@@ -66,6 +66,12 @@ protected:
   /** Interpolate the CDF for smooth continuous distributions */
   Collection<PiecewiseHermiteEvaluation> interpolateCDF(const UnsignedInteger n);
 
+  /** Compute the numerical range of the distribution given the parameters values */
+  virtual void computeRange();
+  Interval getRange1D() const;
+  Interval refineRange1D(const NumericalScalar x,
+			 const NumericalScalar step) const;
+
 public:
   /** String converter */
   String __repr__() const;

@@ -201,4 +201,76 @@ Bool ContinuousDistribution::isContinuous() const
   return true;
 }
 
+/* Compute the numerical range of the distribution given the parameters values */
+Interval ContinuousDistribution::getRange1D() const
+{
+  // First step: find a point x where PDF(x)>0
+  // This is done by exploration along two geometric sequences
+  // First pass: increasing sequence toward +inf
+  NumericalScalar x = 1.0;
+  NumericalScalar step = 1.0;
+  NumericalScalar xPositivePDF = -1.0;
+  NumericalScalar positivePDF = -1.0;
+  while (x < 0.5 * SpecFunc::MaxNumericalScalar)
+    {
+      const NumericalScalar pdf(computePDF(x));
+      if (pdf > 0.0)
+	{
+	  positivePDF = pdf;
+	  xPositivePDF = x;
+	  break;
+	}
+      step *= 2.0;
+      x += step;
+    }
+  // If we found something, take it as a starting point to find range bounds
+  if (positivePDF > 0.0)
+    return refineRange(xPositive, step);
+  // Second pass: decreasing sequence toward zero
+  x = 0.5;
+  NumericalScalar step = 0.5;
+  while (x > 2.0 * SpecFunc::NumericalScalarEpsilon)
+    {
+      const NumericalScalar pdf(computePDF(x));
+      if (pdf > 0.0)
+	{
+	  positivePDF = pdf;
+	  xPositivePDF = x;
+	  break;
+	}
+      step *= 0.5;
+      x += step;
+    }
+  // If we found something, take it as a starting point to find range bounds
+  if (positivePDF > 0.0)
+    return refineRange1D(xPositive, step);
+  
+}
+
+void ContinuousDistribution::computeRange()
+{
+  const Interval::BoolCollection finiteLowerBound(dimension_, false);
+  const Interval::BoolCollection finiteUpperBound(dimension_, false);
+  setRange(Interval(computeLowerBound(), computeUpperBound(), finiteLowerBound, finiteUpperBound));
+void ContinuousDistribution::computeRange()
+{
+  if (dimension_ == 1)
+    {
+      setRange(getRange1D());
+      return;
+    }
+  const Interval::BoolCollection finiteLowerBound(dimension_, false);
+  const Interval::BoolCollection finiteUpperBound(dimension_, false);
+  NumericalPoint lowerBound(dimension_);
+  NumericalPoint upperBound(dimension_);
+  for (UnsignedInteger i = 0; i < dimension_; ++i)
+    {
+      const Interval range1D(getMarginal(i)->getRange1D());
+      lowerBound[i] = range1D.getLowerBound()[0];
+      upperBound[i] = range1D.getUpperBound()[0];
+    }
+  setRange(Interval(lowerBound, upperBound, finiteLowerBound, finiteUpperBound));
+}
+
+
 END_NAMESPACE_OPENTURNS
