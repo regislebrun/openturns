@@ -104,29 +104,46 @@ OrthogonalUniVariatePolynomial * OrthogonalUniVariatePolynomial::clone() const
 /* OrthogonalUniVariatePolynomial are evaluated as functors */
 Scalar OrthogonalUniVariatePolynomial::operator() (const Scalar x) const
 {
-  const UnsignedInteger size = recurrenceCoefficients_.getSize();
-  Scalar uN = 1.0;
-  // Special case: degree == 0, constant unitary polynomial
-  if (size == 0) return uN;
-  Coefficients aN(recurrenceCoefficients_[size - 1]);
-  Scalar uNMinus1 = aN[0] * x + aN[1];
-  // Special case: degree == 1, affine polynomial
-  if (size == 1) return uNMinus1;
-  Scalar uNMinus2 = 0.0;
-  // General case, use Clenshaw's algorithm for a stable evaluation of the polynomial
+  // Use Clenshaw's algorithm for a stable evaluation of the polynomial
   // The summation must be done in reverse order to get the best stability
   // The three terms recurrence relation is:
-  // Pn+1(x) = (a0[n] * x + a1[n]) * Pn(x) + a2[n] * Pn-1(x)
-  // with P-1 = 0, P0 = 1
-  for (UnsignedInteger n = size - 1; n > 0; --n)
-  {
-    const Coefficients aNMinus1(recurrenceCoefficients_[n - 1]);
-    uNMinus2 = (aNMinus1[0] * x + aNMinus1[1]) * uNMinus1 + aN[2] * uN;
-    uN = uNMinus1;
-    uNMinus1 = uNMinus2;
-    aN = aNMinus1;
-  }
-  return uNMinus2;
+  // P_{n+1}(x) = (a_0[n] * x + a_1[n]) * P_n(x) + a_2[n] * P_{n-1}(x)
+  // with P_{-1} = 0, P_0 = 1
+  // For the Clenshaw algorithm, the relation is rewritten:
+  // P_{n+1}(x) - (a_0[n] * x + a_1[n]) * P_n(x) - a_2[n] * P_{n-1}(x)
+  // We want to evaluate p_n(x) = P_n(x)
+  //                            = \sum_{i=0}^n c_iP_i(c) with c_n=1 and c_i=0 for i\in{0,...,n-1}
+  // Clenshaw's algorithm reads:
+  // q_{n+1}=0
+  // q_n = 1
+  // q_{n-1} = a_0[n] * x + a_1[n]
+  // for k=n-1 to 1 by -1
+  //   q_{k-1} = (a_0[k-1] * x + a_1[k-1]) * q_k + a_2[k] * q_{k+1}
+  // p_n(x) = q0
+  const UnsignedInteger n = recurrenceCoefficients_.getSize();
+  const Scalar qN = 1.0;
+  // Special case: degree == 0, constant unitary polynomial
+  if (n == 0) return qN;
+  Coefficients aN(recurrenceCoefficients_[n - 1]);
+  const Scalar qNMinus1 = aN[0] * x + aN[1];
+  // Special case: degree == 1, affine polynomial
+  if (n == 1) return qNMinus1;
+  Scalar qKPlus1 = qN;
+  Scalar qK = qNMinus1;
+  Scalar qKMinus1 = 0.0;
+  Scalar a2K = aN[2];
+  for (UnsignedInteger k = n - 1; k > 0; --k)
+    {
+      const Coefficients coefficientsKMinus1(recurrenceCoefficients_[k - 1]);
+      const Scalar a0KMinus1 = coefficientsKMinus1[0];
+      const Scalar a1KMinus1 = coefficientsKMinus1[1];
+      const Scalar a2KMinus1 = coefficientsKMinus1[2];
+      qKMinus1 = (a0KMinus1 * x + a1KMinus1) * qK + a2K * qKPlus1;
+      a2K = a2KMinus1;
+      qKPlus1 = qK;
+      qK = qKMinus1;
+    }
+  return qKMinus1;
 }
 
 

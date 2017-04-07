@@ -46,6 +46,8 @@ StandardDistributionPolynomialFactory::StandardDistributionPolynomialFactory()
   , orthonormalizationAlgorithm_(AdaptiveStieltjesAlgorithm(Uniform()))
   , specificFamily_()
   , hasSpecificFamily_(false)
+  , linear_(1.0)
+  , constant_(0.0)
 {
   // Initialize the coefficient cache
   initializeCache();
@@ -58,6 +60,8 @@ StandardDistributionPolynomialFactory::StandardDistributionPolynomialFactory(con
   , orthonormalizationAlgorithm_(AdaptiveStieltjesAlgorithm(measure.getStandardRepresentative()))
   , specificFamily_()
   , hasSpecificFamily_(false)
+  , linear_(1.0)
+  , constant_(0.0)
 {
   checkSpecificFamily();
   initializeCache();
@@ -70,6 +74,8 @@ StandardDistributionPolynomialFactory::StandardDistributionPolynomialFactory(con
   , orthonormalizationAlgorithm_(orthonormalizationAlgorithm)
   , specificFamily_()
   , hasSpecificFamily_(false)
+  , linear_(1.0)
+  , constant_(0.0)
 {
   checkSpecificFamily();
   initializeCache();
@@ -87,7 +93,16 @@ StandardDistributionPolynomialFactory * StandardDistributionPolynomialFactory::c
    Pn+1(x) = (a0n * x + a1n) * Pn(x) + a2n * Pn-1(x) */
 StandardDistributionPolynomialFactory::Coefficients StandardDistributionPolynomialFactory::getRecurrenceCoefficients(const UnsignedInteger n) const
 {
-  if (hasSpecificFamily_) return specificFamily_.getRecurrenceCoefficients(n);
+  if (hasSpecificFamily_)
+    {
+      const Point coefficientsReference(specificFamily_.getRecurrenceCoefficients(n));
+      if (linear_ == 1.0 && constant_ == 0.0) return coefficientsReference;
+      Point coefficients(3);
+      coefficients[0] = coefficientsReference[0] / linear_;
+      coefficients[1] = coefficientsReference[1] - constant_ * coefficientsReference[0] / linear_;
+      coefficients[2] = coefficientsReference[2];
+      return coefficients;
+    }
   else return orthonormalizationAlgorithm_.getRecurrenceCoefficients(n);
 }
 
@@ -96,24 +111,29 @@ void StandardDistributionPolynomialFactory::checkSpecificFamily()
 {
   // Check for special cases. Need a more elegant conception and implementation.
   hasSpecificFamily_ = false;
-  OrthogonalUniVariatePolynomialFamily referenceFamily;
   const String measureType(measure_.getImplementation()->getClassName());
-  Bool hasClassMatch = false;
   // Legendre factory
   if (measureType == "Uniform")
   {
-    referenceFamily = LegendreFactory();
-    hasClassMatch = true;
+    hasSpecificFamily_ = true;
+    const Point parameter(measure_.getParameter());
+    specificFamily_ = LegendreFactory();
+    linear_ = 2.0 / (parameter[1] - parameter[0]);
+    constant_ = -(parameter[0] + parameter[1]) / (parameter[1] - parameter[0]);
   }
   // Hermite factory
   if (measureType == "Normal")
   {
-    referenceFamily = HermiteFactory();
-    hasClassMatch = true;
+    hasSpecificFamily_ = true;
+    const Point parameter(measure_.getParameter());
+    specificFamily_ = HermiteFactory();
+    linear_ = parameter[1];
+    constant_ = parameter[0];
   }
   // HistogramPolynomial factory
   if (measureType == "Histogram")
   {
+    hasSpecificFamily_ = true;
     const Point parameter(measure_.getParameter());
     const UnsignedInteger size = (parameter.getSize() - 1) / 2;
     const Scalar first = parameter[0];
@@ -125,88 +145,73 @@ void StandardDistributionPolynomialFactory::checkSpecificFamily()
       height[i] = parameter[2 * i + 2];
     }
 
-    referenceFamily = HistogramPolynomialFactory(first, width, height);
-    hasClassMatch = true;
+    specificFamily_ = HistogramPolynomialFactory(first, width, height);
   }
   // Chebychev factory
   if (measureType == "Arcsine")
   {
-    referenceFamily = ChebychevFactory();
-    hasClassMatch = true;
+    hasSpecificFamily_ = true;
+    specificFamily_ = ChebychevFactory();
   }
   // Jacobi (or Chebychev as a special case) factory
   if (measureType == "Beta")
   {
+    hasSpecificFamily_ = true;
     const Point parameter(measure_.getParameter());
     const Scalar alpha = parameter[1] - parameter[0] - 1.0;
     const Scalar beta = parameter[0] - 1.0;
+    const Scalar a = parameter[2];
+    const Scalar b = parameter[3];
+    linear_ = 2.0 / (b - a);
+    constant_ = -(a + b) / (b - a);
     // Here we set directly the specific family as the reference distribution
     // of the family has a different type (Arcsine) than the given distribution
-    if (alpha == -0.5 && beta == -0.5 && parameter[2] == -1.0 && parameter[3] == 1.0)
-    {
+    if (alpha == -0.5 && beta == -0.5)
       specificFamily_ = ChebychevFactory();
-      hasSpecificFamily_ = true;
-      // To avoid distribution comparison at the end of the method
-      hasClassMatch = false;
-    }
     // Here we set directly the specific family as the reference distribution
     // of the family has a different type (Uniform) than the given distribution
-    else if (alpha == 0.0 && beta == 0.0 && parameter[2] == -1.0 && parameter[3] == 1.0)
-    {
+    else if (alpha == 0.0 && beta == 0.0)
       specificFamily_ = LegendreFactory();
-      hasSpecificFamily_ = true;
-      // To avoid distribution comparison at the end of the method
-      hasClassMatch = false;
-    }
     else
-    {
-      referenceFamily = JacobiFactory(alpha, beta);
-      hasClassMatch = true;
-    }
+      specificFamily_ = JacobiFactory(alpha, beta);
   }
   // Laguerre factory
   if (measureType == "Gamma")
   {
+    hasSpecificFamily_ = true;
     const Point parameter(measure_.getParameter());
-    referenceFamily = LaguerreFactory(parameter[0] - 1.0);
-    hasClassMatch = true;
+    specificFamily_ = LaguerreFactory(parameter[0] - 1.0);
+    linear_ = 1.0 / parameter[1];
+    constant_ = parameter[2];
   }
   if (measureType == "Exponential")
   {
+    hasSpecificFamily_ = true;
     const Point parameter(measure_.getParameter());
-    if (parameter[0] == 1.0)
-    {
-      specificFamily_ = LaguerreFactory(0.0);
-      hasSpecificFamily_ = true;
-      // To avoid distribution comparison at the end of the method
-      hasClassMatch = false;
-    }
+    specificFamily_ = LaguerreFactory(0.0);
+    linear_ = 1.0 / parameter[0];
+    constant_ = parameter[1];
   }
   // Charlier factory
   if (measureType == "Poisson")
   {
+    hasSpecificFamily_ = true;
     const Point parameter(measure_.getParameter());
-    referenceFamily = CharlierFactory(parameter[0]);
-    hasClassMatch = true;
+    specificFamily_ = CharlierFactory(parameter[0]);
   }
   // Krawtchouk factory
   if (measureType == "Binomial")
   {
+    hasSpecificFamily_ = true;
     const Point parameter(measure_.getParameter());
-    referenceFamily = KrawtchoukFactory(static_cast<UnsignedInteger>(parameter[0]), parameter[1]);
-    hasClassMatch = true;
+    specificFamily_ = KrawtchoukFactory(static_cast<UnsignedInteger>(parameter[0]), parameter[1]);
   }
   // Meixner factory
   if (measureType == "NegativeBinomial")
   {
-    const Point parameter(measure_.getParameter());
-    referenceFamily = MeixnerFactory(parameter[0], parameter[1]);
-    hasClassMatch = true;
-  }
-  if (hasClassMatch && (referenceFamily.getMeasure() == measure_))
-  {
-    specificFamily_ = referenceFamily;
     hasSpecificFamily_ = true;
+    const Point parameter(measure_.getParameter());
+    specificFamily_ = MeixnerFactory(parameter[0], parameter[1]);
   }
 }
 
@@ -216,7 +221,12 @@ String StandardDistributionPolynomialFactory::__repr__() const
   OSS oss;
   oss << "class=" << getClassName()
       << " hasSpecificFamily=" << std::boolalpha << hasSpecificFamily_;
-  if (hasSpecificFamily_) oss << " specificFamily=" << specificFamily_;
+  if (hasSpecificFamily_)
+    {
+      oss << " specificFamily=" << specificFamily_
+	  << " linear=" << linear_
+	  << " constant=" << constant_;
+    }
   else oss << " orthonormalization algorithm=" << orthonormalizationAlgorithm_;
   return oss;
 }
@@ -228,6 +238,9 @@ void StandardDistributionPolynomialFactory::save(Advocate & adv) const
   adv.saveAttribute( "orthonormalizationAlgorithm_", orthonormalizationAlgorithm_ );
   adv.saveAttribute( "specificFamily_", specificFamily_ );
   adv.saveAttribute( "hasSpecificFamily_", hasSpecificFamily_ );
+  adv.saveAttribute( "hasSpecificFamily_", hasSpecificFamily_ );
+  adv.saveAttribute( "linear_", linear_ );
+  adv.saveAttribute( "constant_", constant_ );
 }
 
 
@@ -238,6 +251,8 @@ void StandardDistributionPolynomialFactory::load(Advocate & adv)
   adv.loadAttribute( "orthonormalizationAlgorithm_", orthonormalizationAlgorithm_ );
   adv.loadAttribute( "specificFamily_", specificFamily_ );
   adv.loadAttribute( "hasSpecificFamily_", hasSpecificFamily_ );
+  adv.loadAttribute( "linear_", linear_ );
+  adv.loadAttribute( "constant_", constant_ );
 }
 
 

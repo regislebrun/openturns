@@ -84,6 +84,12 @@ private:
   /** Flag to tell if a specific family is available */
   Bool hasSpecificFamily_;
 
+  /** Linear coefficient of the transformation wrt the reference family */
+  Scalar linear_;
+
+  /** Constant coefficient of the transformation wrt the reference family */
+  Scalar constant_;
+
 } ; /* class StandardDistributionPolynomialFactory */
 
 
