@@ -36,18 +36,26 @@ static const Factory<OrthogonalUniVariatePolynomial> Factory_OrthogonalUniVariat
 
 /* Default constructor */
 OrthogonalUniVariatePolynomial::OrthogonalUniVariatePolynomial()
-  : UniVariatePolynomialImplementation(),
-    recurrenceCoefficients_(0)
+  : UniVariatePolynomialImplementation()
+  , recurrenceCoefficients_(0)
+  , a_(1.0)
+  , b_(0.0)
 {
   coefficients_ = Coefficients(1, 1.0);
 }
 
 
 /* Constructor from recurrence coefficients */
-OrthogonalUniVariatePolynomial::OrthogonalUniVariatePolynomial(const CoefficientsCollection & recurrenceCoefficients)
-  : UniVariatePolynomialImplementation(),
-    recurrenceCoefficients_(recurrenceCoefficients)
+OrthogonalUniVariatePolynomial::OrthogonalUniVariatePolynomial(const CoefficientsCollection & recurrenceCoefficients,
+							       const Scalar a,
+							       const Scalar b)
+  : UniVariatePolynomialImplementation()
+  , recurrenceCoefficients_(recurrenceCoefficients)
+  , a_(a)
+  , b_(b)
 {
+  // Check the affine part
+  if (a_ == 0.0) throw InvalidArgumentException(HERE) << "Error: the affine transformation must have a nonzero leading coefficient, here a=0.";
   // Build the coefficients using the recurrence coefficients
   coefficients_ = Coefficients(buildCoefficients(recurrenceCoefficients.getSize()));
 }
@@ -56,8 +64,8 @@ OrthogonalUniVariatePolynomial::OrthogonalUniVariatePolynomial(const Coefficient
 /* Constructor from recurrence coefficients and coefficients */
 OrthogonalUniVariatePolynomial::OrthogonalUniVariatePolynomial(const CoefficientsCollection & recurrenceCoefficients,
     const Coefficients & coefficients)
-  : UniVariatePolynomialImplementation(),
-    recurrenceCoefficients_(recurrenceCoefficients)
+  : UniVariatePolynomialImplementation()
+  , recurrenceCoefficients_(recurrenceCoefficients)
 {
   // Set the value of the coefficients, stored in the upper class
   coefficients_ = coefficients;
@@ -104,28 +112,32 @@ OrthogonalUniVariatePolynomial * OrthogonalUniVariatePolynomial::clone() const
 /* OrthogonalUniVariatePolynomial are evaluated as functors */
 Scalar OrthogonalUniVariatePolynomial::operator() (const Scalar x) const
 {
-  // Use Clenshaw's algorithm for a stable evaluation of the polynomial
+  // The polynomial is stored as a standard polynomial composed with an affine transformation
+  // Here z = a*x+b
+  // Use Clenshaw's algorithm for a stable evaluation of the standard polynomial
   // The summation must be done in reverse order to get the best stability
   // The three terms recurrence relation is:
-  // P_{n+1}(x) = (a_0[n] * x + a_1[n]) * P_n(x) + a_2[n] * P_{n-1}(x)
+  // P_{n+1}(z) = (a_0[n] * z + a_1[n]) * P_n(z) + a_2[n] * P_{n-1}(z)
   // with P_{-1} = 0, P_0 = 1
   // For the Clenshaw algorithm, the relation is rewritten:
-  // P_{n+1}(x) - (a_0[n] * x + a_1[n]) * P_n(x) - a_2[n] * P_{n-1}(x)
-  // We want to evaluate p_n(x) = P_n(x)
-  //                            = \sum_{i=0}^n c_iP_i(c) with c_n=1 and c_i=0 for i\in{0,...,n-1}
+  // P_{n+1}(z) - (a_0[n] * z + a_1[n]) * P_n(z) - a_2[n] * P_{n-1}(z)
+  // We want to evaluate p_n(z) = P_n(z)
+  //                            = \sum_{i=0}^n c_iP_i(z) with c_n=1 and c_i=0 for i\in{0,...,n-1}
   // Clenshaw's algorithm reads:
   // q_{n+1}=0
   // q_n = 1
   // q_{n-1} = a_0[n] * x + a_1[n]
   // for k=n-1 to 1 by -1
-  //   q_{k-1} = (a_0[k-1] * x + a_1[k-1]) * q_k + a_2[k] * q_{k+1}
+  //   q_{k-1} = (a_0[k-1] * z + a_1[k-1]) * q_k + a_2[k] * q_{k+1}
   // p_n(x) = q0
   const UnsignedInteger n = recurrenceCoefficients_.getSize();
   const Scalar qN = 1.0;
   // Special case: degree == 0, constant unitary polynomial
   if (n == 0) return qN;
+  // Apply the affine transformation
+  Scalar z = a_ * x + b_;
   Coefficients aN(recurrenceCoefficients_[n - 1]);
-  const Scalar qNMinus1 = aN[0] * x + aN[1];
+  const Scalar qNMinus1 = aN[0] * z + aN[1];
   // Special case: degree == 1, affine polynomial
   if (n == 1) return qNMinus1;
   Scalar qKPlus1 = qN;
@@ -138,7 +150,7 @@ Scalar OrthogonalUniVariatePolynomial::operator() (const Scalar x) const
       const Scalar a0KMinus1 = coefficientsKMinus1[0];
       const Scalar a1KMinus1 = coefficientsKMinus1[1];
       const Scalar a2KMinus1 = coefficientsKMinus1[2];
-      qKMinus1 = (a0KMinus1 * x + a1KMinus1) * qK + a2K * qKPlus1;
+      qKMinus1 = (a0KMinus1 * z + a1KMinus1) * qK + a2K * qKPlus1;
       a2K = a2KMinus1;
       qKPlus1 = qK;
       qK = qKMinus1;
@@ -185,7 +197,7 @@ OrthogonalUniVariatePolynomial::ComplexCollection OrthogonalUniVariatePolynomial
   dstev_(&jobz, &ldz, &d[0], &e[0], &z(0, 0), &ldz, &work[0], &info, &ljobz);
   if (info != 0) throw InternalException(HERE) << "Lapack DSTEV: error code=" << info;
   ComplexCollection result(n);
-  for (UnsignedInteger i = 0; i < n; ++i) result[i] = Complex(d[i], 0.0);
+  for (UnsignedInteger i = 0; i < n; ++i) result[i] = Complex((d[i] - b_) / a_, 0.0);
   return result;
 }
 
@@ -194,6 +206,8 @@ void OrthogonalUniVariatePolynomial::save(Advocate & adv) const
 {
   UniVariatePolynomialImplementation::save(adv);
   adv.saveAttribute( "recurrenceCoefficients_", recurrenceCoefficients_ );
+  adv.saveAttribute( "a_", a_ );
+  adv.saveAttribute( "b_", b_ );
 }
 
 /* Method load() reloads the object from the StorageManager */
@@ -201,6 +215,8 @@ void OrthogonalUniVariatePolynomial::load(Advocate & adv)
 {
   UniVariatePolynomialImplementation::load(adv);
   adv.loadAttribute( "recurrenceCoefficients_", recurrenceCoefficients_ );
+  adv.loadAttribute( "a_", a_ );
+  adv.loadAttribute( "b_", b_ );
 }
 
 

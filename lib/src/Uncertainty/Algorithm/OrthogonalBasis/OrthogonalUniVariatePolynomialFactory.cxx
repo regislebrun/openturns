@@ -82,7 +82,7 @@ OrthogonalUniVariatePolynomial OrthogonalUniVariatePolynomialFactory::build(cons
   for (UnsignedInteger i = cacheSize; i <= degree; ++i)
   {
     CoefficientsCollection rec(buildRecurrenceCoefficientsCollection(i));
-    polynomialsCache_.add(OrthogonalUniVariatePolynomial(rec, buildCoefficients(i)));
+    polynomialsCache_.add(OrthogonalUniVariatePolynomial(rec, linear_, constant_));
   };
   return polynomialsCache_[degree];
 }

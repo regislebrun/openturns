@@ -93,16 +93,7 @@ StandardDistributionPolynomialFactory * StandardDistributionPolynomialFactory::c
    Pn+1(x) = (a0n * x + a1n) * Pn(x) + a2n * Pn-1(x) */
 StandardDistributionPolynomialFactory::Coefficients StandardDistributionPolynomialFactory::getRecurrenceCoefficients(const UnsignedInteger n) const
 {
-  if (hasSpecificFamily_)
-    {
-      const Point coefficientsReference(specificFamily_.getRecurrenceCoefficients(n));
-      if (linear_ == 1.0 && constant_ == 0.0) return coefficientsReference;
-      Point coefficients(3);
-      coefficients[0] = coefficientsReference[0] / linear_;
-      coefficients[1] = coefficientsReference[1] - constant_ * coefficientsReference[0] / linear_;
-      coefficients[2] = coefficientsReference[2];
-      return coefficients;
-    }
+  if (hasSpecificFamily_) return specificFamily_.getRecurrenceCoefficients(n);
   else return orthonormalizationAlgorithm_.getRecurrenceCoefficients(n);
 }
 
@@ -144,7 +135,6 @@ void StandardDistributionPolynomialFactory::checkSpecificFamily()
       width[i] = parameter[2 * i + 1];
       height[i] = parameter[2 * i + 2];
     }
-
     specificFamily_ = HistogramPolynomialFactory(first, width, height);
   }
   // Chebychev factory
@@ -213,6 +203,12 @@ void StandardDistributionPolynomialFactory::checkSpecificFamily()
     const Point parameter(measure_.getParameter());
     specificFamily_ = MeixnerFactory(parameter[0], parameter[1]);
   }
+  if (!hasSpecificFamily_)
+  {
+    linear_ = measure_.getStandardDeviation()[0];
+    constant_ = measure_.getMean()[0];
+    measure_ = measure_ * (1.0 / linear_) + (-constant_ / linear_);
+  }
 }
 
 /* String converter */
@@ -222,11 +218,11 @@ String StandardDistributionPolynomialFactory::__repr__() const
   oss << "class=" << getClassName()
       << " hasSpecificFamily=" << std::boolalpha << hasSpecificFamily_;
   if (hasSpecificFamily_)
-    {
-      oss << " specificFamily=" << specificFamily_
-	  << " linear=" << linear_
-	  << " constant=" << constant_;
-    }
+  {
+    oss << " specificFamily=" << specificFamily_
+        << " linear=" << linear_
+        << " constant=" << constant_;
+  }
   else oss << " orthonormalization algorithm=" << orthonormalizationAlgorithm_;
   return oss;
 }

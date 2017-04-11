@@ -84,6 +84,10 @@ private:
   /** The recurrence coefficients (an, bn, cn) that defines the orthogonal polynomial for n >= 0. The polynomial P0 is constant equal to 1.0, and by convention we note P-1(x) the null polynomial. For n>=1 we have: Pn+1(x) = (an * x + bn) * Pn(x) + cn * Pn-1(x). The recurrence coefficients are stored starting with (a1, b1, c1). */
   CoefficientsPersistentCollection recurrenceCoefficients_;
 
+  /** The coefficients of the affine function ax+b to apply to the evaluation point */
+  Scalar a_;
+  Scalar b_;
+  
 } ; /* class OrthogonalUniVariatePolynomial */
 
 
