@@ -43,6 +43,8 @@
 #include "openturns/EventProcess.hxx"
 #include "openturns/FunctionalChaosRandomVector.hxx"
 #include "openturns/KrigingRandomVector.hxx"
+#include "openturns/PointProcessImplementation.hxx"
+#include "openturns/PointProcess.hxx"
 #include "openturns/ProcessImplementation.hxx"
 #include "openturns/Process.hxx"
 #include "openturns/RandomVector.hxx"

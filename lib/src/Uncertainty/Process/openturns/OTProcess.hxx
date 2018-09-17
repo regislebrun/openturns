@@ -40,5 +40,6 @@
 #include "openturns/ConditionedGaussianProcess.hxx"
 #include "openturns/KarhunenLoeveQuadratureAlgorithm.hxx"
 #include "openturns/KarhunenLoeveSVDAlgorithm.hxx"
+#include "openturns/PoissonProcess.hxx"
 
 #endif /* OPENTURNS_OTSTOCHASTICPROCESS_HXX */
