@@ -151,7 +151,7 @@ struct KrigingEvaluationPointFunctor1D
                                   const KrigingEvaluation & evaluation)
     : input_(input)
     , evaluation_(evaluation)
-    , accumulator_(evaluation.getOutputDimension())
+    , accumulator_(0.0)
   {}
 
   KrigingEvaluationPointFunctor1D(const KrigingEvaluationPointFunctor1D & other,
@@ -164,7 +164,9 @@ struct KrigingEvaluationPointFunctor1D
   inline void operator()( const TBB::BlockedRange<UnsignedInteger> & r )
   {
     for (UnsignedInteger i = r.begin(); i != r.end(); ++i)
-      accumulator_ += evaluation_.covarianceModel_.computeAsScalar(input_, evaluation_.inputSample_[i]) * evaluation_.gamma_(i, 0);
+    {
+      accumulator_ += evaluation_.covarianceModel_.getImplementation()->computeAsScalar(input_.begin(), evaluation_.inputSample_.getImplementation()->data_begin() + i * input_.getDimension()) * evaluation_.gamma_(i, 0);
+    }
   } // operator()
 
   inline void join(const KrigingEvaluationPointFunctor1D & other)
@@ -272,7 +274,7 @@ struct KrigingEvaluationSampleFunctor1D
     for (UnsignedInteger i = 0; i != size; ++i)
     {
       for (UnsignedInteger j = 0; j < trainingSize_; ++j)
-        value += evaluation_.covarianceModel_.getImplementation()->computeAsScalar(input_[start + i], evaluation_.inputSample_[j]) * evaluation_.gamma_(j, 0);
+        value += evaluation_.covarianceModel_.getImplementation()->computeAsScalar(input_.getImplementation()->data_begin() + (start + i) * inputDimension, evaluation_.inputSample_.getImplementation()->data_begin() + (j * inputDimension) ) * evaluation_.gamma_(j, 0);
       output_(start + i, 0) = value;
     }
   } // operator()
