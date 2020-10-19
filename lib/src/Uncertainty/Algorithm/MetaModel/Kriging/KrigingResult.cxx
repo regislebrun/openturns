@@ -60,7 +60,7 @@ KrigingResult::KrigingResult(const Sample & inputSample,
 }
 
 
-/* Constructor with parameters & Cholesky factor */
+/* Constructor with parameters & Cholesky factor (Lapack) */
 KrigingResult::KrigingResult(const Sample & inputSample,
                              const Sample & outputSample,
                              const Function & metaModel,
@@ -88,6 +88,38 @@ KrigingResult::KrigingResult(const Sample & inputSample,
     throw InvalidArgumentException(HERE) << "In KrigingResult::KrigingResult, input & output sample have different size. input sample size = " << size << ", output sample size = " << outputSample.getSize();
   if (covarianceCholeskyFactor_.getDimension() != 0 && covarianceCholeskyFactor_.getDimension() != size * outputDimension)
     throw InvalidArgumentException(HERE) << "In KrigingResult::KrigingResult, Cholesky factor has unexpected dimensions. Its dimension should be " << size * outputDimension << ". Here dimension = " << covarianceCholeskyFactor_.getDimension();
+}
+
+
+/* Constructor with parameters & Cholesky factor (HMAT) */
+KrigingResult::KrigingResult(const Sample & inputSample,
+                             const Sample & outputSample,
+                             const Function & metaModel,
+                             const Point & residuals,
+                             const Point & relativeErrors,
+                             const BasisCollection & basis,
+                             const PointCollection & trendCoefficients,
+                             const CovarianceModel & covarianceModel,
+                             const Sample & covarianceCoefficients,
+                             const HMatrix & covarianceHMatrix)
+  : MetaModelResult(DatabaseFunction(inputSample, outputSample), metaModel, residuals, relativeErrors)
+  , inputSample_(inputSample)
+  , inputTransformedSample_(inputSample)
+  , outputSample_(outputSample)
+  , basis_(basis)
+  , trendCoefficients_(trendCoefficients)
+  , covarianceModel_(covarianceModel)
+  , covarianceCoefficients_(covarianceCoefficients)
+  , covarianceCholeskyFactor_(covarianceCholeskyFactor)
+  , covarianceHMatrix_(covarianceHMatrix)
+  , F_()
+  , phiT_()
+  , Gt_()
+{
+  const UnsignedInteger outputDimension = outputSample.getDimension();
+  const UnsignedInteger size = inputSample.getSize();
+  if (size != outputSample.getSize())
+    throw InvalidArgumentException(HERE) << "In KrigingResult::KrigingResult, input & output sample have different size. input sample size = " << size << ", output sample size = " << outputSample.getSize();
   if (covarianceHMatrix_.getNbRows() != 0)
   {
     if (covarianceHMatrix_.getNbRows() != covarianceHMatrix_.getNbColumns())

@@ -95,20 +95,14 @@ public:
   void load(Advocate & adv) override;
 
 
-protected:
-
-  // KrigingAlgorithm::run could ask for the Cholesky factor
-  friend class KrigingAlgorithm;
-
-  // GeneralLinearModelAlgorithm::run could set the Cholesky factor
-  friend class GeneralLinearModelAlgorithm;
-
-  /** Accessor to the Cholesky factor*/
-  void setCholeskyFactor(const TriangularMatrix & covarianceCholeskyFactor,
-                         const HMatrix & covarianceHMatrix);
+  /** Accessor to the Cholesky factor - lapack */
+  void setCholeskyFactor(const TriangularMatrix & covarianceCholeskyFactor);
 
   /** Method that returns the covariance factor - lapack */
   TriangularMatrix getCholeskyFactor() const;
+
+  /** Accessor to the Cholesky factor - hmat*/
+  void setHMatCholeskyFactor(const HMatrix & covarianceHMatrix);
 
   /** Method that returns the covariance factor - hmat */
   HMatrix getHMatCholeskyFactor() const;

@@ -819,8 +819,9 @@ ot_add_python_module(metamodel metamodel_module.i
                       KrigingResult.i KrigingResult_doc.i.in
                       LinearModelResult.i LinearModelResult_doc.i.in
                       MetaModelValidation.i MetaModelValidation_doc.i.in
-		      GeneralLinearModelResult.i GeneralLinearModelResult_doc.i.in
-		      GeneralLinearModelAlgorithm.i GeneralLinearModelAlgorithm_doc.i.in
+        		      GeneralLinearModelResult.i GeneralLinearModelResult_doc.i.in
+		              GeneralLinearModelAlgorithm.i GeneralLinearModelAlgorithm_doc.i.in
+		              GeneralLinearModelAlgorithmDenseScalar.i GeneralLinearModelAlgorithmDenseScalar_doc.i.in
                       LinearTaylor.i LinearTaylor_doc.i.in
                       QuadraticTaylor.i QuadraticTaylor_doc.i.in
                       LinearLeastSquares.i LinearLeastSquares_doc.i.in
@@ -837,6 +838,7 @@ ot_add_python_module(metamodel metamodel_module.i
                       FunctionalChaosResult.i FunctionalChaosResult_doc.i.in
                       FunctionalChaosAlgorithm.i FunctionalChaosAlgorithm_doc.i.in
                       KrigingAlgorithm.i KrigingAlgorithm_doc.i.in
+                      KrigingAlgorithmDenseScalar.i KrigingAlgorithmDenseScalar_doc.i.in
                       LinearModelStepwiseAlgorithm.i LinearModelStepwiseAlgorithm_doc.i.in
                       LinearModelAlgorithm.i LinearModelAlgorithm_doc.i.in
                       LinearModelAnalysis.i LinearModelAnalysis_doc.i.in

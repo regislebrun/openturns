@@ -19,7 +19,7 @@
  *
  */
 
-#include "openturns/KrigingAlgorithm.hxx"
+#include "openturns/KrigingAlgorithmDenseScalar.hxx"
 #include "openturns/PersistentObjectFactory.hxx"
 #include "openturns/LinearFunction.hxx"
 #include "openturns/SpecFunc.hxx"
@@ -31,13 +31,13 @@
 
 BEGIN_NAMESPACE_OPENTURNS
 
-CLASSNAMEINIT(KrigingAlgorithm)
+CLASSNAMEINIT(KrigingAlgorithmDenseScalar)
 
-static const Factory<KrigingAlgorithm> Factory_KrigingAlgorithm;
+static const Factory<KrigingAlgorithmDenseScalar> Factory_KrigingAlgorithmDenseScalar;
 
 
 /* Default constructor */
-KrigingAlgorithm::KrigingAlgorithm()
+KrigingAlgorithmDenseScalar::KrigingAlgorithmDenseScalar()
   : MetaModelAlgorithm()
   , inputSample_(0, 0)
   , outputSample_(0, 0)
@@ -47,19 +47,16 @@ KrigingAlgorithm::KrigingAlgorithm()
   , rho_(0)
   , result_()
   , covarianceCholeskyFactor_()
-  , covarianceCholeskyFactorHMatrix_()
 {
-  // Force the GLM algo to use the exact same linear algebra as the Kriging algorithm
-  if (ResourceMap::GetAsString("KrigingAlgorithm-LinearAlgebra") == "HMAT") glmAlgo_.setMethod(1);
-  else glmAlgo_.setMethod(0);
+  // Nothing to do
 }
 
 
 /* Constructor */
-KrigingAlgorithm::KrigingAlgorithm(const Sample & inputSample,
-                                   const Sample & outputSample,
-                                   const CovarianceModel & covarianceModel,
-                                   const Basis & basis)
+KrigingAlgorithmDenseScalar::KrigingAlgorithmDenseScalar(const Sample & inputSample,
+    const Sample & outputSample,
+    const CovarianceModel & covarianceModel,
+    const Basis & basis)
   : MetaModelAlgorithm()
   , inputSample_(inputSample)
   , outputSample_(outputSample)
@@ -69,72 +66,95 @@ KrigingAlgorithm::KrigingAlgorithm(const Sample & inputSample,
   , rho_(0)
   , result_()
   , covarianceCholeskyFactor_()
-  , covarianceCholeskyFactorHMatrix_()
 {
-  // Force the GLM algo to use the exact same linear algebra as the Kriging algorithm
-  if (ResourceMap::GetAsString("KrigingAlgorithm-LinearAlgebra") == "HMAT") glmAlgo_.setMethod(1);
-  else glmAlgo_.setMethod(0);
+  // Nothing to do
 }
 
-
-/* Constructor */
-KrigingAlgorithm::KrigingAlgorithm(const Sample & inputSample,
-                                   const Sample & outputSample,
-                                   const CovarianceModel & covarianceModel,
-                                   const BasisCollection & basisCollection)
-  : MetaModelAlgorithm()
-  , inputSample_(inputSample)
-  , outputSample_(outputSample)
-  , covarianceModel_(covarianceModel)
-  , glmAlgo_(inputSample, outputSample, covarianceModel, basisCollection, true)
-  , gamma_(0)
-  , rho_(0)
-  , result_()
-  , covarianceCholeskyFactor_()
-  , covarianceCholeskyFactorHMatrix_()
-{
-  // Force the GLM algo to use the exact same linear algebra as the Kriging algorithm
-  if (ResourceMap::GetAsString("KrigingAlgorithm-LinearAlgebra") == "HMAT") glmAlgo_.setMethod(1);
-  else glmAlgo_.setMethod(0);
-}
 
 /* Virtual constructor */
-KrigingAlgorithm * KrigingAlgorithm::clone() const
+KrigingAlgorithmDenseScalar * KrigingAlgorithmDenseScalar::clone() const
 {
-  return new KrigingAlgorithm(*this);
+  return new KrigingAlgorithmDenseScalar(*this);
 }
 
-void KrigingAlgorithm::computeGamma()
+void KrigingAlgorithmDenseScalar::computeGamma()
 {
   // Get cholesky factor & rho from glm
   LOGINFO("Solve L^t.gamma = rho");
-  if (ResourceMap::GetAsString("KrigingAlgorithm-LinearAlgebra") == "HMAT")
-  {
-    gamma_ = covarianceCholeskyFactorHMatrix_.solveLower(rho_, true);
-  }
-  else
-  {
-    // Arguments are keepIntact=true, matrix_lower=true & solving_transposed=true
-    gamma_ = covarianceCholeskyFactor_.getImplementation()->solveLinearSystemTri(rho_, true, true, true);
-  }
+  // Arguments are keepIntact=true, matrix_lower=true & solving_transposed=true
+  gamma_ = covarianceCholeskyFactor_.getImplementation()->solveLinearSystemTri(rho_, true, true, true);
 }
 
 /* Perform regression */
-void KrigingAlgorithm::run()
+void KrigingAlgorithmDenseScalar::run()
 {
-  LOGINFO("Launch GeneralLinearModelAlgorithm for the optimization");
+  LOGINFO("Launch GeneralLinearModelAlgorithmDenseScalar for the optimization");
   glmAlgo_.run();
   LOGINFO("End of GeneralLinearModelAlgorithm run");
 
   // Covariance coefficients are computed once, ever if optimiser is fixed
   rho_ = glmAlgo_.getRho();
 
-  /* Method that returns the covariance factor - hmat */
+  /* Method that returns the covariance factor */
   const GeneralLinearModelResult glmResult(glmAlgo_.getResult());
-  if (ResourceMap::GetAsString("KrigingAlgorithm-LinearAlgebra") == "HMAT")
-    covarianceCholeskyFactorHMatrix_ = glmResult.getHMatCholeskyFactor();
-  else
-    covarianceCholeskyFactor_ = glmResult.getCholeskyFactor();
+  covarianceCholeskyFactor_ = glmResult.getCholeskyFactor();
+  LOGINFO("Compute the interpolation part");
+  computeGamma();
+  LOGINFO("Store the estimates");
+  LOGINFO("Build the output meta-model");
+  Function metaModel;
+  // We use directly the collection of points
+  const BasisCollection basis(glmResult.getBasisCollection());
+  const CovarianceModel conditionalCovarianceModel(glmResult.getCovarianceModel());
+  const Collection<Point> trendCoefficients(glmResult.getTrendCoefficients());
+  const UnsignedInteger outputDimension = outputSample_.getDimension();
+  Sample covarianceCoefficients(inputSample_.getSize(), outputDimension);
+  covarianceCoefficients.getImplementation()->setData(gamma_);
+  // Meta model definition
+  metaModel.setEvaluation(new KrigingEvaluation(basis, inputSample_, conditionalCovarianceModel, trendCoefficients, covarianceCoefficients));
+  metaModel.setGradient(new KrigingGradient(basis, inputSample_, conditionalCovarianceModel, trendCoefficients, covarianceCoefficients));
+  metaModel.setHessian(new CenteredFiniteDifferenceHessian(ResourceMap::GetAsScalar( "CenteredFiniteDifferenceGradient-DefaultEpsilon" ), metaModel.getEvaluation()));
+
+  // compute residual, relative error
+  const Point outputVariance(outputSample_.computeVariance());
+  
+  const Sample mY(metaModel(inputSample_));
+  //const Sample mY(outputSample_.getSize(), outputSample_.getDimension());
+  const Point squaredResiduals((outputSample_ - mY).computeRawMoment(2));
+
+  const UnsignedInteger size = inputSample_.getSize();
+  Point residuals(outputDimension);
+  Point relativeErrors(outputDimension);
+  for (UnsignedInteger outputIndex = 0; outputIndex < outputDimension; ++ outputIndex)
+  {
+    residuals[outputIndex] = sqrt(squaredResiduals[outputIndex] / size);
+    relativeErrors[outputIndex] = squaredResiduals[outputIndex] / outputVariance[outputIndex];
+  }
+  result_ = KrigingResult(inputSample_, outputSample_, metaModel, residuals, relativeErrors, basis, trendCoefficients, conditionalCovarianceModel, covarianceCoefficients, covarianceCholeskyFactor_);
+}
+
+
+/* Update regression */
+void KrigingAlgorithmDenseScalar::update(const Sample & inputSample,
+    const Sample & outputSample)
+{
+  glmAlgo_.run();
+  const Sample oldInputSample(glmAlgo_.getInputSample());
+  // Discretize the covariance model on the new points
+  const CovarianceModel conditionalCovarianceModel(glmResult.getCovarianceModel());
+  const UnsignedInteger oldSize = oldInputSample.getSize();
+  const UnsignedInteger size = inputSample.getSize();
+  const Matrix M12(oldSize, size);
+  for (UnsignedInteger j = 0; j < size; ++j)
+    for (UnsignedInteger i = 0; i < oldSize; ++i)
+      M12(i, j) = conditionalCovarianceModel.computeAsScalar(inputSample[i], inputSample[j]);
+  const CovarianceMatrix M22(conditionalCovarianceModel.discretize(inputSample));
+  Matrix L12Transpose(covarianceCholeskyFactor_.solve(M12));
+  Matrix L22(CovarianceMatrix((M22 - L12Transpose.computeGram()).getImplementation()).computeCholeski());
+
+  /* Method that returns the covariance factor */
+  const GeneralLinearModelResult glmResult(glmAlgo_.getResult());
+  covarianceCholeskyFactor_ = glmResult.getCholeskyFactor();
   LOGINFO("Compute the interpolation part");
   computeGamma();
   LOGINFO("Store the estimates");
@@ -166,101 +186,87 @@ void KrigingAlgorithm::run()
     residuals[outputIndex] = sqrt(squaredResiduals[outputIndex] / size);
     relativeErrors[outputIndex] = squaredResiduals[outputIndex] / outputVariance[outputIndex];
   }
-  result_ = (getMethod() == "LAPACK" ? KrigingResult(inputSample_, outputSample_, metaModel, residuals, relativeErrors, basis, trendCoefficients, conditionalCovarianceModel, covarianceCoefficients, covarianceCholeskyFactor_) : KrigingResult(inputSample_, outputSample_, metaModel, residuals, relativeErrors, basis, trendCoefficients, conditionalCovarianceModel, covarianceCoefficients, covarianceCholeskyFactorHMatrix_));
+  result_ = KrigingResult(inputSample_, outputSample_, metaModel, residuals, relativeErrors, basis, trendCoefficients, conditionalCovarianceModel, covarianceCoefficients, covarianceCholeskyFactor_);
 }
 
 
 /* String converter */
-String KrigingAlgorithm::__repr__() const
+String KrigingAlgorithmDenseScalar::__repr__() const
 {
   return OSS() << "class=" << getClassName();
 }
 
 
-Sample KrigingAlgorithm::getInputSample() const
+Sample KrigingAlgorithmDenseScalar::getInputSample() const
 {
   return inputSample_;
 }
 
 
-Sample KrigingAlgorithm::getOutputSample() const
+Sample KrigingAlgorithmDenseScalar::getOutputSample() const
 {
   return outputSample_;
 }
 
 
-KrigingResult KrigingAlgorithm::getResult()
+KrigingResult KrigingAlgorithmDenseScalar::getResult()
 {
   return result_;
 }
 
 /* Optimization solver accessor */
-OptimizationAlgorithm KrigingAlgorithm::getOptimizationAlgorithm() const
+OptimizationAlgorithm KrigingAlgorithmDenseScalar::getOptimizationAlgorithm() const
 {
   return glmAlgo_.getOptimizationAlgorithm();
 }
 
-void KrigingAlgorithm::setOptimizationAlgorithm(const OptimizationAlgorithm & solver)
+void KrigingAlgorithmDenseScalar::setOptimizationAlgorithm(const OptimizationAlgorithm & solver)
 {
   glmAlgo_.setOptimizationAlgorithm(solver);
 }
 
 
 /* Accessor to optimization bounds */
-void KrigingAlgorithm::setOptimizationBounds(const Interval & optimizationBounds)
+void KrigingAlgorithmDenseScalar::setOptimizationBounds(const Interval & optimizationBounds)
 {
   glmAlgo_.setOptimizationBounds(optimizationBounds);
 }
 
-Interval KrigingAlgorithm::getOptimizationBounds() const
+Interval KrigingAlgorithmDenseScalar::getOptimizationBounds() const
 {
   return glmAlgo_.getOptimizationBounds();
 }
 
 /* Log-Likelihood function accessor */
-Function KrigingAlgorithm::getReducedLogLikelihoodFunction()
+Function KrigingAlgorithmDenseScalar::getReducedLogLikelihoodFunction()
 {
   return glmAlgo_.getObjectiveFunction();
 }
 
 /* Optimize parameters flag accessor */
-Bool KrigingAlgorithm::getOptimizeParameters() const
+Bool KrigingAlgorithmDenseScalar::getOptimizeParameters() const
 {
   return glmAlgo_.getOptimizeParameters();
 }
 
-void KrigingAlgorithm::setOptimizeParameters(const Bool optimizeParameters)
+void KrigingAlgorithmDenseScalar::setOptimizeParameters(const Bool optimizeParameters)
 {
   glmAlgo_.setOptimizeParameters(optimizeParameters);
 }
 
 /* Observation noise accessor */
-void KrigingAlgorithm::setNoise(const Point & noise)
+void KrigingAlgorithmDenseScalar::setNoise(const Point & noise)
 {
   glmAlgo_.setNoise(noise);
 }
 
-Point KrigingAlgorithm::getNoise() const
+Point KrigingAlgorithmDenseScalar::getNoise() const
 {
   return glmAlgo_.getNoise();
 }
 
-String KrigingAlgorithm::getMethod() const
-{
-  const UnsignedInteger method = glmAlgo_.getMethod();
-  if (method) return "HMAT";
-  return "LAPACK";
-}
-
-void KrigingAlgorithm::setMethod(const String & method)
-{
-  if (method == "HMAT")
-    glmAlgo_.setMethod(1);
-  glmAlgo_.setMethod(0);
-}
-
 /* Method save() stores the object through the StorageManager */
-void KrigingAlgorithm::save(Advocate & adv) const
+void KrigingAlgorithmDenseScalar::save(Advocate & adv) const
 {
   MetaModelAlgorithm::save(adv);
   adv.saveAttribute( "inputSample_", inputSample_ );
@@ -272,7 +278,7 @@ void KrigingAlgorithm::save(Advocate & adv) const
 
 
 /* Method load() reloads the object from the StorageManager */
-void KrigingAlgorithm::load(Advocate & adv)
+void KrigingAlgorithmDenseScalar::load(Advocate & adv)
 {
   MetaModelAlgorithm::load(adv);
   adv.loadAttribute( "inputSample_", inputSample_ );

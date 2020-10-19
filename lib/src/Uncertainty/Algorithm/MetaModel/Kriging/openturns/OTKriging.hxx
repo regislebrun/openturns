@@ -25,8 +25,10 @@
 #include "openturns/KrigingEvaluation.hxx"
 #include "openturns/KrigingGradient.hxx"
 #include "openturns/KrigingAlgorithm.hxx"
+#include "openturns/KrigingAlgorithmDenseScalar.hxx"
 #include "openturns/KrigingResult.hxx"
 #include "openturns/GeneralLinearModelResult.hxx"
 #include "openturns/GeneralLinearModelAlgorithm.hxx"
+#include "openturns/GeneralLinearModelAlgorithmDenseScalar.hxx"
 
 #endif /* OPENTURNS_OTKRIGING_HXX */

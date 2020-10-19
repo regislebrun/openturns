@@ -77,7 +77,18 @@ public:
                 const PointCollection & trendCoefficients,
                 const CovarianceModel & covarianceModel,
                 const Sample & covarianceCoefficients,
-                const TriangularMatrix & covarianceCholeskyFactor,
+                const TriangularMatrix & covarianceCholeskyFactor);
+
+  /** Parameter constructor with Cholesky factor (HMAT)*/
+  KrigingResult(const Sample & inputSample,
+                const Sample & outputSample,
+                const Function & metaModel,
+                const Point & residuals,
+                const Point & relativeErrors,
+                const BasisCollection & basis,
+                const PointCollection & trendCoefficients,
+                const CovarianceModel & covarianceModel,
+                const Sample & covarianceCoefficients,
                 const HMatrix & covarianceHMatrix);
 
   /** Virtual constructor */

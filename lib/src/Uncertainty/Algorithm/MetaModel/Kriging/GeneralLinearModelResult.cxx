@@ -135,19 +135,31 @@ Process GeneralLinearModelResult::getNoise() const
   return noise;
 }
 
-/* Method that returns the covariance factor - lapack */
+/* Covariance Cholesky factor accessor - lapack */
 TriangularMatrix GeneralLinearModelResult::getCholeskyFactor() const
 {
   return covarianceCholeskyFactor_;
 }
 
-void GeneralLinearModelResult::setCholeskyFactor(const TriangularMatrix & covarianceCholeskyFactor,
-    const HMatrix & covarianceHMatrix)
+void GeneralLinearModelResult::setCholeskyFactor(const TriangularMatrix & covarianceCholeskyFactor)
 {
   const UnsignedInteger size = inputData_.getSize();
   const UnsignedInteger outputDimension = getMetaModel().getOutputDimension();
   if (covarianceCholeskyFactor_.getDimension() != 0 && covarianceCholeskyFactor_.getDimension() != size * outputDimension)
     throw InvalidArgumentException(HERE) << "In GeneralLinearModelResult::setCholeskyFactor, Cholesky factor has unexpected dimensions. Its dimension should be " << size * outputDimension << ". Here dimension = " << covarianceCholeskyFactor_.getDimension();
+  covarianceCholeskyFactor_ = covarianceCholeskyFactor;
+}
+
+/* Covariance Cholesky factor accessor - HMAT */
+HMatrix GeneralLinearModelResult::getHMatCholeskyFactor() const
+{
+  return covarianceHMatrix_;
+}
+
+void GeneralLinearModelResult::setHMatCholeskyFactor(const HMatrix & covarianceHMatrix)
+{
+  const UnsignedInteger size = inputData_.getSize();
+  const UnsignedInteger outputDimension = getMetaModel().getOutputDimension();
   if (covarianceHMatrix_.getNbRows() != 0)
   {
     if (covarianceHMatrix_.getNbRows() != covarianceHMatrix_.getNbColumns())
@@ -155,14 +167,7 @@ void GeneralLinearModelResult::setCholeskyFactor(const TriangularMatrix & covari
     if (covarianceHMatrix_.getNbRows() != size * outputDimension)
       throw InvalidArgumentException(HERE) << "In GeneralLinearModelResult::setCholeskyFactor, HMAT Cholesky factor has unexpected dimensions. Its dimension should be " << size * outputDimension << ". Here dimension = " << covarianceHMatrix_.getNbRows();
   }
-  covarianceCholeskyFactor_ = covarianceCholeskyFactor;
   covarianceHMatrix_ = covarianceHMatrix;
-}
-
-/* Method that returns the covariance factor - hmat */
-HMatrix GeneralLinearModelResult::getHMatCholeskyFactor() const
-{
-  return covarianceHMatrix_;
 }
 
 
