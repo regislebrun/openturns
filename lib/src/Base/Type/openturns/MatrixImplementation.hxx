@@ -115,6 +115,13 @@ public:
   void reshapeInPlace(const UnsignedInteger newRowDim,
                       const UnsignedInteger newColDim);
 
+  /** MatrixImplementation resize */
+  using PersistentCollection<Scalar>::resize;
+  MatrixImplementation resize(const UnsignedInteger newRowDim,
+                              const UnsignedInteger newColDim) const;
+  void resizeInPlace(const UnsignedInteger newRowDim,
+                     const UnsignedInteger newColDim);
+
 
   /** Row extraction */
   const MatrixImplementation getRow(const UnsignedInteger rowIndex) const;

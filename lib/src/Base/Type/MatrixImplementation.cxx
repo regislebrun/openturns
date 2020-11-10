@@ -197,6 +197,62 @@ void MatrixImplementation::reshapeInPlace(const UnsignedInteger newRowDim,
 }
 
 
+/* MatrixImplementation resize */
+MatrixImplementation MatrixImplementation::resize(const UnsignedInteger newRowDim,
+    const UnsignedInteger newColDim) const
+{
+  // Fast! copy if no row change
+  if (newRowDim == nbRows_)
+    {
+      MatrixImplementation newMatrix(*this);
+      newMatrix.resize(newRowDim * newColDim);
+      return newMatrix;
+    }
+  // Here the number of rows has change, we have to insert zeros or to cut data
+  MatrixImplementation newMatrix(newRowDim, newColDim);
+  if (newRowDim == 0 || newColDim == 0) return newMatrix;
+  // Copy either the full columns or up to the new number of rows
+  const UnsignedInteger minRow = std::min(nbRows_, newRowDim);
+  // Copy either all the columns or the new number of columns
+  const UnsignedInteger minCol = std::min(nbColumns_, newColim);
+  UnsignedInteger shiftM = 0;
+  UnsignedInteger shiftN = 0;
+  for (UnsignedInteger j = 0; j < minCol; ++j)
+    {
+      std::copy(begin() + shiftM, begin() + shiftM + minRow, newMatrix.begin() + shiftN);
+      shiftM += nbRows_;
+      shiftN += newRowDim;
+    }
+  return newMatrix;
+}
+
+void MatrixImplementation::resizeInPlace(const UnsignedInteger newRowDim,
+    const UnsignedInteger newColDim)
+{
+  // If newRowDim<=nbRows_ and newColDim<=nbColumns_ first move the data then resize the buffer
+  // If newRowDim>=nbRows_ and newColDim>=nbColumns_ first resize the buffer then move the data
+  // In the other cases ???
+  if (newRowDim == 0 || newColDim == 0)
+    {
+      resize(0);
+      return;
+    }
+  // If we need more room, first resize the matrix
+  if (newRowDim * newColDim > nbRows_ * nbColumns_) resize(newRowDim * newColDim);
+  const UnsignedInteger minRow = std::min(nbRows_, newRowDim);
+  const UnsignedInteger minCol = std::min(nbColumns_, newColim);
+  UnsignedInteger shiftM = 0;
+  UnsignedInteger shiftN = 0;
+  for (UnsignedInteger j = 0; j < minCol; ++j)
+    {
+      std::copy(begin() + shiftM, begin() + shiftM + minRow, newMatrix.begin() + shiftN);
+      shiftM += nbRows_;
+      shiftN += newRowDim;
+    }
+  return newMatrix;
+}
+
+
 /* Row extraction */
 const MatrixImplementation MatrixImplementation::getRow(const UnsignedInteger rowIndex) const
 {
