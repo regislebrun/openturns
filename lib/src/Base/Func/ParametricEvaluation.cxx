@@ -67,24 +67,48 @@ ParametricEvaluation::ParametricEvaluation(const Function & function,
   // Then gather all the available indices
   for (UnsignedInteger i = 0; i < inputDimension; ++i)
     if (fullIndices[i] != inputDimension) otherSet.add(i);
-  if (parametersSet)
-  {
-    parametersPositions_ = set;
-    inputPositions_ = otherSet;
-  }
+  Indices candidateParametersPosition(parametersSet ? set : otherSet);
+  Indices candidateInputPositions(parametersSet ? otherSet : set);
+  Point candidateReferencePoint(referencePoint);
+  // Now, either the underlying function evaluation is a ParametricEvaluation and we can flatten the parameterization or we are done
+  if (function.getEvaluation().getClassName() == "ParametricEvaluation")
+    {
+      const ParametricEvaluation* p_evaluation = dynamic_cast<const ParametricEvaluation*>(function.getEvaluation().getImplementation().get());
+      function_ = p_evaluation->getFunction();
+      Indices underlyingParameterPosition(p_evaluation->getParametersPositions());
+      Indices underlyingInputPosition(p_evaluation->getInputPositions());
+      Point underlyingParameter(function_.getParameter());
+      // Set the parameters position
+      parametersPositions_ = underlyingParameterPosition;
+      // Set the input position
+      inputPositions_ = Indices();
+      // Set the parameters value
+      parameter_ = underlyingParameter;
+      // Set the given parameter position as additional parameter positions of the underlying function
+      for (UnsignedInteger i = 0; i < candidateParametersPosition.getSize(); ++i)
+        {
+          parametersPositions_.add(underlyingInputPosition[candidateParametersPosition[i]]);
+          parameter_.add(referencePoint[i]);
+        }
+      // Restrict the input position
+      for (UnsignedInteger i = 0; i < candidateInputPositions.getSize(); ++i)
+        inputPositions_.add(underlyingInputPosition[candidateInputPositions[i]]);
+    }
   else
-  {
-    parametersPositions_ = otherSet;
-    inputPositions_ = set;
-  }
+    {
+      // Set the parameters position
+      parametersPositions_ = candidateParametersPosition;
+      // Set the input position
+      inputPositions_ = candidateInputPositions;
+      // Set the parameters value
+      parameter_ = candidateReferencePoint;
+    }
   const UnsignedInteger parametersSize = parametersPositions_.getSize();
   // Check if the given reference point has a dimension compatible with the function
   if (referencePoint.getDimension() != parametersSize) throw InvalidArgumentException(HERE) << "Error: the given reference point dimension=" << referencePoint.getDimension() << " does not match the parameters size=" << parametersSize;
-  // Set the relevant part of the reference point in the parameters
-  parameter_ = referencePoint;
-  parameterDescription_ = function.getInputDescription().select(parametersPositions_);
   // And finally the input/output descriptions
-  setInputDescription(function.getInputDescription().select(inputPositions_));
+  parameterDescription_ = function_.getInputDescription().select(parametersPositions_);
+  setInputDescription(function_.getInputDescription().select(inputPositions_));
   setOutputDescription(function_.getOutputDescription());
 }
 

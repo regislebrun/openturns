@@ -31,6 +31,7 @@ CLASSNAMEINIT(ParametricFunction)
 ParametricFunction::ParametricFunction ()
   : Function()
 {
+  // Nothing to do
 }
 
 
