@@ -174,7 +174,11 @@ Sample SymbolicParserExprTk::operator() (const Sample & inS) const
   {
     // account for the penalty on small samples
     for (UnsignedInteger i = 0; i < size; ++ i)
-      result[i] = operator()(inS[i]);
+      {
+        const Point value(operator()(inS[i]));
+        for (UnsignedInteger j = 0; j < outputDimension; ++j)
+          result(i, j) = value[j];
+      }
   }
   else
   {
