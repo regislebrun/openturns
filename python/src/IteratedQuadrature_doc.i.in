@@ -111,3 +111,20 @@ Returns
 value : :class:`~openturns.Point`
     Approximation of the integral."
 
+// ---------------------------------------------------------------------
+%feature("docstring") OT::IteratedQuadrature::getAlgorithm
+"Accessor to the underlying 1D integration algorithm.
+
+Returns
+-------
+algo : :class:`~openturns.IntegrationAlgorithm`
+    The 1D integration algorithm used recursively over the dimensions of the integration domain."
+
+// ---------------------------------------------------------------------
+%feature("docstring") OT::IteratedQuadrature::setAlgorithm
+"Set the underlying 1D integration algorithm.
+
+Parameters
+----------
+algo : :class:`~openturns.IntegrationAlgorithm`
+    The 1D integration algorithm used recursively over the dimensions of the integration domain."
