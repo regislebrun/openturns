@@ -542,6 +542,12 @@
   <LogNormalFactory-MaximumIteration  value_int="50" />
   <LogNormalFactory-EstimationMethod  value_int="0"  />
 
+  <!-- MarginalDistribution parameters -->
+  <MarginalDistribution-UsePDF              value_bool="true"         />
+  <MarginalDistribution-MaximumError        value_float="1.0e-7"      />
+  <MarginalDistribution-MaximumSubIntervals value_int="128"           />
+  <MarginalDistribution-Rule                value_str="G15K31"         />
+
   <!-- Meixner parameters -->
   <MeixnerDistribution-MaximumAbsoluteError      value_float="1.0e-12"         />
   <MeixnerDistribution-MaximumConstraintError    value_float="1.0e-12"         />
