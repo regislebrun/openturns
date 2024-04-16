@@ -168,7 +168,7 @@ rule : :class:`~openturns.GaussKronrodRule`
 
 Returns
 -------
-rules : :class:`~openturns.Collection<~openturns.GaussKronrodRule>`
+rules : :class:`~openturns.GaussKronrodRuleCollection`
     Rules available for the integration."
 
 // ---------------------------------------------------------------------
