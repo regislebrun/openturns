@@ -230,7 +230,8 @@ Sample KPermutationsDistribution::getSupport(const Interval & interval) const
   // Convert int values into float
   const IndicesCollection intResult(KPermutations(k_, n_).generate());
   const UnsignedInteger size = intResult.getSize();
-  if (size == 0) return Sample();  const Interval inter(interval.intersect(range_));
+  if (size == 0) return Sample();
+  const Interval inter(interval.intersect(range_));
   // Common case: get the full support
   if (inter == range_)
     {
