@@ -508,7 +508,7 @@ multivariate bandwidth.
 Returns
 -------
 bandwidth : :class:`~openturns.Point`
-    Bandwith computed according to the plug-in rule.
+    Bandwidth computed according to the plug-in rule.
 
 Notes
 -----
