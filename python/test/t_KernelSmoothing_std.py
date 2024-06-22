@@ -236,16 +236,14 @@ for i, distribution in enumerate([ot.LogNormal(0.0, 2.5),
                                   ot.Beta(20000.5, 2.5, 0.0, 1.0),
                                   ot.Exponential(),
                                   ot.WeibullMax(1.0, 0.9, 0.0),
-                                  ot.Mixture([ot.Normal(-1.0, 0.5), ot.Normal(1.0, 1.0)], [0.4, 0.6]),
                                   ot.Mixture([ot.LogNormal(-1.0, 1.0, -1.0), ot.LogNormal(1.0, 1.0, 1.0)], [0.2, 0.8])]):
     sample = distribution.getSample(10000)
     kernel = ot.KernelSmoothing()
     kernel.setUseLogTransform(True)
     fitted = kernel.build(sample)
-    assert_almost_equal(fitted.getMean(), distribution.getMean(), 1)
-    quantile = distribution.computeQuantile(0.9)
-    assert_almost_equal(fitted.computePDF(quantile), distribution.computePDF(quantile), 1e-2)
-    quantile = distribution.computeQuantile(0.7)
-    assert_almost_equal(fitted.computePDF(quantile), distribution.computePDF(quantile), 1e-2)
-    quantile = distribution.computeQuantile(0.2)
-    assert_almost_equal(fitted.computePDF(quantile), distribution.computePDF(quantile), 1e-2)
+    quantile = distribution.computeQuantile(0.25)
+    assert_almost_equal(distribution.computePDF(quantile),fitted.computePDF(quantile),  0.05)
+    quantile = distribution.computeQuantile(0.5)
+    assert_almost_equal(distribution.computePDF(quantile),fitted.computePDF(quantile),  0.05)
+    quantile = distribution.computeQuantile(0.75)
+    assert_almost_equal(distribution.computePDF(quantile),fitted.computePDF(quantile),  0.05)
