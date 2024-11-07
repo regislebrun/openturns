@@ -237,6 +237,7 @@ void PointConditionalDistribution::update()
 
   // enable simplified path
   useSimplifiedVersion_ = hasSimplifiedVersion(simplifiedVersion_);
+  LOGDEBUG(OSS() << "useSimplifiedVersion_=" << useSimplifiedVersion_);
 
   // cache marginal for reuse
   if (!useSimplifiedVersion_)
@@ -259,10 +260,12 @@ void PointConditionalDistribution::update()
   const UnsignedInteger dimension = getDimension();
   if (!useSimplifiedVersion_ && isContinuous() && (dimension <= ResourceMap::GetAsUnsignedInteger("PointConditionalDistribution-SmallDimension")))
   {
-    const Interval bounds(getRange());
+    const Point stddev(getStandardDeviation());
+    const Point mean(getMean());
+    const Scalar factor = ResourceMap::GetAsScalar("PointConditionalDistribution-RatioUniformBoundsFactor");
+    const Interval bounds(getRange().intersect(Interval(mean - factor * stddev, mean + factor * stddev)));
     const Point lb(bounds.getLowerBound());
     const Point ub(bounds.getUpperBound());
-    const Point middle(0.5 * (lb + ub));
 
     // First, the upper bound on U
     const Function objectiveU(new PointConditionalDistributionUBoundEvaluation(*this, r_));
@@ -271,9 +274,10 @@ void PointConditionalDistribution::update()
     problemU.setBounds(bounds);
     OptimizationAlgorithm algo(OptimizationAlgorithm::GetByName(ResourceMap::GetAsString("PointConditionalDistribution-OptimizationAlgorithm")));
     algo.setProblem(problemU);
-    algo.setStartingPoint(middle);
+    algo.setStartingPoint(mean);
     algo.run();
     supU_ = std::exp(algo.getResult().getOptimalValue()[0]);
+    LOGDEBUG(OSS() << "supU_=" << supU_);
 
     // Second, the lower and upper bounds on V
     const Function objectiveV(new PointConditionalDistributionVBoundEvaluation(*this, r_));
@@ -292,6 +296,7 @@ void PointConditionalDistribution::update()
         algo.setStartingPoint(ub * 0.5);
         algo.run();
         supV_[i] = std::exp(algo.getResult().getOptimalValue()[0]);
+        LOGDEBUG(OSS() << "supV_[" << i << "]=" << supV_[i]);
       }
       if (lb[i] < 0.0)
       {
@@ -300,6 +305,7 @@ void PointConditionalDistribution::update()
         algo.setStartingPoint(lb * 0.5);
         algo.run();
         infV_[i] = -std::exp(algo.getResult().getOptimalValue()[0]);
+        LOGDEBUG(OSS() << "infV_[" << i << "]=" << infV_[i]);
       }
     }
   }
@@ -314,6 +320,7 @@ void PointConditionalDistribution::update()
   x.add(getRange().getLowerBound());
   conditioningCDF_ = reorderedDistribution_.computeSequentialConditionalCDF(x);
   conditioningCDF_.resize(conditioningIndices_.getSize());
+  LOGDEBUG(OSS() << "conditioningCDF_=" << conditioningCDF_);
 }
 
 

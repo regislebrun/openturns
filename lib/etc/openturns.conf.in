@@ -494,6 +494,7 @@
   <DeconditionedDistribution-ContinuousDiscretizationMethod value_str="GaussProduct" />
 
   <!-- OT::PointConditionalDistribution parameters -->
+  <PointConditionalDistribution-RatioUniformBoundsFactor value_float="3.0" />
   <PointConditionalDistribution-CubaAlgorithm value_str="cuhre" />
   <PointConditionalDistribution-OptimizationAlgorithm value_str="Cobyla" />
   <PointConditionalDistribution-SmallDimension value_int="6" />

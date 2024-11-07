@@ -1114,6 +1114,7 @@ void ResourceMap::loadDefaultConfiguration()
   addAsString("DeconditionedDistribution-ContinuousDiscretizationMethod", "GaussProduct");
 
   // PointConditionalDistribution parameters //
+  addAsScalar("PointConditionalDistribution-RatioUniformBoundsFactor", 3.0);
   addAsString("PointConditionalDistribution-CubaAlgorithm", "cuhre");
   addAsString("PointConditionalDistribution-OptimizationAlgorithm", "Cobyla");
   addAsUnsignedInteger("PointConditionalDistribution-SmallDimension", 6);
