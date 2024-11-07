@@ -28,6 +28,11 @@
 #include "openturns/SimplicialCubature.hxx"
 #include "openturns/CubaIntegration.hxx"
 #include "openturns/Tuples.hxx"
+#include "openturns/Beta.hxx"
+#include "openturns/BlockIndependentCopula.hxx"
+#include "openturns/BlockIndependentDistribution.hxx"
+#include "openturns/Dirichlet.hxx"
+#include "openturns/EmpiricalBernsteinCopula.hxx"
 #include "openturns/JointDistribution.hxx"
 #include "openturns/KernelMixture.hxx"
 #include "openturns/Mixture.hxx"
@@ -38,6 +43,7 @@
 #include "openturns/DomainEvent.hxx"
 #include "openturns/PlatformInfo.hxx"
 #include "openturns/GaussKronrod.hxx"
+#include "openturns/SobolSequence.hxx"
 #include "openturns/DistFunc.hxx"
 #include "openturns/SobolSequence.hxx"
 
@@ -144,6 +150,8 @@ PointConditionalDistribution * PointConditionalDistribution::clone() const
   return new PointConditionalDistribution(*this);
 }
 
+namespace
+{
 class PointConditionalDistributionUBoundEvaluation : public EvaluationImplementation
 {
 public:
@@ -230,20 +238,78 @@ private:
 };
 
 
+} // anonymous namespace
+
+void PointConditionalDistribution::dispatchConditioning(const Collection<Distribution> & distributions,
+							Distribution & simplified) const
+{
+  Collection<Indices> conditioningIndicesBlocks(distributions.getSize());
+  Collection<Point> conditioningValuesBlocks(distributions.getSize());
+  // Sort both the conditioning indices and values in increasing order
+  const UnsignedInteger conditioningSize = conditioningIndices_.getSize();
+  Collection< std::pair<UnsignedInteger, Scalar> > sortedConditioningPairs(conditioningSize);
+  for (UnsignedInteger i = 0; i < conditioningSize; ++i)
+    sortedConditioningPairs[i] = std::pair<UnsignedInteger, Scalar>(conditioningIndices_[i], conditioningValues_[i]);
+  std::sort(sortedConditioningPairs.begin(), sortedConditioningPairs.end());
+  UnsignedInteger beginBlock = 0;
+  UnsignedInteger endBlock = distributions[0].getDimension();
+  UnsignedInteger blockCounter = 0;
+  for (UnsignedInteger conditioningCounter = 0; conditioningCounter < conditioningSize; ++conditioningCounter)
+    {
+      const UnsignedInteger conditioningIndex = sortedConditioningPairs[conditioningCounter].first;
+      // Find the block the conditioning index belongs to
+      while (conditioningIndex >= endBlock)
+	{
+	  ++blockCounter;
+	  // Should never go there
+	  if (blockCounter == distributions.getSize())
+	    break;
+	  beginBlock = endBlock;
+	  endBlock += distributions[blockCounter].getDimension();
+	}
+      conditioningIndicesBlocks[blockCounter].add(conditioningIndex - beginBlock);
+      conditioningValuesBlocks[blockCounter].add(sortedConditioningPairs[conditioningCounter].second);
+    } // for conditioningCounter
+  // Now, decide what to do for each block
+  Collection<Distribution> newBlocks;
+  for (UnsignedInteger i = 0; i < distributions.getSize(); ++i)
+    {
+      // If the block is fully conditioned, skip it
+      if (conditioningIndicesBlocks[i].getSize() == distributions[i].getDimension())
+	continue;
+      const PointConditionalDistribution conditionalBlock(distributions[i], conditioningIndicesBlocks[i], conditioningValuesBlocks[i]);
+      Distribution simplifiedBlock;
+      if (conditionalBlock.useSimplifiedVersion_)
+	newBlocks.add(conditionalBlock.getSimplifiedVersion());
+      else
+	newBlocks.add(conditionalBlock);
+    } // for i
+  // Here we return a BlockIndependentDistribution even if the initial collection of distributions was
+  // made of copulas only, as the conditioning breaks the copula property
+  simplified = (newBlocks.getSize() == 1 ? newBlocks[0] : BlockIndependentDistribution(newBlocks));
+}
+
 void PointConditionalDistribution::update()
 {
   const UnsignedInteger fullDimension = distribution_.getDimension();
-  if (conditioningIndices_.getSize())
-    logNormalizationFactor_ = distribution_.getMarginal(conditioningIndices_).computeLogPDF(conditioningValues_);
-  if (!(logNormalizationFactor_ > std::log(getPDFEpsilon())))
-    throw InvalidArgumentException(HERE) << "Conditioning vector log PDF value is too low (" << logNormalizationFactor_ << ")";
   nonConditioningIndices_ = conditioningIndices_.complement(fullDimension);
   setDimension(nonConditioningIndices_.getSize());
+  if (getDimension() == 0)
+    throw InvalidArgumentException(HERE) << "Cannot define a conditional distribution by fixing the value of all the components";
   setDescription(distribution_.getDescription().select(nonConditioningIndices_));
 
   // enable simplified path
   useSimplifiedVersion_ = hasSimplifiedVersion(simplifiedVersion_);
   LOGDEBUG(OSS() << "useSimplifiedVersion_=" << useSimplifiedVersion_);
+
+  // We can postpone the computation of the normalization factor here as we will not need it if there is a simplified version (and it can be costly due to the marginal extraction)
+  if (!useSimplifiedVersion_)
+    {
+      if (conditioningIndices_.getSize())
+	logNormalizationFactor_ = distribution_.getMarginal(conditioningIndices_).computeLogPDF(conditioningValues_);
+      if (!(logNormalizationFactor_ > std::log(getPDFEpsilon())))
+	throw InvalidArgumentException(HERE) << "Conditioning vector log PDF value is too low (" << logNormalizationFactor_ << ")";
+    }
 
   // cache marginal for reuse
   if (!useSimplifiedVersion_)
@@ -293,7 +359,18 @@ void PointConditionalDistribution::update()
     problemU.setBounds(bounds);
     OptimizationAlgorithm algo(OptimizationAlgorithm::GetByName(ResourceMap::GetAsString("PointConditionalDistribution-OptimizationAlgorithm")));
     algo.setProblem(problemU);
-    algo.setStartingPoint(start);
+    const SobolSequence generator(dimension);
+    Bool found = false;
+    Point candidate;
+    while (!found)
+      {
+	candidate = lb;
+	const Point u(generator.generate());
+	for (UnsignedInteger i = 0; i < dimension; ++i)
+	  candidate[i] += (ub[i] - lb[i]) * u[i];
+	found = computePDF(candidate) > 0.0;
+      } // found
+    algo.setStartingPoint(candidate);
     algo.run();
     supU_ = std::exp(algo.getResult().getOptimalValue()[0]);
     LOGDEBUG(OSS() << "supU_=" << supU_ << " u*=" << algo.getResult().getOptimalPoint());
@@ -312,40 +389,53 @@ void PointConditionalDistribution::update()
       {
         problemVI.setBounds(Interval(zero, ub));
         algo.setProblem(problemVI);
-        Point startUb(start);
-        for (UnsignedInteger j = 0; j < dimension; ++ j)
-          startUb[j] = std::max(start[j], 0.0);
-        algo.setStartingPoint(startUb);
+	Bool found = false;
+	while (!found)
+	  {
+	    candidate = zero;
+	    const Point u(generator.generate());
+	    for (UnsignedInteger i = 0; i < dimension; ++i)
+	      candidate[i] = ub[i] * u[i];
+	    found = computePDF(candidate) > 0.0;
+	  } // found
+        algo.setStartingPoint(candidate);
         algo.run();
         supV_[i] = std::exp(algo.getResult().getOptimalValue()[0]);
-        LOGDEBUG(OSS() << "supV_[" << i << "]=" << supV_[i] << " v*=" << algo.getResult().getOptimalPoint());
-      }
+      } // ub[i] > 0.0
       if (lb[i] < 0.0)
       {
         problemVI.setBounds(Interval(lb, zero));
         algo.setProblem(problemVI);
-        Point startLb(start);
-        for (UnsignedInteger j = 0; j < dimension; ++ j)
-          startLb[j] = std::min(startLb[j], 0.0);
-        algo.setStartingPoint(startLb);
+	Bool found = false;
+	while (!found)
+	  {
+	    candidate = zero;
+	    const Point u(generator.generate());
+	    for (UnsignedInteger i = 0; i < dimension; ++i)
+	      candidate[i] = lb[i] * u[i];
+	    found = computePDF(candidate) > 0.0;
+	  } // found
+        algo.setStartingPoint(candidate);
         algo.run();
         infV_[i] = -std::exp(algo.getResult().getOptimalValue()[0]);
-        LOGDEBUG(OSS() << "infV_[" << i << "]=" << infV_[i] << " v*=" << algo.getResult().getOptimalPoint());
-      }
+      } // lb[i] < 0.0
     }
   }
 
-  // cache reordered marginals
-  Indices indices(conditioningIndices_);
-  indices.add(nonConditioningIndices_); // initialized in update()
-  reorderedDistribution_ = distribution_.getMarginal(indices);
-
-  // cache qI
-  Point x(conditioningValues_);
-  x.add(getRange().getLowerBound());
-  conditioningCDF_ = reorderedDistribution_.computeSequentialConditionalCDF(x);
-  conditioningCDF_.resize(conditioningIndices_.getSize());
-  LOGDEBUG(OSS() << "conditioningCDF_=" << conditioningCDF_);
+  if (!useSimplifiedVersion_)
+    {
+      // cache reordered marginals
+      Indices indices(conditioningIndices_);
+      indices.add(nonConditioningIndices_); // initialized in update()
+      reorderedDistribution_ = distribution_.getMarginal(indices);
+      
+      // cache qI
+      Point x(conditioningValues_);
+      x.add(getRange().getLowerBound());
+      conditioningCDF_ = reorderedDistribution_.computeSequentialConditionalCDF(x);
+      conditioningCDF_.resize(conditioningIndices_.getSize());
+      LOGDEBUG(OSS() << "conditioningCDF_=" << conditioningCDF_);
+    }
 }
 
 
@@ -463,13 +553,86 @@ Bool PointConditionalDistribution::hasSimplifiedVersion(Distribution & simplifie
     return true;
   }
 
+  // EmpiricalBernsteinCopula
+  EmpiricalBernsteinCopula *p_empirical_bernstein_copula = dynamic_cast<EmpiricalBernsteinCopula *>(distribution_.getImplementation().get());
+  if (p_empirical_bernstein_copula)
+  {
+    const Sample copulaSample(p_empirical_bernstein_copula->getCopulaSample());
+    const UnsignedInteger sampleSize = copulaSample.getSize();
+    const UnsignedInteger binNumber = p_empirical_bernstein_copula->getBinNumber();
+    Collection<Distribution> atoms(sampleSize);
+    Point weights(sampleSize, 0.0);
+    const UnsignedInteger dimension = getDimension();
+    const UnsignedInteger conditioningDimension = conditioningIndices_.getSize();
+    for (UnsignedInteger i = 0; i < sampleSize; ++i)
+      {
+	Collection<Distribution> atomComponents(dimension);
+	for (UnsignedInteger j = 0; j < dimension; ++j)
+	  {
+	    const UnsignedInteger newJ = nonConditioningIndices_[j];
+	    const Scalar r = std::ceil(binNumber * copulaSample(i, newJ));
+	    atomComponents[j] = Beta(r, binNumber - r + 1.0, 0.0, 1.0);
+	  } // j
+	atoms[i] = JointDistribution(atomComponents);
+	for (UnsignedInteger j = 0; j < conditioningDimension; ++j)
+	  {
+	    const UnsignedInteger newJ = conditioningIndices_[j];
+	    const Scalar r = std::ceil(binNumber * copulaSample(i, newJ));
+	    const Scalar xJ = conditioningValues_[j];
+	    weights[i] += -SpecFunc::LogBeta(r, binNumber - r + 1.0) + (r - 1.0) * std::log(xJ) + (binNumber - r) * std::log1p(-xJ);
+	  } // j
+	weights[i] = std::exp(weights[i]);
+      } // i
+    simplified = Mixture(atoms, weights);
+    return true;
+  }
+
+  // Dirichlet
+  Dirichlet *p_dirichlet = dynamic_cast<Dirichlet *>(distribution_.getImplementation().get());
+  if (p_dirichlet)
+  {
+    const Point theta(p_dirichlet->getTheta());
+    Scalar weight = 1.0;
+    for (UnsignedInteger i = 0; i < conditioningValues_.getSize(); ++i)
+      weight -= conditioningValues_[i];
+    const UnsignedInteger dimension = getDimension();
+    Point newTheta(dimension + 1, theta[p_dirichlet->getDimension()]);
+    for (UnsignedInteger i = 0; i < nonConditioningIndices_.getSize(); ++i)
+      {
+	const UnsignedInteger newI = nonConditioningIndices_[i];
+	newTheta[i] =theta[i];
+      }
+    // Unfortunately we don't know how to multiply a multivariate distribution by a scalar
+    // simplified = Distribution(Dirichlet(newTheta)) * weight;
+    // return true;
+    return false;
+  }
+
+  // BlockIndependentDistribution
+  std::cerr << "Try to cast into a BlockIndependentDistribution" << std::endl;
+  BlockIndependentDistribution *p_block_independent_distribution = dynamic_cast<BlockIndependentDistribution *>(distribution_.getImplementation().get());
+  if (p_block_independent_distribution)
+  {
+    std::cerr << "Start dispatching" << std::endl;
+    dispatchConditioning(p_block_independent_distribution->getDistributionCollection(), simplified);
+    return true;
+  }
+  
+  // BlockIndependentCopula
+  BlockIndependentCopula *p_block_independent_copula = dynamic_cast<BlockIndependentCopula *>(distribution_.getImplementation().get());
+  if (p_block_independent_copula)
+  {
+    dispatchConditioning(p_block_independent_copula->getCopulaCollection(), simplified);
+    return true;
+  }
+  
   // Joint
   JointDistribution *p_joint = dynamic_cast<JointDistribution *>(distribution_.getImplementation().get());
   if (p_joint)
   {
     const Collection<Distribution> marginals(p_joint->getDistributionCollection());
     Point coreConditioniningValues(conditioningIndices_.getSize());
-    for (UnsignedInteger i = 0; i < conditioningIndices_.getSize(); ++ i)
+    for (UnsignedInteger i = 0; i < conditioningIndices_.getSize(); ++i)
       coreConditioniningValues[i] = marginals[conditioningIndices_[i]].computeCDF(conditioningValues_[i]);
     const PointConditionalDistribution conditionalCore(p_joint->getCore(), conditioningIndices_, coreConditioniningValues);
     simplified = JointDistribution(marginals.select(nonConditioningIndices_), conditionalCore);
@@ -899,6 +1062,24 @@ Point PointConditionalDistribution::computeSequentialConditionalQuantile(const P
   Point result(reorderedDistribution_.computeSequentialConditionalQuantile(qCond));
   result.erase(result.begin(), result.begin() + conditioningIndices_.getSize());
   return result;
+}
+
+/* Get the isoprobabilist transformation */
+PointConditionalDistribution::IsoProbabilisticTransformation PointConditionalDistribution::getIsoProbabilisticTransformation() const
+{
+  if (useSimplifiedVersion_)
+    return simplifiedVersion_.getIsoProbabilisticTransformation();
+
+  return DistributionImplementation::getIsoProbabilisticTransformation();
+}
+
+/* Get the inverse isoprobabilist transformation */
+PointConditionalDistribution::InverseIsoProbabilisticTransformation PointConditionalDistribution::getInverseIsoProbabilisticTransformation() const
+{
+  if (useSimplifiedVersion_)
+    return simplifiedVersion_.getInverseIsoProbabilisticTransformation();
+
+  return DistributionImplementation::getInverseIsoProbabilisticTransformation();
 }
 
 Point PointConditionalDistribution::getConditioningValues() const
