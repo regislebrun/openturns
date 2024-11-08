@@ -60,38 +60,29 @@ PythonEvaluation::PythonEvaluation(PyObject * pyCallable)
 
   const UnsignedInteger inputDimension  = getInputDimension();
   const UnsignedInteger outputDimension = getOutputDimension();
-  Description description(inputDimension + outputDimension);
+  Description description;
 
   ScopedPyObjectPointer descIn(PyObject_CallMethod(pyObj_,
                                const_cast<char *>("getInputDescription"),
                                const_cast<char *>("()")));
-  if (descIn.get()
-      && PySequence_Check(descIn.get())
+  if (descIn.get() && PySequence_Check(descIn.get())
       && (PySequence_Size(descIn.get()) == (SignedInteger)inputDimension))
   {
-    Description inputDescription(convert< _PySequence_, Description >(descIn.get()));
-    for (UnsignedInteger i = 0; i < inputDimension; ++ i)
-    {
-      description[i] = inputDescription[i];
-    }
+    description = convert< _PySequence_, Description >(descIn.get());
   }
-  else for (UnsignedInteger i = 0; i < inputDimension; ++ i) description[i] = (OSS() << "x" << i);
-
+  else
+    description = Description::BuildDefault(inputDimension, "x");
 
   ScopedPyObjectPointer descOut(PyObject_CallMethod(pyObj_,
                                 const_cast<char *>("getOutputDescription"),
                                 const_cast<char *>("()")));
-  if (descOut.get()
-      && PySequence_Check(descOut.get())
+  if (descOut.get() && PySequence_Check(descOut.get())
       && (PySequence_Size(descOut.get()) == (SignedInteger)outputDimension))
   {
-    Description outputDescription(convert< _PySequence_, Description >(descOut.get()));
-    for (UnsignedInteger i = 0; i < outputDimension; ++ i)
-    {
-      description[inputDimension + i] = outputDescription[i];
-    }
+    description.add(convert< _PySequence_, Description >(descOut.get()));
   }
-  else for (UnsignedInteger i = 0; i < outputDimension; ++ i) description[inputDimension + i] = (OSS() << "y" << i);
+  else
+    description.add(Description::BuildDefault(outputDimension, "y"));
 
   setDescription(description);
 }
@@ -414,10 +405,12 @@ void PythonEvaluation::initializePythonState()
 /* Accessor for input point dimension */
 UnsignedInteger PythonEvaluation::getInputDimension() const
 {
+  if (!PyObject_HasAttrString(pyObj_, "getInputDimension"))
+    throw InvalidArgumentException(HERE) << "PythonEvaluation: mandatory getInputDimension method is missing";
   ScopedPyObjectPointer result(PyObject_CallMethod (pyObj_,
                                const_cast<char *>("getInputDimension"),
                                const_cast<char *>("()")));
-  UnsignedInteger dim = convert< _PyInt_, UnsignedInteger >(result.get());
+  const UnsignedInteger dim = convert< _PyInt_, UnsignedInteger >(result.get());
   return dim;
 }
 
@@ -425,10 +418,12 @@ UnsignedInteger PythonEvaluation::getInputDimension() const
 /* Accessor for output point dimension */
 UnsignedInteger PythonEvaluation::getOutputDimension() const
 {
+  if (!PyObject_HasAttrString(pyObj_, "getOutputDimension"))
+    throw InvalidArgumentException(HERE) << "PythonEvaluation: mandatory getOutputDimension method is missing";
   ScopedPyObjectPointer result(PyObject_CallMethod (pyObj_,
                                const_cast<char *>("getOutputDimension"),
                                const_cast<char *>("()")));
-  UnsignedInteger dim = convert< _PyInt_, UnsignedInteger >(result.get());
+  const UnsignedInteger dim = convert< _PyInt_, UnsignedInteger >(result.get());
   return dim;
 }
 
