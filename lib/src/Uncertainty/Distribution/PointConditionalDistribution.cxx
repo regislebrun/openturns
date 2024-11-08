@@ -39,6 +39,7 @@
 #include "openturns/PlatformInfo.hxx"
 #include "openturns/GaussKronrod.hxx"
 #include "openturns/DistFunc.hxx"
+#include "openturns/SobolSequence.hxx"
 
 BEGIN_NAMESPACE_OPENTURNS
 
@@ -172,7 +173,9 @@ public:
   Point operator()(const Point & inP) const override
   {
     const UnsignedInteger dimension = distribution_.getDimension();
-    return {distribution_.computeLogPDF(inP) / (1.0 + r_ * dimension)};
+    Scalar result = distribution_.computeLogPDF(inP) / (1.0 + r_ * dimension);
+    result = std::max(-SpecFunc::LogMaxScalar, result);
+    return {result};
   }
 
 private:
@@ -213,7 +216,10 @@ public:
     const Scalar value = distribution_.computeLogPDF(inP) * r_ / (1.0 + r_ * dimension);
     Point result(dimension, value);
     for (UnsignedInteger i = 0; i < dimension; ++ i)
+    {
       result[i] += std::log(std::abs(inP[i]));
+      result[i] = std::max(-SpecFunc::LogMaxScalar, result[i]);
+    }
     return result;
   }
 
@@ -260,12 +266,25 @@ void PointConditionalDistribution::update()
   const UnsignedInteger dimension = getDimension();
   if (!useSimplifiedVersion_ && isContinuous() && (dimension <= ResourceMap::GetAsUnsignedInteger("PointConditionalDistribution-SmallDimension")))
   {
-    const Point stddev(getStandardDeviation());
-    const Point mean(getMean());
-    const Scalar factor = ResourceMap::GetAsScalar("PointConditionalDistribution-RatioUniformBoundsFactor");
-    const Interval bounds(getRange().intersect(Interval(mean - factor * stddev, mean + factor * stddev)));
+    const Interval bounds(getRange());
     const Point lb(bounds.getLowerBound());
     const Point ub(bounds.getUpperBound());
+
+    // find a feasible starting point
+    SobolSequence sequence(dimension);
+    Point start;
+    const UnsignedInteger size = ResourceMap::GetAsUnsignedInteger("PointConditionalDistribution-RatioUniformCandidateNumber");
+    for (UnsignedInteger i = 0; i < size; ++ i)
+    {
+      Point candidate(sequence.generate(1)[0]);
+      for (UnsignedInteger j = 0; j < dimension; ++ j)
+        candidate[j] = lb[j] + candidate[j] * (ub[j] - lb[j]);
+      if (computePDF(candidate) > 0.0)
+      {
+        start = candidate;
+        break;
+      }
+    }
 
     // First, the upper bound on U
     const Function objectiveU(new PointConditionalDistributionUBoundEvaluation(*this, r_));
@@ -274,10 +293,10 @@ void PointConditionalDistribution::update()
     problemU.setBounds(bounds);
     OptimizationAlgorithm algo(OptimizationAlgorithm::GetByName(ResourceMap::GetAsString("PointConditionalDistribution-OptimizationAlgorithm")));
     algo.setProblem(problemU);
-    algo.setStartingPoint(mean);
+    algo.setStartingPoint(start);
     algo.run();
     supU_ = std::exp(algo.getResult().getOptimalValue()[0]);
-    LOGDEBUG(OSS() << "supU_=" << supU_);
+    LOGDEBUG(OSS() << "supU_=" << supU_ << " u*=" << algo.getResult().getOptimalPoint());
 
     // Second, the lower and upper bounds on V
     const Function objectiveV(new PointConditionalDistributionVBoundEvaluation(*this, r_));
@@ -293,19 +312,25 @@ void PointConditionalDistribution::update()
       {
         problemVI.setBounds(Interval(zero, ub));
         algo.setProblem(problemVI);
-        algo.setStartingPoint(ub * 0.5);
+        Point startUb(start);
+        for (UnsignedInteger j = 0; j < dimension; ++ j)
+          startUb[j] = std::max(start[j], 0.0);
+        algo.setStartingPoint(startUb);
         algo.run();
         supV_[i] = std::exp(algo.getResult().getOptimalValue()[0]);
-        LOGDEBUG(OSS() << "supV_[" << i << "]=" << supV_[i]);
+        LOGDEBUG(OSS() << "supV_[" << i << "]=" << supV_[i] << " v*=" << algo.getResult().getOptimalPoint());
       }
       if (lb[i] < 0.0)
       {
         problemVI.setBounds(Interval(lb, zero));
         algo.setProblem(problemVI);
-        algo.setStartingPoint(lb * 0.5);
+        Point startLb(start);
+        for (UnsignedInteger j = 0; j < dimension; ++ j)
+          startLb[j] = std::min(startLb[j], 0.0);
+        algo.setStartingPoint(startLb);
         algo.run();
         infV_[i] = -std::exp(algo.getResult().getOptimalValue()[0]);
-        LOGDEBUG(OSS() << "infV_[" << i << "]=" << infV_[i]);
+        LOGDEBUG(OSS() << "infV_[" << i << "]=" << infV_[i] << " v*=" << algo.getResult().getOptimalPoint());
       }
     }
   }
