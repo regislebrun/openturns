@@ -78,6 +78,8 @@ public:
   using DistributionImplementation::setParametersCollection;
   void setParametersCollection(const PointCollection & parametersCollection) override;
 
+  /** Get one realization of the distribution */
+  Point getRealization() const override;
 
   /* Interface specific to PosteriorDistribution */
 
@@ -108,11 +110,11 @@ public:
   void load(Advocate & adv) override;
 
 
-  /** Compute the likelihood of the observations */
-  Point computeLikelihood(const Point & theta) const;
+  /** Compute the normalized likelihood of the observations */
+  Point computeNormalizedLikelihood(const Point & theta) const;
 
-  /** Compute the log-likelihood of the observations */
-  Scalar computeLogLikelihood(const Point & theta) const;
+  /** Compute the log-normalized likelihood of the observations */
+  Scalar computeLogNormalizedLikelihood(const Point & theta) const;
 
 protected:
 
@@ -136,6 +138,12 @@ private:
 
   /** The Bayes normalization constant */
   Scalar logNormalizationFactor_;
+
+  // for ratio of uniforms method
+  Scalar r_ = 1.0;
+  Scalar supU_ = 0.0;
+  Point infV_;
+  Point supV_;
 
 }; /* class PosteriorDistribution */
 
