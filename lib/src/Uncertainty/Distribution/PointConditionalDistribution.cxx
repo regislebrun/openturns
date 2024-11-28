@@ -355,7 +355,8 @@ void PointConditionalDistribution::update()
       Point candidate(sequence.generate());
       for (UnsignedInteger j = 0; j < dimension; ++ j)
         candidate[j] = lb[j] + candidate[j] * (ub[j] - lb[j]);
-      if (computePDF(candidate) > 0.0)
+
+      if (SpecFunc::IsNormal(computeLogPDF(candidate)))
       {
         start = candidate;
         break;
@@ -395,7 +396,7 @@ void PointConditionalDistribution::update()
           Point candidate(sequence.generate());
           for (UnsignedInteger j = 0; j < dimension; ++ j)
             candidate[j] = candidate[j] * ub[j];
-          if (computePDF(candidate) > 0.0)
+	  if (SpecFunc::IsNormal(computeLogPDF(candidate)))
           {
             start = candidate;
             break;
@@ -419,7 +420,7 @@ void PointConditionalDistribution::update()
           Point candidate(sequence.generate());
           for (UnsignedInteger j = 0; j < dimension; ++ j)
             candidate[j] = candidate[j] * lb[j];
-          if (computePDF(candidate) > 0.0)
+	  if (SpecFunc::IsNormal(computeLogPDF(candidate)))
           {
             start = candidate;
             break;
