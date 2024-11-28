@@ -53,7 +53,6 @@ DeconditionedDistribution::DeconditionedDistribution()
   description.add(outVars);
   linkFunction.setDescription(description);
   setConditionedAndConditioningDistributionsAndLinkFunction(Uniform(), Uniform(), linkFunction);
-  isParallel_ = false;
 }
 
 /* Parameters constructor */
