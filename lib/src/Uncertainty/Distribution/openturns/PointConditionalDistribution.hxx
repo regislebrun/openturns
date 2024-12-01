@@ -25,6 +25,7 @@
 #include "openturns/DistributionImplementation.hxx"
 #include "openturns/IntegrationAlgorithm.hxx"
 #include "openturns/Distribution.hxx"
+#include "openturns/RatioOfUniformsExperiment.hxx"
 
 BEGIN_NAMESPACE_OPENTURNS
 
@@ -225,10 +226,7 @@ private:
   Point conditioningCDF_;
 
   // for ratio of uniforms method
-  Scalar r_ = 1.0;
-  Scalar supU_ = 0.0;
-  Point infV_;
-  Point supV_;
+  RatioOfUniformsExperiment sampler_;
 
   // for discrete sampling using alias method
   Point base_;

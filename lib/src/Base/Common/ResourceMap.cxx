@@ -994,6 +994,10 @@ void ResourceMap::loadDefaultConfiguration()
   // LowDiscrepancySequence parameters //
   addAsUnsignedInteger("LowDiscrepancySequence-ScramblingSeed", 0);
 
+  // RatioOfUniformsExperiment //
+  addAsString("RatioOfUniformsExperiment-OptimizationAlgorithm", "Cobyla");
+  addAsUnsignedInteger("RatioOfUniformsExperiment-CandidateNumber", 10000);
+
   // ReverseHaltonSequence parameters //
   addAsUnsignedInteger("ReverseHaltonSequence-InitialSeed", 1);
 
@@ -1121,6 +1125,10 @@ void ResourceMap::loadDefaultConfiguration()
   addAsBool("PointConditionalDistribution-UseSimplifiedVersion", true);
   addAsBool("PointConditionalDistribution-InitializeTransformation", true);
   addAsBool("PointConditionalDistribution-InitializeSampling", true);
+
+  // PosteriorDistribution parameters //
+  addAsString("PosteriorDistribution-OptimizationAlgorithm", "Cobyla");
+  addAsUnsignedInteger("PosteriorDistribution-RatioUniformCandidateNumber", 10000);
 
   // JointDistribution parameters //
   addAsBool("JointDistribution-UseGenericCovarianceAlgorithm", false);
