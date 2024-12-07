@@ -69,14 +69,15 @@ The continuous part of the conditioning distribution is discretized using a
 :class:`~openturns.WeightedExperiment` which can be modified using the following entries in
 :class:`~openturns.ResourceMap`:
 
-- 'DeconditionedDistribution-ContinuousDiscretizationMethod': can be *GaussProduct*, *QMC* or *MC*,
-- 'DeconditionedDistribution-MarginalIntegrationNodesNumber',
+- 'DeconditionedDistribution-ContinuousDiscretizationMethod': can be *GaussProduct*, *QMC* or *MC*. The
+  default value is 'GaussProduct', well adapted if the conditioned distribution is *regular*, meaning that
+  its range does not depend on the parameters (e.g. a :class:`~openturns.Normal` distribution).
+  Otherwise, one of the other discretization methods is to be preferred (e.g. for a 
+  :class:`~openturns.Uniform` distribution).
+- 'DeconditionedDistribution-MarginalIntegrationNodesNumber', 
 - 'DeconditionedDistribution-MaximumIntegrationNodesNumber'.
 
-The default value is 'GaussProduct', well adapted if the conditioned distribution is *regular*, meaning that
-its range does not depend on the parameters (e.g. a :class:`~openturns.Normal`
-distribution). Otherwise, one of the other discretization methods is to be
-preferred (e.g. for a :class:`~openturns.Uniform` distribution).
+
 
 Examples
 --------

@@ -33,7 +33,7 @@ We assume that we have a sample of realizations of :math:`\inputRV`, denoted by
 Let :math:`\mu_{\inputRV|\vect{\Theta} = g(\vect{y})}` be the PDF of
 :math:`\inputRV|\vect{\Theta} = g(\vect{y})`.
 
-This class builds the bayesian posterior distribution of  :math:`\vect{Y}|\inputRV = (\vect{x}_1, ..., \vect{x}_n)`. Its PDF is defined by:
+This class builds the bayesian posterior distribution of  :math:`\vect{Y}|\inputRV = (\vect{x}_1, ..., \vect{x}_\sampleSize)`. Its PDF is defined by:
 
 .. math::
 
@@ -75,11 +75,11 @@ thanks to the class :class:`~openturns.DeconditionedDistribution`.
 >>> import openturns.experimental as otexp
 >>> ot.RandomGenerator.SetSeed(0)
 
-Define the conditioned distribution:
+Create the conditioned distribution:
 
 >>> conditionedDist = ot.Normal()
 
-Build  the deconditioned distribution from the conditioning  and conditioned distributions:
+Create  the deconditioned distribution from the conditioning  and conditioned distributions:
 
 >>> conditioningDist = ot.JointDistribution([ot.Uniform(0.0, 1.0), ot.Uniform(1.0, 2.0)])
 >>> deconditionedDist = ot.DeconditionedDistribution(conditionedDist, conditioningDist)
@@ -92,9 +92,9 @@ Define the observations: here, we generate them from the distribution
 >>> observationsDist.setParameter(conditioningDist.getMean())
 >>> observations = observationsDist.getSample(observationsSize)
 
-Build the bayesian posterior distribution:
+Create the bayesian posterior distribution:
 
->>> posterioriDist = otexp.PosteriorDistribution(deconditionedDist, observations)"
+>>> posteriorDist = otexp.PosteriorDistribution(deconditionedDist, observations)"
 
 // ---------------------------------------------------------------------
 
