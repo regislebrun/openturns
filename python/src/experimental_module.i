@@ -12,7 +12,7 @@
 #include "openturns/OTOrthogonalBasis.hxx"
 #include "openturns/OTMetaModel.hxx"
 #include "openturns/OTSimulation.hxx"
-
+#include "openturns/OTSolver.hxx"
 %}
 
 %include typemaps.i
@@ -34,7 +34,11 @@
 %include LatentVariableModel.i
 %include SamplePartition.i
 
+/* Base/Solver */
+%include LeastSquaresEquationsSolver.i
+
 /* Uncertainty/Model */
+
 /* Uncertainty/Distribution */
 %import model_copula_module.i
 %import dist_bundle3_module.i
@@ -72,6 +76,7 @@
 %include PosteriorDistribution.i
 %include UniformOrderStatistics.i
 %include GeneralizedParetoValidation.i
+
 /* Uncertainty/Algorithm/Metamodel */
 %include FunctionalChaosValidation.i
 %include LinearModelValidation.i
@@ -80,3 +85,6 @@
 %include GaussianProcessRegressionResult.i
 %include GaussianProcessRegression.i
 %include GaussianProcessConditionalCovariance.i
+
+ /* Uncertainty/Model */
+%include RatioOfUniforms.i

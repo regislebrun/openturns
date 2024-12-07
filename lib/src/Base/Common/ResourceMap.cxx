@@ -1013,6 +1013,9 @@ void ResourceMap::loadDefaultConfiguration()
   addAsUnsignedInteger("SobolIndicesAlgorithm-DefaultBlockSize", 1);
   addAsUnsignedInteger("SobolIndicesAlgorithm-DefaultBootstrapSize", 100);
 
+  // RatioOfUniforms //
+  addAsString("RatioOfUniforms-OptimizationAlgorithm", "Cobyla");
+  addAsUnsignedInteger("RatioOfUniforms-CandidateNumber", 10000);
 
   // RankSobolSensitivityALgorithm//
   addAsScalar("RankSobolSensitivityAlgorithm-DefaultBootstrapSampleRatio", 0.8);

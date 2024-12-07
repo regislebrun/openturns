@@ -954,9 +954,9 @@
   <!-- OT::GaussProductExperiment parameters -->
   <GaussProductExperiment-DefaultMarginalSize value_int="5" />
 
-  <!-- OT::RatioOfUniformsExperiment parameters -->
-  <RatioOfUniformsExperiment-CandidateNumber       value_int="10000"  />
-  <RatioOfUniformsExperiment-OptimizationAlgorithm value_str="Cobyla" />
+  <!-- OT::RatioOfUniforms parameters -->
+  <RatioOfUniforms-CandidateNumber       value_int="10000"  />
+  <RatioOfUniforms-OptimizationAlgorithm value_str="Cobyla" />
 
   <!-- OT::HyperbolicAnisotropicEnumerateFunction parameters -->
   <HyperbolicAnisotropicEnumerateFunction-DefaultQ value_float="0.4" />

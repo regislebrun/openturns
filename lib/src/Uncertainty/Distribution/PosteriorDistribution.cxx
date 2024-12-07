@@ -35,9 +35,9 @@ static const Factory<PosteriorDistribution> Factory_PosteriorDistribution;
 
 /* Default constructor */
 PosteriorDistribution::PosteriorDistribution()
-  : DistributionImplementation(),
-    deconditionedDistribution_(),
-    observations_()
+  : DistributionImplementation()
+  , deconditionedDistribution_()
+  , observations_()
 {
   setName("PosteriorDistribution");
   // First, set the observations
@@ -46,12 +46,35 @@ PosteriorDistribution::PosteriorDistribution()
   setDeconditionedDistribution(deconditionedDistribution_);
 }
 
+  PosteriorDistribution::PosteriorDistribution(const Distribution & conditionedDistribution,
+					       const Distribution & conditioningDistribution,
+					       const Sample & observations)
+  : DistributionImplementation()
+  , deconditionedDistribution_()
+  , observations_(observations)
+{
+  setName("PosteriorDistribution");
+  setDeconditionedDistribution(DeconditionedDistribution(conditionedDistribution, conditioningDistribution));
+}
+
+  PosteriorDistribution::PosteriorDistribution(const Distribution & conditionedDistribution,
+					       const Distribution & conditioningDistribution,
+					       const Function & linkFunction,
+					       const Sample & observations)
+  : DistributionImplementation()
+  , deconditionedDistribution_()
+  , observations_(observations)
+{
+  setName("PosteriorDistribution");
+  setDeconditionedDistribution(DeconditionedDistribution(conditionedDistribution, conditioningDistribution, linkFunction));
+}
+
 /* Parameters constructor */
 PosteriorDistribution::PosteriorDistribution(const DeconditionedDistribution & deconditionedDistribution,
     const Sample & observations)
-  : DistributionImplementation(),
-    deconditionedDistribution_(),
-    observations_(observations)
+  : DistributionImplementation()
+  , deconditionedDistribution_()
+  , observations_(observations)
 {
   setName("PosteriorDistribution");
   if (observations.getSize() == 0) throw InvalidArgumentException(HERE) << "Error: cannot build a posterior distribution with no observation.";
@@ -163,10 +186,19 @@ Scalar PosteriorDistribution::computeCDF(const Point & point) const
 Point PosteriorDistribution::getRealization() const
 {
   // If the distribution is continuous, use the ratio of uniforms method
-  if (isContinuous())
-    return sampler_.generate()[0];
+  if (isContinuous() && sampler_.isInitialized())
+    return sampler_.getRealization();
 
   return DistributionImplementation::getRealization();
+}
+
+Sample PosteriorDistribution::getSample(const UnsignedInteger size) const
+{
+  // If the distribution is continuous, use the ratio of uniforms method
+  if (isContinuous() && sampler_.isInitialized())
+    return sampler_.getSample(size);
+
+  return DistributionImplementation::getSample(size);
 }
 
 /* Check if the distribution is constinuous */
@@ -224,10 +256,9 @@ void PosteriorDistribution::setDeconditionedDistribution(const DeconditionedDist
   {
     // initialize ratio of uniforms method, see https://en.wikipedia.org/wiki/Ratio_of_uniforms
     // r_ is a free parameter, could be optimized to maximize the acceptance ratio
-    sampler_ = RatioOfUniformsExperiment();
+    sampler_ = RatioOfUniforms();
     sampler_.setOptimizationAlgorithm(OptimizationAlgorithm::GetByName(ResourceMap::GetAsString("PosteriorDistribution-OptimizationAlgorithm")));
     sampler_.setCandidateNumber(ResourceMap::GetAsUnsignedInteger("PosteriorDistribution-RatioUniformCandidateNumber"));
-    sampler_.setSize(1);
     sampler_.setDistribution(*this);
   } // isContinuous()
 }

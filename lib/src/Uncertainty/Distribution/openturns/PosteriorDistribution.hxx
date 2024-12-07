@@ -24,7 +24,7 @@
 #include "openturns/OTprivate.hxx"
 #include "openturns/DistributionImplementation.hxx"
 #include "openturns/DeconditionedDistribution.hxx"
-#include "openturns/RatioOfUniformsExperiment.hxx"
+#include "openturns/RatioOfUniforms.hxx"
 
 BEGIN_NAMESPACE_OPENTURNS
 
@@ -45,6 +45,15 @@ public:
   /** Parameters constructor */
   PosteriorDistribution(const DeconditionedDistribution & deconditionedDistribution,
                         const Sample & observations);
+
+  PosteriorDistribution(const Distribution & conditionedDistribution,
+			const Distribution & conditioningDistribution,
+			const Sample & observations);
+
+  PosteriorDistribution(const Distribution & conditionedDistribution,
+			const Distribution & conditioningDistribution,
+			const Function & linkFunction,
+			const Sample & observations);
 
   /** Comparison operator */
   using DistributionImplementation::operator ==;
@@ -81,6 +90,7 @@ public:
 
   /** Get one realization of the distribution */
   Point getRealization() const override;
+  Sample getSample(const UnsignedInteger size) const override;
 
   /* Interface specific to PosteriorDistribution */
 
@@ -143,7 +153,7 @@ private:
   Scalar logNormalizationFactor_;
 
   // for ratio of uniforms method
-  RatioOfUniformsExperiment sampler_;
+  RatioOfUniforms sampler_;
 
 }; /* class PosteriorDistribution */
 
