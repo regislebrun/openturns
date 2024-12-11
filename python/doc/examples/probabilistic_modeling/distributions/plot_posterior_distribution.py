@@ -18,8 +18,8 @@ Create a bayesian posterior distribution
 # We assume that we have a sample of observations of :math:`\inputRV`, denoted by
 # :math:`(\vect{x}_1, \dots, \vect{x}_\sampleSize)` whith :math:`\sampleSize=25`.
 #
-# The obective is to estimate :math:`\vect{\theta}_v` using a Bayesian approach. For that, we
-# consider the following probabilistic modelisation:
+# The objective is to estimate :math:`\vect{\theta}_v` using a Bayesian approach. For that, we
+# consider the following probabilistic modeling:
 #
 # .. math::
 #
@@ -71,8 +71,8 @@ import openturns.experimental as otexp
 ot.Log.Show(ot.Log.NONE)
 
 # %%
-# Case 1:
-# ^^^^^^^
+# Case 1: A very good prior
+# ^^^^^^^^^^^^^^^^^^^^^^^^^
 # In that case, we have:
 #
 # .. math::
@@ -82,7 +82,7 @@ ot.Log.Show(ot.Log.NONE)
 #
 # In this case, the model is regular and the default value of the integration nodes number is too high.
 # We fix it to 16 rather than 256, which is sufficient.
-ot.ResourceMap.SetAsUnsignedInteger( "DeconditionedDistribution-MarginalIntegrationNodesNumber", 13)
+ot.ResourceMap.SetAsUnsignedInteger( "DeconditionedDistribution-MarginalIntegrationNodesNumber", 16)
 ot.ResourceMap.SetAsString("DeconditionedDistribution-ContinuousDiscretizationMethod", "GaussProduct")
 ot.RandomGenerator.SetSeed(0)
 # %%
@@ -195,8 +195,8 @@ view = viewer.View(graph_post, square_axes=True)
 #    \mu_{\cL_{\vect{\theta^m}}(\vect{X})}(\vect{x})
 #    \log \dfrac{\mu_{\cL_{\vect{\theta^m}}(\vect{X})}(\vect{x})}
 #    {\mu_{\cL_{\vect{\theta_v}}(\vect{X})}(\vect{x})} \, d\vect{x}\\
-#    & = \Expect{\log \dfrac{\mu_{\cL_{\vect{\theta^m}}(\vect{X})}}
-#    {\mu_{\cL_{\vect{\theta_v}}(\vect{X})}(\vect{x})}}
+#    & = \Expect{\log \dfrac{\mu_{\cL_{\vect{\theta^m}}(\vect{X})}(\vect{X})}
+#    {\mu_{\cL_{\vect{\theta_v}}(\vect{X})}(\vect{X})}}
 #
 # where the expectation is computed with respect to the :math:`\cL_{\vect{\theta^m}}(\vect{X})`
 # distribution. We compute it thanks to a Monte Carlo sampling.
@@ -236,8 +236,8 @@ view = viewer.View(graph_X_dist, square_axes=True)
 
 
 # %%
-# Case 2:
-# ^^^^^^^
+# Case 2: A bad prior
+# ^^^^^^^^^^^^^^^^^^^
 # In that case, we have:
 #
 # .. math::
@@ -348,7 +348,7 @@ print("KL divergence =%.2e" %KL_dist)
 # %%
 # In this graph, we draw the PDF of the real distribution of :math:`\inputRV` and the distribution
 # :math:`\cL_{\vect{\theta^m}}(\vect{X}) = \cN(\vect{\theta^m})`. This graph confirms that both
-# distributions are very near, even if this second modelisation appears to be less good than the first one.
+# distributions are very near, even if this second modeling appears to be less good than the first one.
 graph_X_dist = X_dist_real.drawPDF()
 levels = graph_X_dist.getDrawable(0).getLevels()
 dr_bay = X_dist_theta_mod.drawPDF().getDrawable(0).getImplementation()
@@ -371,6 +371,7 @@ view = viewer.View(graph_X_dist, square_axes=True)
 # and the prior distribution :math:`\cL^0_{\vect{Y}}` with a sample generated from the posterior
 # distribution. We note that the posterior distribution is quadri-modale, due to the parity of the link
 # function.
+# sphinx_gallery_thumbnail_number = 5
 graph_Y_dist_post = Y_dist_posterior.drawPDF()
 graph_Y_dist_post.setXTitle(r"$y_0$")
 graph_Y_dist_post.setYTitle(r"$y_1$")
@@ -380,7 +381,7 @@ view = viewer.View(graph_Y_dist_post, square_axes=True)
 
 
 # %%
-# Here we drw the PDF of the priori and the posterior  distribution  of :math:`\vect{Y}`.
+# Here we draw the PDF of the priori and the posterior  distribution  of :math:`\vect{Y}`.
 graph_Y_dist_post = Y_dist_posterior.drawPDF()
 levels = graph_Y_dist_post.getDrawable(0).getLevels()
 dr_prior = Y_dist_prior.drawPDF().getDrawable(0).getImplementation()
@@ -394,11 +395,11 @@ graph_Y_dist_post.setTitle("Bayesian prior and posterior distribution of $\mathb
 view = viewer.View(graph_Y_dist_post, square_axes=True)
 
 # %%
-# Display all figures
+# Display all figures:
 viewer.View.ShowAll()
 
 # %%
-# Reset default settings
+# Reset default settings:
 ot.ResourceMap.Reload()
 
 

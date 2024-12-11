@@ -53,7 +53,7 @@ graph = YXDist.drawPDF(yxMin - delta, yxMax + delta, [256]*2)
 cloud = ot.Cloud(sample)
 cloud.setLegend("sample")
 graph.add(cloud)
-view = viewer.View(graph, square_axes=True)
+view = viewer.View(graph)
 
 # %%
 # Display all figures

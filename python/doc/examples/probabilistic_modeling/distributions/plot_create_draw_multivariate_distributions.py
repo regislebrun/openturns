@@ -7,7 +7,6 @@ Create and draw multivariate distributions
 # In this example we create and draw multidimensional distributions.
 import openturns as ot
 import openturns.viewer as otv
-from matplotlib import pylab as plt
 
 ot.Log.Show(ot.Log.NONE)
 
@@ -237,6 +236,7 @@ graph.setTitle("User defined PDF")
 
 # %%
 # We can generate and display a sample from this distribution.
+# sphinx_gallery_thumbnail_number = 17
 omega = distribution.getSample(100)
 cloud = ot.Cloud(omega, "black", "fdiamond", "Sample from UserDefined distribution")
 graph.add(cloud)
@@ -245,6 +245,7 @@ view = otv.View(graph)
 # %%
 # As expected most values are near the edge of the square where the PDF is the higher.
 
+
 # %%
 # Display all figures
-plt.show()
+otv.View.ShowAll()
