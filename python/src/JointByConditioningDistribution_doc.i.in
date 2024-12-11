@@ -1,35 +1,48 @@
 %feature("docstring") OT::JointByConditioningDistribution
 "Bayes distribution.
 
-Helper class for defining the distribution of the random vector :math:`(\vect{Y},\vect{X})`
-where :math:`\vect{Y}` follows the distribution :math:`\mathcal{L}_{\vect{Y}}`
-and :math:`\vect{X}|\vect{\Theta}` follows the distribution :math:`\mathcal{L}_{\vect{X}|\vect{\Theta}}`
-where :math:`\vect{\Theta}=g(\vect{Y})` with :math:`g` a given function of input dimension
-the dimension of :math:`\mathcal{L}_{\vect{Y}}` and output dimension the dimension of :math:`\vect{\Theta}`.
-
 Parameters
 ----------
 conditionedDist : :class:`~openturns.Distribution`
-    The distribution of :math:`\vect{X}|\vect{\Theta}`, whose parameters will be overwritten by :math:`g(\vect{Y})`.
+    The distribution :math:`\cL_{\vect{\Theta}}(\vect{X})` of :math:`\vect{X}|\vect{\Theta}`,
+    whose parameters will be overwritten by :math:`g(\vect{Y})`.
 conditioningDist : :class:`~openturns.Distribution`
-    The distribution of :math:`\vect{Y}`, specified with its parameters.
+    The distribution of :math:`\vect{Y}`.
 linkFunction : :class:`~openturns.Function`, optional
-    The function :math:`g: \Rset^p \rightarrow \Rset^q`, where :math:`p` is the dimension of `conditioningDist`
-    and :math:`q` is the dimension of :math:`\vect{\Theta}`.
-    By default it is chosen as the identity function.
+    The link function :math:`g` defined in :eq:`linkFunc`.
+
+    When not provided *linkFunction* is taken equal to  :math:`g(\vect{y})=\vect{y}`.
 
 Notes
 -----
-This distribution is limited to the continuous case, ie when both the conditioning and the conditioned distributions are continuous.
-Its probability density function is defined as:
+Let :math:`\vect{X}` be a random vector which distribution
+:math:`\cL_{\vect{\Theta}}(\vect{X})` is parameterized by the random vector :math:`\vect{\Theta}`
+of dimension :math:`q`.
+
+The parameter random vector is defined as:
+
+.. math::
+    :label: linkFunc
+
+    \vect{\Theta} = g(\vect{Y})
+
+where :math:`g: \Rset^p \rightarrow \Rset^q` is the *link function* and :math:`\vect{Y}` a
+random vector of dimension :math:`p` whose distribution is known.
+
+This class builds the joint distribution of :math:`(\vect{Y}, \vect{X})` in the case where  both the conditioning and the conditioned distributions are continuous.
+
+Let :math:`\mu_{\vect{X}|\vect{\Theta} = g(\vect{y})}` be the PDF of
+:math:`\vect{X}|\vect{\Theta} = g(\vect{y})` and :math:`f_{\vect{Y}}` be the PDF of :math:`\vect{Y}`. The PDF of :math:`(\vect{Y}, \vect{X})` is defined as:
 
 .. math::
 
-    f_{(\vect{Y}, \vect{X})}(\vect{y}, \vect{x}) = f_{\vect{X}|\vect{\Theta}=g(\vect{y})}(\vect{x}|g(\vect{y})) f_{\vect{Y}}( \vect{y})
+    f_{(\vect{Y}, \vect{X})}(\vect{y}, \vect{x}) = \mu_{\vect{X}|\vect{\Theta}=g(\vect{y})}(\vect{x}) f_{\vect{Y}}( \vect{y})
 
-with :math:`f_{\vect{X}|\vect{\Theta}=g(\vect{y})}` the PDF of the distribution of :math:`\vect{X}|\vect{\Theta}`,
-where :math:`\vect{\Theta}` has been replaced by :math:`g(\vect{y})`,
-:math:`f_{\vect{Y}}` the PDF of :math:`\vect{Y}` and :math:`g` the linking function.
+We call:
+
+- *conditioned distribution* the distribution :math:`\cL_{\vect{\Theta}}(\vect{X})`,
+- *conditioning distribution* the distribution of :math:`\vect{Y}`,
+- *link function* the function :math:`g`.
 
 With the default constructor, the resulting random vector :math:`(Y,X)` is uniformly
 distributed on the parallelogram which vertices are :math:`(-1,-1); (0,-1); (2,1); (1,1)`.
@@ -37,59 +50,58 @@ distributed on the parallelogram which vertices are :math:`(-1,-1); (0,-1); (2,1
 
 Examples
 --------
-Create a distribution:
+In that example, we consider :math:`X` such that :math:`X|\vect{\Theta}` follows the distribution :math:`\cL_{\vect{\Theta}}(\vect{X}) = \cN(\vect{\Theta})`, where :math:`\vect{\Theta}` is bivariate and is the couple of the
+random mean and the random standard deviation of the normal distribution. We assume that :math:`\vect{\Theta} = g(Y)` where :math:`Y` is scalar and follows :math:`\cN(0,1)`
+and :math:`g: \Rset \rightarrow \Rset^2` is the  link function such that :math:`g(y) = (y, 0.1+y^2)`.
 
 >>> import openturns as ot
+>>> conditionedDist = ot.Normal()
 >>> conditioningDist = ot.Normal(0.0, 1.0)
 >>> g = ot.SymbolicFunction(['y'], ['y', '0.1+y^2'])
->>> conditionedDist = ot.Normal()
->>> finalDist = ot.DeconditionedDistribution(conditionedDist, conditioningDist, g)
-
-Draw a sample:
-
->>> sample = finalDist.getSample(5)
+>>> finalDist = ot.JointByConditioningDistribution(conditionedDist, conditioningDist, g)
 "
 
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::JointByConditioningDistribution::getConditionedDistribution
-"Accessor to the distribution's conditioned distribution parameter `conditionedDistribution`.
+"Accessor to the conditioned distribution.
 
 Returns
 -------
-conditionedDistribution : :class:`~openturns.Distribution`, the distribution of :math:`\vect{X}|\vect{\Theta}`, whose parameters will be overwritten by :math:`g(\vect{Y})`.
+conditionedDist : :class:`~openturns.Distribution`
+    The distribution of :math:`\vect{X}|\vect{\Theta}`,
+    whose parameters will be overwritten by :math:`g(\vect{Y})`.
 "
 
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::JointByConditioningDistribution::getConditioningDistribution
-"Accessor to the distribution's conditioned distribution parameter `conditioningDistribution`.
+"Accessor to the conditioning distribution.
 
 Returns
 -------
-conditioningDistribution : :class:`~openturns.Distribution`
-    The distribution of :math:`\vect{Y}`, specified with its parameters.
+conditioningDist : :class:`~openturns.Distribution`
+    The distribution of :math:`\vect{Y}`.
 "
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::JointByConditioningDistribution::getLinkFunction
-"Accessor to the distribution's conditioned distribution parameter `linkFunction`.
+"Accessor to the link function.
 
 Returns
 -------
 linkFunction : :class:`~openturns.Function`
-    The function :math:`g: \Rset^p \rightarrow \Rset^q`, where :math:`p` is the dimension
-    of `conditioningDist` and :math:`q` is the dimension of :math:`\vect{\Theta}`.
+    The link function :math:`g` defined in :eq:`linkFunc`.
 "
 
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::JointByConditioningDistribution::setConditionedDistribution
-"Accessor to the distribution's conditioned distribution parameter `conditionedDistribution`.
+"Accessor to the conditioned distribution.
 
 Parameters
 ----------
-conditionedDistribution : :class:`~openturns.Distribution`
+conditionedDist : :class:`~openturns.Distribution`
     The distribution of :math:`\vect{X}|\vect{\Theta}`,
     whose parameters will be overwritten by :math:`g(\vect{Y})`.
 "
@@ -97,21 +109,20 @@ conditionedDistribution : :class:`~openturns.Distribution`
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::JointByConditioningDistribution::setConditioningDistribution
-"Accessor to the distribution's conditioned distribution parameter `conditioningDistribution`.
+"Accessor to the conditioning distribution.
 
 Parameters
 ----------
-conditioningDistribution : :class:`~openturns.Distribution`
-    The distribution of :math:`\vect{Y}`, specified with its parameters.
+conditioningDist : :class:`~openturns.Distribution`
+    The distribution of :math:`\vect{Y}`.
 "
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::JointByConditioningDistribution::setLinkFunction
-"Accessor to the distribution's conditioned distribution parameter `linkFunction`.
+"Accessor to the link function.
 
 Parameters
 ----------
 linkFunction : :class:`~openturns.Function`
-    The function :math:`g: \Rset^p \rightarrow \Rset^q`, where :math:`p` is the dimension of `conditioningDist`
-    and :math:`q` is the dimension of :math:`\vect{\Theta}`.
+    The link function :math:`g` defined in :eq:`linkFunc`.
 "

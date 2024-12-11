@@ -154,6 +154,7 @@ threshold
 # The interesting point is that a `LevelSet` may be non-contiguous. In the current mixture example, this is not an interval.
 
 # %%
+# sphinx_gallery_thumbnail_number = 5
 graph = drawLevelSet1D(m, levelSet, alpha, threshold, 1000)
 view = viewer.View(graph)
 

@@ -994,6 +994,10 @@ void ResourceMap::loadDefaultConfiguration()
   // LowDiscrepancySequence parameters //
   addAsUnsignedInteger("LowDiscrepancySequence-ScramblingSeed", 0);
 
+  // RatioOfUniformsExperiment //
+  addAsString("RatioOfUniformsExperiment-OptimizationAlgorithm", "Cobyla");
+  addAsUnsignedInteger("RatioOfUniformsExperiment-CandidateNumber", 10000);
+
   // ReverseHaltonSequence parameters //
   addAsUnsignedInteger("ReverseHaltonSequence-InitialSeed", 1);
 

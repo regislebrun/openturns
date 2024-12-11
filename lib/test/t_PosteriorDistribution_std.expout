@@ -12,6 +12,8 @@ Distribution PosteriorDistribution(deconditioned distribution = DeconditionedDis
 4 : [ -2.77208  ])
 range=[0, 1]
 [1, 2]
+entropy=-0.248814
+entropy (MC)=-0.246413
 Mean [0.408932,1.65873]
 Covariance [[ 0.0737985  0.00565287 ]
  [ 0.00565287 0.0516131  ]]

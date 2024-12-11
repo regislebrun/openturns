@@ -47,5 +47,6 @@
 #include "openturns/LeaveOneOutSplitter.hxx"
 #include "openturns/TensorProductExperiment.hxx"
 #include "openturns/SmolyakExperiment.hxx"
+#include "openturns/RatioOfUniformsExperiment.hxx"
 
 #endif /* OPENTURNS_OTWEIGHTEDEXPERIMENTS_HXX */

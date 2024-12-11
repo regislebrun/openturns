@@ -1,5 +1,5 @@
 %feature("docstring") OT::PosteriorDistribution
-"Distribution conditioned by observations.
+"Bayesian posterior distribution conditioned by observations.
 
 .. warning::
     This class is experimental and likely to be modified in future releases.
@@ -7,10 +7,10 @@
 
 Parameters
 ----------
-deconditioned : :class:`~openturns.DeconditionedDistribution`
-    The distribution of density :math:`f_{\vect{X}}(\vect{x}) = \int f_{\vect{X}|\vect{\Theta}=\vect{y}}(\vect{x}|\vect{y}) f_{\vect{Y}}(\vect{y})\di{\vect{y}}`.
+deconditionedDist : :class:`~openturns.DeconditionedDistribution`
+    The deconditioned distribution defined in :eq:`deconditionedDist`.
 observations : 2-d sequence of float
-    Observations :math:`\vect{x}_i`.
+    Observations :math:`(\vect{x}_1, \dots, \vect{x}_\sampleSize)`.
 
 See Also
 --------
@@ -19,33 +19,82 @@ openturns.MetropolisHastings
 
 Notes
 -----
-Its probability density function is defined as:
+Let :math:`\inputRV` be a random vector which distribution
+:math:`\cL_{\vect{\Theta}}(\inputRV)` is parameterized by the random vector :math:`\vect{\Theta}`. 
+The parameter random vector is defined as :math:`\vect{\Theta} = g(\vect{Y})`, where
+:math:`g` is the *link function* and :math:`\vect{Y}` a random vector whose distribution is known.
+Let :math:`F_{\vect{Y}}` be its cumulative distribution function and :math:`f_{\vect{Y}}` its PDF,
+where PDF designs the probability density function in the continuous case or the probability
+distribution function in the discrete one.
+
+We assume that we have a sample of realizations of :math:`\inputRV`, denoted by
+:math:`(\vect{x}_1, \dots, \vect{x}_\sampleSize)`. 
+
+Let :math:`\mu_{\inputRV|\vect{\Theta} = g(\vect{y})}` be the PDF of
+:math:`\inputRV|\vect{\Theta} = g(\vect{y})`.
+
+This class builds the bayesian posterior distribution of  :math:`\vect{Y}|\inputRV = (\vect{x}_1, ..., \vect{x}_\sampleSize)`. Its PDF is defined by:
 
 .. math::
 
-    f_{\vect{Y}|\vect{X}_1=\vect{x}_1, ..., \vect{X}_n = \vect{x}_n}(\vect{y}) = \frac{f_{\vect{Y}}(\vect{y})\prod_{i=1}^n f_{\vect{X}|\vect{\Theta}=\vect{y}}(\vect{x}_i)}{\int f_{\vect{Y}}(\vect{y}')\prod_{i=1}^n f_{\vect{X}|\vect{\Theta}=\vect{y}'}(\vect{x}_i) d \vect{y}'}
+    f_{\vect{Y}|\inputRV = (\vect{x}_1, ..., \vect{x}_n)}(\vect{y}) = \frac{f_{\vect{Y}}(\vect{y})
+    \prod_{i=1}^\sampleSize \mu_{\inputRV|\vect{\Theta} = g(\vect{y})}(\vect{x}_i)}{\int
+    \prod_{i=1}^\sampleSize \mu_{\inputRV|\vect{\Theta} = g(\vect{y})}(\vect{x}_i) dF_{\vect{Y}}
+    (\vect{y})}
 
-with :math:`f_{\vect{X}|\vect{\Theta}}` the PDF of the conditioned distribution,
-:math:`f_{\vect{Y}}` the PDF of the conditioning distribution, i.e. the marginal distribution of :math:`\vect{Y}`,
-:math:`\vect{x}_i` the observations of the deconditioned distribution.
+We call:
+
+- *conditioned distribution* the distribution :math:`\cL_{\vect{\Theta}}(\inputRV)`,
+- *conditioning distribution* the prior distribution of :math:`\vect{Y}`,
+- *deconditioned distribution* the distribution of :math:`\inputRV`, which PDF is defined by:
+
+.. math::
+    :label: deconditionedDist
+
+    \inputMeasure(\vect{x}) = \int \mu_{\inputRV|\vect{\Theta}=\vect{y}}(\vect{x})
+    dF_{\vect{Y}}(\vect{y})
+
+The normalization factor of the bayesian posterior distribution is defined by:
+
+.. math::
+    :label: normalizationFactor
+
+    \int \prod_{i=1}^\sampleSize \mu_{\inputRV|\vect{\Theta} = g(\vect{y})}(\vect{x}_i)
+    dF_{\vect{Y}}(\vect{y})
 
 Examples
 --------
+In that example, we consider :math:`X` such that :math:`X|\vect{\Theta}` follows the distribution :math:`\cL_{\vect{\Theta}}(\inputRV) = \cN(\vect{\Theta})`, where :math:`\vect{\Theta}` is bivariate and is the couple of the
+random mean and the random standard deviation  of the normal distribution. We assume that :math:`\vect{\Theta} \sim \cU(0,1) \times \cU(1,2)` whose components are independent.
+
+The *conditioned distribution* is :math:`\cN`, the *conditioning distribution* is :math:`\cU(0,1)
+\times \cU(1,2)` and the *deconditioned distribution* is the distribution of :math:`X`, built
+thanks to the class :class:`~openturns.DeconditionedDistribution`.
+
 >>> import openturns as ot
 >>> import openturns.experimental as otexp
 >>> ot.RandomGenerator.SetSeed(0)
->>> conditionedDistribution = ot.Normal()
->>> # Deconditioned distribution
->>> atoms = [ot.Uniform(0.0, 1.0), ot.Uniform(1.0, 2.0)]
->>> conditioning = ot.JointDistribution(atoms)
->>> deconditioned = ot.DeconditionedDistribution(conditionedDistribution, conditioning)
->>> # Observations
+
+Create the conditioned distribution:
+
+>>> conditionedDist = ot.Normal()
+
+Create  the deconditioned distribution from the conditioning  and conditioned distributions:
+
+>>> conditioningDist = ot.JointDistribution([ot.Uniform(0.0, 1.0), ot.Uniform(1.0, 2.0)])
+>>> deconditionedDist = ot.DeconditionedDistribution(conditionedDist, conditioningDist)
+
+Define the observations: here, we generate them from the distribution
+:math:`\cL_{\Expect{\vect{\Theta}}}(\inputRV)`:
+
 >>> observationsSize = 5
->>> observationsDistribution = ot.Distribution(conditionedDistribution)
->>> observationsDistribution.setParameter(conditioning.getMean())
->>> observations = observationsDistribution.getSample(observationsSize)
->>> # Posterior distribution
->>> distribution = otexp.PosteriorDistribution(deconditioned, observations)"
+>>> observationsDist = ot.Distribution(conditionedDist)
+>>> observationsDist.setParameter(conditioningDist.getMean())
+>>> observations = observationsDist.getSample(observationsSize)
+
+Create the bayesian posterior distribution:
+
+>>> posteriorDist = otexp.PosteriorDistribution(deconditionedDist, observations)"
 
 // ---------------------------------------------------------------------
 
@@ -54,8 +103,8 @@ Examples
 
 Parameters
 ----------
-deconditioned : :class:`~openturns.DeconditionedDistribution`
-    The deconditioned distribution."
+deconditionedDist : :class:`~openturns.DeconditionedDistribution`
+    The deconditioned distribution defined in :eq:`deconditionedDist`."
 
 // ---------------------------------------------------------------------
 
@@ -64,8 +113,8 @@ deconditioned : :class:`~openturns.DeconditionedDistribution`
 
 Returns
 -------
-deconditioned : :class:`~openturns.DeconditionedDistribution`
-    The deconditioned distribution."
+deconditionedDist : :class:`~openturns.DeconditionedDistribution`
+    The deconditioned distribution defined in :eq:`deconditionedDist`."
 
 // ---------------------------------------------------------------------
 
@@ -75,7 +124,7 @@ deconditioned : :class:`~openturns.DeconditionedDistribution`
 Parameters
 ----------
 observations : 2-d sequence of float
-    Observations."
+    Observations :math:`(\vect{x}_1, \dots, \vect{x}_\sampleSize)`."
 
 // ---------------------------------------------------------------------
 
@@ -85,7 +134,7 @@ observations : 2-d sequence of float
 Returns
 -------
 observations : :class:`~openturns.Sample`
-    Observations."
+    Observations :math:`(\vect{x}_1, \dots, \vect{x}_\sampleSize)`."
 
 // ---------------------------------------------------------------------
 
@@ -95,4 +144,4 @@ observations : :class:`~openturns.Sample`
 Returns
 -------
 factor : float
-    Log-scale normalization factor."
+    Log of the normalization factor defined in :eq:`normalizationFactor`."
