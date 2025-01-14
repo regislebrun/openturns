@@ -964,6 +964,7 @@
 
   <!-- OT::RatioOfUniforms parameters -->
   <RatioOfUniforms-CandidateNumber       value_int="10000"  />
+  <RatioOfUniforms-MaximumMultistart     value_int="32"     />
   <RatioOfUniforms-OptimizationAlgorithm value_str="Cobyla" />
 
   <!-- OT::HyperbolicAnisotropicEnumerateFunction parameters -->

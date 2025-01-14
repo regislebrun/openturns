@@ -4,7 +4,7 @@
 #include "openturns/RatioOfUniforms.hxx"
 %}
 
-// %include RatioOfUniforms_doc.i
+%include RatioOfUniforms_doc.i
 
 %copyctor OT::RatioOfUniforms;
 

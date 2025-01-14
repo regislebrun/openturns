@@ -1020,6 +1020,7 @@ void ResourceMap::loadDefaultConfiguration()
   // RatioOfUniforms //
   addAsString("RatioOfUniforms-OptimizationAlgorithm", "Cobyla");
   addAsUnsignedInteger("RatioOfUniforms-CandidateNumber", 10000);
+  addAsUnsignedInteger("RatioOfUniforms-MaximumMultistart", 32);
 
   // RankSobolSensitivityALgorithm//
   addAsScalar("RankSobolSensitivityAlgorithm-DefaultBootstrapSampleRatio", 0.8);

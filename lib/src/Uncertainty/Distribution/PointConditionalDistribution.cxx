@@ -345,7 +345,7 @@ void PointConditionalDistribution::update()
     sampler_ = RatioOfUniforms();
     sampler_.setOptimizationAlgorithm(OptimizationAlgorithm::GetByName(ResourceMap::GetAsString("PointConditionalDistribution-OptimizationAlgorithm")));
     sampler_.setCandidateNumber(ResourceMap::GetAsUnsignedInteger("PointConditionalDistribution-RatioUniformCandidateNumber"));
-    sampler_.setLogPDFAndRange(getLogPDF(), getRange());
+    sampler_.setLogUnscaledPDFAndRange(getLogPDF(), getRange());
   } // isContinuous()
 
   if (!useSimplifiedVersion_ && ResourceMap::GetAsBool("PointConditionalDistribution-InitializeTransformation"))

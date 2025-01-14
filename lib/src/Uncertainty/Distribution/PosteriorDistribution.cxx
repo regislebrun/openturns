@@ -259,7 +259,7 @@ void PosteriorDistribution::setDeconditionedDistribution(const DeconditionedDist
     sampler_ = RatioOfUniforms();
     sampler_.setOptimizationAlgorithm(OptimizationAlgorithm::GetByName(ResourceMap::GetAsString("PosteriorDistribution-OptimizationAlgorithm")));
     sampler_.setCandidateNumber(ResourceMap::GetAsUnsignedInteger("PosteriorDistribution-RatioUniformCandidateNumber"));
-    sampler_.setLogPDFAndRange(getLogPDF(), getRange());
+    sampler_.setLogUnscaledPDFAndRange(getLogPDF(), getRange());
   } // isContinuous()
 }
 

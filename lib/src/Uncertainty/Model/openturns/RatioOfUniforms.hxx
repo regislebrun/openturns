@@ -55,7 +55,7 @@ public:
   String __repr__() const override;
   String __str__(const String & offset = "") const override;
 
-  /** LogPDF and range accessor */
+  /** LogUnscaledPDF and range accessor */
   void setLogUnscaledPDFAndRange(const Function & logUnscaledPDF,
 				 const Interval & range);
   Function getLogUnscaledPDF() const;
@@ -73,6 +73,10 @@ public:
   /** Candidate number accessor */
   void setCandidateNumber(const UnsignedInteger candidateNumber);
   UnsignedInteger getCandidateNumber() const;
+
+  /** Maximum multistart accessor */
+  void setMaximumMultistart(const UnsignedInteger maximumMultistart);
+  UnsignedInteger getMaximumMultistart() const;
 
   /** Acceptance ratio accessor */
   Scalar getAcceptanceRatio() const;
@@ -104,6 +108,7 @@ private:
   Point supV_;
   OptimizationAlgorithm optimizationAlgorithm_;
   UnsignedInteger candidateNumber_ = 1;
+  UnsignedInteger maximumMultistart_ = 1;
 }; /* class RatioOfUniforms */
 
 
