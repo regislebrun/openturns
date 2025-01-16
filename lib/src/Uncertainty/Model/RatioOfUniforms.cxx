@@ -398,10 +398,10 @@ Sample RatioOfUniforms::getSample(const UnsignedInteger size) const
       while (!accepted)
 	{
 	  const Scalar u = supU_ * RandomGenerator::Generate();
-	    const Scalar ur = std::pow(u, r_);
-	    for (UnsignedInteger i = 0; i < dimension; ++ i)
-	      result[i] = (infV_[i] + (supV_[i] - infV_[i]) * RandomGenerator::Generate()) / ur;
-	    accepted = ((1.0 + r_ * dimension) * std::log(u) <= logPDF_(result)[0]) && range_.contains(result);
+	  const Scalar ur = std::pow(u, r_);
+	  for (UnsignedInteger i = 0; i < dimension; ++ i)
+	    result[i] = (infV_[i] + (supV_[i] - infV_[i]) * RandomGenerator::Generate()) / ur;
+	  accepted = range_.contains(result) && ((1.0 + r_ * dimension) * std::log(u) <= logPDF_(result)[0]);
 	} // !accepted
       sample[n] = result;
     } // for n
