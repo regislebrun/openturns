@@ -324,7 +324,7 @@ r : float
 
 // ---------------------------------------------------------------------
 %feature("docstring") OT::RatioOfUniforms::initialize
-"Trigger to the initializationof the class.
+"Trigger to the initialization of the class.
 
 
 Returns

@@ -367,6 +367,9 @@ view = otv.View(g)
 view.ShowAll()
 
 # %%
+view.ShowAll()
+
+# %%
 # References
 # -----------
 # [1] Marin , J.M. & Robert, C.P. (2007). *Bayesian Core: A Practical Approach to Computational Bayesian Statistics*. Springer-Verlag, New York

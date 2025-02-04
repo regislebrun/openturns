@@ -415,7 +415,6 @@ Bool PointConditionalDistribution::hasSimplifiedVersion(Distribution & simplifie
   if (distribution_.isElliptical())
   {
     const String standardSpace(distribution_.getStandardRepresentative().getImplementation()->getClassName());
-    std::cerr << "standardSpace=" << standardSpace << std::endl;
     // Normal case
     if (standardSpace == "Normal")
     {
