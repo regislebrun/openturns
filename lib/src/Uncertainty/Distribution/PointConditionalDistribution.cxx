@@ -551,6 +551,30 @@ Bool PointConditionalDistribution::hasSimplifiedVersion(Distribution & simplifie
     return true;
   }
 
+  // Joint. Has we don't have an efficient PointConditionalCopula we restrict ourselve to the Bernstein copula
+  JointDistribution *p_joint = dynamic_cast<JointDistribution *>(distribution_.getImplementation().get());
+  if (p_joint)
+  {
+    const EmpiricalBernsteinCopula *p_bernstein = dynamic_cast<EmpiricalBernsteinCopula *>(distribution_.getCopula().getImplementation().get());
+    if (p_bernstein)
+      {
+	const Collection<Distribution> marginals(p_joint->getDistributionCollection());
+	Point coreConditioniningValues(conditioningIndices_.getSize());
+	for (UnsignedInteger i = 0; i < conditioningIndices_.getSize(); ++ i)
+	  {
+	    const Scalar conditioningValueI = marginals[conditioningIndices_[i]].computeCDF(conditioningValues_[i]);
+	    // If the conditioning value is too close to 1 or too close to 0
+	    // the conditioning of the core will fail
+	    if ((conditioningValueI <= cdfEpsilon_) || (conditioningValueI >= 1.0 - cdfEpsilon_))
+	      return false;
+	    coreConditioniningValues[i] = conditioningValueI;
+	  }
+	const PointConditionalDistribution conditionalCore(p_joint->getCore(), conditioningIndices_, coreConditioniningValues);
+	simplified = JointDistribution(marginals.select(nonConditioningIndices_), conditionalCore);
+	return true;
+      } // p_bernstein
+  } // p_joint
+
   return false;
 }
 
