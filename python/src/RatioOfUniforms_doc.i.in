@@ -19,13 +19,13 @@ dist : :class:`~openturns.Distribution`
     With that constructor, the range is the distribution range and *isScaled* = True.
 
 logUnscaledPDF : :class:`~openturns.Function`
-   Function :math:`\log F` such that :math:`f = F\, 1_{I}`  is proportional to the PDF :math:`p` we want to sample.
+   Function :math:`\log F` such that :math:`f = F\, \mathbf{1}_{I}`  is proportional to the PDF :math:`p` we want to sample.
 
 rangeF : :class:`~openturns.Interval`
     Interval :math:`I \subset \Rset^\inputDim` outside which :math:`p=0`.
 
 isScaled : bool, optional
-    Flag telling if the input *logUnscaledPDF* is such that :math:`f = F\, 1_{I}` is an actual PDF of a distribution.
+    Flag telling if the input *logUnscaledPDF* is such that :math:`f = F\, \mathbf{1}_{I}` is an actual PDF of a distribution.
     
     Default value is False.
 
@@ -44,7 +44,7 @@ with :math:`c \in \Rset^+_*`. We can write :math:`f` as:
 
 .. math::
 
-    f(\vect{x}) = F(\vect{x})\, 1_{I}\quad \forall \vect{x}  \in I
+    f(\vect{x}) = F(\vect{x})\, \mathbf{1}_{I}\quad \forall \vect{x}  \in I
 
 with :math:`I \subset \Rset^\inputDim`. It implies that the numerical range of :math:`p` is inluced in :math:`I`. We note:
 
@@ -62,25 +62,28 @@ Let :math:`r \in \Rset^+_*`. By default, :math:`r=1`. Let :math:`A_{f,r}` be the
     A_{f,r} & = \left\{ (u, v_1, \dots, v_\inputDim) \in \Rset^{\inputDim+1}\, |\, 0 \leq u \leq f\left(\dfrac{v_1}{u^r},
     \dots, \dfrac{v_\inputDim}{u^r}\right)^{\frac{1}{1+r\inputDim}}\right \}
 
-The Lebesgue measure of :math:`A_{f,r}`  is equal to :math:`\dfrac{1}{c(1+rd)}`.
+The Lebesgue measure of :math:`A_{f,r}`  is equal to :math:`\dfrac{1}{c(1+r\inputDim)}`.
 
-Let :math:`(U, V_1, \dots, V_\inputDim)` be a random variable uniformly distributed on  :math:`A_{f,r}`.
+Let :math:`(U, V_1, \dots, V_\inputDim)` be a random vector uniformly distributed on  :math:`A_{f,r}`.
 Then, :math:`\left( \dfrac{V_1}{U^r}, \dots, \dfrac{V_\inputDim}{U^r}\right)` is a random vector
 distributed according to :math:`p`.
 
 Under the condition that the functions :math:`\vect{x} \rightarrow f(\vect{x})^{\frac{1}{1+r\inputDim}}` and
-:math:`\vect{x} \rightarrow x_if(\vect{x})^{\frac{1}{1+r\inputDim}}` for all :math:`i` are bounded, then the domain
+:math:`\vect{x} \rightarrow x_if(\vect{x})^{\frac{1}{1+r\inputDim}}` for all :math:`i \in \llbracket 1, \inputDim  \rrbracket` are bounded, then the domain
 :math:`A_{f,r}` is bounded and can be included in a rectangular bounding box :math:`\tilde{A}_{f,r}`
 defined by:
 
 .. math::
     :label: tildeArf_def
 
-    \tilde{A}_{f,r} & = \left[0, \sup_{\vect{x}} f(\vect{x})^{\frac{1}{1+r\inputDim}} \right] \times \prod_i
+    \tilde{A}_{f,r} & = \left[0, \sup_{\vect{x}} f(\vect{x})^{\frac{1}{1+r\inputDim}} \right] \times \prod_{i=1}^\inputDim
     \left[ \inf_{\vect{x}} x_i f(\vect{x})^{\frac{r}{1+r\inputDim}} ,  \sup_{\vect{x}} x_i f(\vect{x})^{\frac{r}
     {1+r\inputDim}}\right]\\
-                    & = [0, u_{sup}] \times \prod_{i=1}^d [v_{inf, i}, v_{sup, i}]
+                    & = [0, u_{sup}] \times \prod_{i=1}^\inputDim [v_{inf, i}, v_{sup, i}]
 
+where :math:`u_{sup} = \sup_{\vect{x}} f(\vect{x})^{\frac{1}{1+r\inputDim}}`,
+:math:`v_{inf, i} = \inf_{\vect{x}} x_i f(\vect{x})^{\frac{r}{1+r\inputDim}}`
+and :math:`v_{sup, i} = \sup_{\vect{x}} x_i f(\vect{x})^{\frac{r}{1+r\inputDim}}`.
 
 This allows one to sample uniformly the set :math:`A_{f,r}` by rejection sampling inside
 :math:`\tilde{A}_{f,r}`.
@@ -99,7 +102,7 @@ To compute the second part of :math:`\tilde{A}_{f,r}`, we note that:
 
   .. math::
 
-      v_{sup, i} = \sup_{\vect{x}} x_i f(\vect{x})^{\frac{r}{1+rd}} =\sup_{\vect{x}, x_i \leq 0} x_i
+      v_{sup, i} = \sup_{\vect{x}} x_i f(\vect{x})^{\frac{r}{1+r\inputDim}} =\sup_{\vect{x}, x_i \leq 0} x_i
       f(\vect{x})^{\frac{r}{1+r\inputDim}} = 0
 
   Otherwise, we solve the maximization problem for :math:`x_i \in \Rset^+`:
@@ -119,7 +122,7 @@ To compute the second part of :math:`\tilde{A}_{f,r}`, we note that:
 
   .. math::
 
-      \inf_{\vect{x}} x_i f(\vect{x})^{\frac{r}{1+rd}} = \inf_{\vect{x}, x_i \geq 0} x_i
+      \inf_{\vect{x}} x_i f(\vect{x})^{\frac{r}{1+r\inputDim}} = \inf_{\vect{x}, x_i \geq 0} x_i
       f(\vect{x})^{\frac{r}{1+r\inputDim}} = 0
 
   Otherwise, we solve the minimization problem for :math:`x_i \in \Rset^-` and note that:
@@ -137,7 +140,7 @@ To compute the second part of :math:`\tilde{A}_{f,r}`, we note that:
      \sup_{\vect{x}, x_i \leq 0} \log |x_i|  + \dfrac{r}{1+r\inputDim} \log f(\vect{x})
 
 For the effective solution of these optimization problems, the initial point :math:`\vect{x}_0` must be
-such that :math:`f(\vect{x}_0)>0`. Such points are found by scrolling through a Sobol multivariate
+such that :math:`f(\vect{x}_0)>0`. Such points are found by scrolling through a Sobol' multivariate
 low discrepancy sequence: the maximum number of points of the sequence
 to generate is fixed by the entry *RatioOfUniforms-CandidateNumber* of :class:`~openturns.ResourceMap`. The maximum number of
 points selected as starting points is controlled by the entry *RatioOfUniforms-MaximumMultistart*.
@@ -159,7 +162,7 @@ This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *RatioOfUniforms-OptimizationAlgorithm*: the optimization algorithm used to compute the bounding box of
   :math:`\tilde{A}_{f,r}`,
-- *RatioOfUniforms-CandidateNumber*: maximum number of points of the Sobol low discrepancy sequence of dimension
+- *RatioOfUniforms-CandidateNumber*: maximum number of points of the Sobol' low discrepancy sequence of dimension
   :math:`\inputDim` used to find admissible starting points,
 - *RatioOfUniforms-MaximumMultistart*: maximum number of points selected as starting points
   for the multistart optimization algorithm,
@@ -189,7 +192,7 @@ compute the bounds of :math:`\tilde{A}_{f,r}`:
 Parameters
 ----------
 logUnscaledPDF : :class:`~openturns.Function`
-  Function :math:`\log F` where :math:`F\, 1_{I} \propto p`, the PDF we want to sample.
+  Function :math:`\log F` where :math:`F\, \mathbf{1}_{I} \propto p`, the PDF we want to sample.
 
 rangeF : :class:`~openturns.Interval`
     Interval :math:`I \in \Rset^\inputDim` outside which :math:`p=0`."
@@ -216,9 +219,9 @@ Notes
 -----
 As long as the number of selected starting points is less than the number
 defined in :class:`~openturns.ResourceMap`,
-entry *RatioOfUniforms-MaximumMultistart*, a new point of the Sobol low
+entry *RatioOfUniforms-MaximumMultistart*, a new point of the Sobol' low
 discrepancy sequence of dimension :math:`\inputDim` is considered. The maximum
-points of the Sobol sequence is :math:`n`. If no starting point has been
+points of the Sobol' sequence is :math:`n`. If no starting point has been
 selected, a warning is sent."
 
 // ---------------------------------------------------------------------
@@ -234,9 +237,9 @@ Notes
 -----
 As long as the number of selected starting points is less than the number
 defined in :class:`~openturns.ResourceMap`,
-entry *RatioOfUniforms-MaximumMultistart*, a new point of the Sobol low
+entry *RatioOfUniforms-MaximumMultistart*, a new point of the Sobol' low
 discrepancy sequence of dimension :math:`\inputDim` is considered. The maximum
-points of the Sobol sequence is :math:`n`. If no starting point has been
+points of the Sobol' sequence is :math:`n`. If no starting point has been
 selected, a warning is sent."
 
 // ---------------------------------------------------------------------
@@ -272,7 +275,7 @@ A tested point :math:`\vect{x} \in I` is a starting point of the multistart algo
 Returns
 -------
 logUnscaledPDF : :class:`~openturns.Function`,
-   Function :math:`\log F` such that :math:`f = F\, 1_{I}`  is proportional to the PDF :math:`p` we want to sample."
+   Function :math:`\log F` such that :math:`f = F\, \mathbf{1}_{I}`  is proportional to the PDF :math:`p` we want to sample."
 
 // ---------------------------------------------------------------------
 %feature("docstring") OT::RatioOfUniforms::getRange
@@ -285,7 +288,7 @@ rangeF : :class:`~openturns.Interval`
 
 Notes
 -----
-As :math:`p \propto f = F\, 1_I`, then :math:`p = 0` outside :math:`I`."
+As :math:`p \propto f = F\, \mathbf{1}_I`, then :math:`p = 0` outside :math:`I`."
 
 // ---------------------------------------------------------------------
 %feature("docstring") OT::RatioOfUniforms::getAcceptanceRatio
@@ -293,13 +296,15 @@ As :math:`p \propto f = F\, 1_I`, then :math:`p = 0` outside :math:`I`."
 
 Returns
 -------
-accepRatio : float, :math:`0 \leq \tau_{accept} \leq 1`,
+acceptRatio : float, :math:`0 \leq \tau_{accept} \leq 1`,
     Acceptance ratio :math:`\tau_{accept}`.
 
 Notes
 -----
-The acceptance ratio is computed at the initialization of the class by the ethod *initialize*, according to :eq:`acceptRatio` where :math:`c=1` 
-if the class has been created with a log-PDF and estimated by :eq:`acceptRatioEstimate` in the other case."
+The acceptance ratio is computed at the initialization of the class by the method *initialize*,
+according to :eq:`acceptRatio` where :math:`c=1`
+if the class has been created with a log-PDF and estimated by :eq:`acceptRatioEstimate` in the
+other case."
 
 // ---------------------------------------------------------------------
 %feature("docstring") OT::RatioOfUniforms::setR
@@ -335,10 +340,10 @@ collMutliStart : collection of :class:`~openturns.MultiStart`
 
 Notes
 -----
-A call to that method triggers the computation of the bounding box :math:`\tilde{A}_{f,r}`
+A call to the method triggers the computation of the bounding box :math:`\tilde{A}_{f,r}`
 and the estimation of the acceptance ratio.
 
-The methods returns a collection of multistart optimization algorithms containing:
+The method returns a collection of multistart optimization algorithms containing:
 
 - the multistart optimization algorithm used to compute :math:`u_{sup}`,
 - for each :math:`i`, the multistart optimization algorithm used to compute :math:`v_{inf, i}` if required, the one used to
