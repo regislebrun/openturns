@@ -130,6 +130,22 @@ We assign to :math:`\inputRV_{\overline{\cI}}|\inputRV_\cI = \vect{x}_\cI` the n
     \cD \left(\vect{X}_{\overline{\cI}}|\vect{X}_\cI = \vect{x}_\cI \right) = \prod_{i\in \overline{\cI}} \left[ x_i^{min},
     x_i^{max}\right]
 
+The default integration algorithm is :class:`openturns.experimental.CubaIntegration` if available
+(or :class:`openturns.GaussKronrod` in dimension) or else :class:`openturns.SimplicialCubature`.
+
+Various :class:`~openturns.ResourceMap` entries allow for a more fine-grained control over the distribution:
+
+- The string entry `PointConditionalDistribution-CubaAlgorithm` defines the default Cuba algorithm name used.
+- The string entry `PointConditionalDistribution-OptimizationAlgorithm` defines the default optimization algorithm name used.
+- The integer entry `PointConditionalDistribution-RatioUniformCandidateNumber` sets the number
+  of candidates to find a feasible points for the ration of uniforms method initialization.
+- The integer entry `PointConditionalDistribution-SmallDimension` is the dimension threshold
+  from which to switch to CDF inversion sampling instead of ratio of uniforms (for continuous distribution).
+- The boolean entry `PointConditionalDistribution-UseSimplifiedVersion` decides if simplification is enabled.
+- The boolean entry `PointConditionalDistribution-InitializeTransformation` decides whether
+  to initialize the iso-proabilistic transformation.
+- The boolean entry `PointConditionalDistribution-InitializeSampling` decides whether to initialize the ratio of uniforms method.
+
 Examples
 --------
 >>> import openturns as ot
@@ -181,7 +197,16 @@ conditioningValues : :class:`~openturns.Point`
 Returns
 -------
 simplified : :class:`~openturns.Distribution`
-    Simplified distribution when an analytical simplification is available."
+    Simplified distribution in the following cases:
+
+    - no conditionning (empty indices)
+    - independent copula
+    - elliptical distributions (Normal, Student)
+    - JointDistribution, BlockIndependentDistribution, BlockIndependentCopula
+    - Mixture, KernelMixture
+    - Bernstein copula
+
+"
 
 // ---------------------------------------------------------------------
 
@@ -192,7 +217,8 @@ Returns
 -------
 algo : :class:`~openturns.IntegrationAlgorithm`
     Integration algorithm used to compute the CDF.
-    Default value is :class:`openturns.experimental.CubaIntegration` if available or else :class:`openturns.SimplicialCubature`."
+    Default value is :class:`openturns.experimental.CubaIntegration`
+    if available or else :class:`openturns.SimplicialCubature`."
 
 // ---------------------------------------------------------------------
 
@@ -203,4 +229,5 @@ Parameters
 ----------
 algo : :class:`~openturns.IntegrationAlgorithm`
     Integration algorithm used to compute the CDF.
-    Default value is :class:`openturns.experimental.CubaIntegration` if available or else :class:`openturns.SimplicialCubature`."
+    Default value is :class:`openturns.experimental.CubaIntegration`
+    if available or else :class:`openturns.SimplicialCubature`."
