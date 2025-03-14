@@ -105,7 +105,7 @@ PointConditionalDistribution::PointConditionalDistribution(const Distribution & 
 	{
 	  // If we are in the case of a symmetric bivariate copula (elliptical or archimedean), then X0|X1=x is the same as X1|X0=x
 	  // but only the last one allows for the use of generic methods. Change the conditioning order in this case
-	  if ((distribution.getDimension() == 2) && distribution.isCopula() && (conditioningIndices[0] == 1))
+	  if ((conditioningSize > 0) && (distribution.getDimension() == 2) && distribution.isCopula() && (conditioningIndices[0] == 1))
 	    {
 	      // elliptical case: swap the conditioning
 	      if (distribution.hasIndependentCopula())
@@ -119,7 +119,7 @@ PointConditionalDistribution::PointConditionalDistribution(const Distribution & 
 		} // No elliptical copula
 	    } // bivariate copula to swap
 	  // Now, check if the last component is the one conditioned by the others
-	  useGenericConditionalMethods_ = (conditioningIndices[conditioningSize - 1] == (fullDimension - 2));
+	  useGenericConditionalMethods_ = (conditioningSize > 0) && (conditioningIndices[conditioningSize - 1] == (fullDimension - 2));
 	} // conditioningSize == fullDimension - 1
       else
 	useGenericConditionalMethods_ = false;
