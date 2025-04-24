@@ -43,6 +43,7 @@
 #include "openturns/DomainEvent.hxx"
 #include "openturns/PlatformInfo.hxx"
 #include "openturns/GaussKronrod.hxx"
+#include "openturns/Brent.hxx"
 #include "openturns/DistFunc.hxx"
 #include "openturns/SobolSequence.hxx"
 #include "openturns/MarginalTransformationEvaluation.hxx"
@@ -125,7 +126,9 @@ PointConditionalDistribution::PointConditionalDistribution(const Distribution & 
 	useGenericConditionalMethods_ = false;
     } // useGenericConditionalMethods_ from ResourceMap
   // it is ok to condition continuous marginals by a discrete one and vice-versa
+  std::cerr << "get marginal" << std::endl;
   const Distribution marginalConditioned(distribution.getMarginal(conditioningIndices.complement(fullDimension)));
+  std::cerr << "get marginal -> ok" << std::endl;
   if (!marginalConditioned.isDiscrete() && !marginalConditioned.isContinuous())
     throw NotYetImplementedException(HERE) << "PointConditionalDistribution for mixed continuous/discrete case";
 
@@ -153,7 +156,9 @@ PointConditionalDistribution::PointConditionalDistribution(const Distribution & 
       integrationAlgorithm_ = SimplicialCubature();
     }
   }
+  std::cerr << "before update()" << std::endl;
   update();
+  std::cerr << "after update()" << std::endl;
 }
 
 /* Comparison operator */
@@ -362,7 +367,9 @@ void PointConditionalDistribution::update()
   if (!useSimplifiedVersion_)
     marginalConditionedDistribution_ = distribution_.getMarginal(nonConditioningIndices_);
 
+  std::cerr << "Before computeRange" << std::endl;
   computeRange();
+  std::cerr << "After computeRange" << std::endl;
   isAlreadyComputedMean_ = false;
   isAlreadyComputedCovariance_ = false;
 
@@ -402,6 +409,7 @@ void PointConditionalDistribution::update()
     conditioningCDF_.resize(conditioningIndices_.getSize());
     LOGDEBUG(OSS() << "conditioningCDF_=" << conditioningCDF_);
   }
+  std::cerr << "Leave update()" << std::endl;
 }
 
 
@@ -616,6 +624,69 @@ Distribution PointConditionalDistribution::getSimplifiedVersion() const
   return useSimplifiedVersion_ ? simplifiedVersion_ : *this;
 }
 
+namespace
+{
+  class StudentTailFunction: public EvaluationImplementation
+  {
+  public:
+    StudentTailFunction(const Scalar rho)
+      : EvaluationImplementation()
+      , scale_(std::sqrt((1.0 - rho) / (1.0 + rho)))
+    {
+      // Nothing to do
+    }
+
+    StudentTailFunction * clone() const override
+    {
+      return new StudentTailFunction(*this);
+    }
+
+    Point operator() (const Point & point) const override
+    {
+      const Scalar nu = point[0];
+      const Scalar t = 2.0 * DistFunc::pStudent(nu + 1.0, -std::sqrt(1.0 + nu) * scale_);
+      return {t};
+    }
+
+    UnsignedInteger getInputDimension() const override
+    {
+      return 1;
+    }
+
+    UnsignedInteger getOutputDimension() const override
+    {
+      return 1;
+    }
+
+    Description getInputDescription() const override
+    {
+      return {"nu"};
+    }
+
+    Description getOutputDescription() const override
+    {
+      return {"lambda"};
+    }
+
+    String __repr__() const override
+    {
+      OSS oss;
+      oss << "StudentTailFunction(scale=" << scale_ << ")";
+      return oss;
+    }
+
+    String __str__(const String & ) const override
+    {
+      OSS oss;
+      oss << "StudentTailFunction(scale=" << scale_ << ")";
+      return oss;
+    }
+
+  private:
+    Scalar scale_ = 1.0;
+  };  // class StudentTailFunction
+} // Anonymous namespace
+
 /* Compute the numerical range of the distribution given the parameters values */
 void PointConditionalDistribution::computeRange()
 {
@@ -637,6 +708,12 @@ void PointConditionalDistribution::computeRange()
     // same marginals and a normal copula having the same Spearman
     // correlation. In addition to the Spearman correlation one has to
     // extract all the 1D marginal distributions.
+    // Strategy four [StudentCopula], robust but slow: the conditioning acts
+    // on the marginal range the same way it acts on a distribution with the
+    // same marginals and a student copula having the same Kendall
+    // concordance and tail dependence. In addition to the Kendall concordance
+    // one has to extract all the 1D marginal distributions and to compute
+    // the tail dependence
     const String adaptationMethod(ResourceMap::GetAsString("PointConditionalDistribution-RangeAdaptationMethod"));
     // The marginal range
     const Interval marginalRange(distribution_.getRange().getMarginal(nonConditioningIndices_));
@@ -661,7 +738,7 @@ void PointConditionalDistribution::computeRange()
 	conditionedRange.setUpperBound(normalConditionedRange.getUpperBound());
       } // Strategy = Normal
       // Third strategy
-      else
+      else if (adaptationMethod == "NormalCopula")
       {
         const UnsignedInteger dimension = distribution_.getDimension();
         const Point mean(dimension, 0.0);
@@ -694,6 +771,76 @@ void PointConditionalDistribution::computeRange()
         conditionedRange.setUpperBound(T(y));
         setRange(conditionedRange);
       } // Strategy == NormalCopula
+      // Fourth strategy
+      else
+      {
+        const UnsignedInteger dimension = distribution_.getDimension();
+        const Point mean(dimension, 0.0);
+	const CorrelationMatrix Rkendall(distribution_.getKendallTau());
+	LOGDEBUG(OSS() << "Rkendall=" << Rkendall);
+	// The relationship between the Student copula correlation and the Kendall tau
+	// is the same as for the normal copula (true for all the elliptical copulas)
+        const CovarianceMatrix covariance(NormalCopula::GetCorrelationFromKendallCorrelation(Rkendall));
+	LOGDEBUG(OSS() << "covariance=" << covariance);
+	// Compute nu using the tail dependence
+	const CorrelationMatrix upperTail(distribution_.computeUpperTailDependenceMatrix());
+	LOGDEBUG(OSS() << "upperTail=" << upperTail);
+	const CorrelationMatrix lowerTail(distribution_.computeLowerTailDependenceMatrix());
+	LOGDEBUG(OSS() << "lowerTail=" << lowerTail);
+	Scalar nu = SpecFunc::MaxScalar;
+	const Scalar minNu = ResourceMap::GetAsScalar("PointConditionalDistribution-MinNu");
+	const Scalar maxNu = ResourceMap::GetAsScalar("PointConditionalDistribution-MaxNu");
+	for (UnsignedInteger j = 0; j < dimension; ++j)
+	  {
+	  for (UnsignedInteger i = 0; i < j; ++i)
+	    {
+	      const Scalar maxTailIJ = std::max(upperTail(i, j), lowerTail(i, j));
+	      try
+		{
+		  const Function tailFunction(StudentTailFunction(covariance(i, j)));
+		  // Here we have to solve a nonlinear equation
+		  const Scalar nuIJ = Brent().solve(tailFunction, maxTailIJ, minNu, maxNu);
+		  nu = std::min(nu, nuIJ);
+		  std::cerr << "nuIJ=" << nuIJ << ", nu=" << nu << std::endl;
+		}
+	      catch (const Exception &)
+	      {
+		// Nothing to do
+		std::cerr << "Impossible to solve nu for lambda=" << maxTailIJ << " with rho=" << covariance(i, j) << std::endl;
+	      }
+	    } // i
+	  } // j
+        const Student student(nu, mean, covariance);
+        // Extract the marginal distributions
+        Collection<Distribution> marginals(dimension);
+        for (UnsignedInteger i = 0; i < dimension; ++i)
+          marginals[i] = distribution_.getMarginal(i);
+        // Compute the equivalent normal conditioning values
+        const UnsignedInteger conditioningDimension = conditioningIndices_.getSize();
+        Collection<Distribution> conditioningMarginals(conditioningDimension);
+        for (UnsignedInteger i = 0; i < conditioningDimension; ++i)
+          conditioningMarginals[i] = marginals[conditioningIndices_[i]];
+        const Point studentConditioningValues(MarginalTransformationEvaluation(conditioningMarginals, Collection<Distribution>(conditioningDimension, Student(nu, 0.0, 1.0)))(conditioningValues_));
+        CovarianceMatrix C;
+        const Point mu = decompose(student, conditioningIndices_, nonConditioningIndices_, studentConditioningValues, C);
+	const Point mY(studentConditioningValues - mu.select(conditioningIndices_));
+	const Scalar dy = mY.dot(student.getMarginal(conditioningIndices_).getCovariance().solveLinearSystem(mY));
+	const UnsignedInteger py = conditioningIndices_.getSize();
+	C = CovarianceMatrix((C * std::sqrt((nu + dy) / (nu + py))).getImplementation());
+	const Student conditionedStudent(nu + py, mu, C);
+        const Interval studentConditionedRange(conditionedStudent.getRange());
+        // Adapt the range using marginal quantiles
+        const Point x(studentConditionedRange.getLowerBound());
+        const Point y(studentConditionedRange.getUpperBound());
+        const UnsignedInteger conditionedDimension = nonConditioningIndices_.getSize();
+        Collection<Distribution> conditionedMarginals(conditionedDimension);
+        for (UnsignedInteger i = 0; i < conditionedDimension; ++i)
+          conditionedMarginals[i] = marginals[nonConditioningIndices_[i]];
+        const MarginalTransformationEvaluation T(Collection<Distribution>(conditionedDimension, Student(nu, 0.0, 1.0)), conditionedMarginals);
+        conditionedRange.setLowerBound(T(x));
+        conditionedRange.setUpperBound(T(y));
+        setRange(conditionedRange);
+      } // Strategy == StudentCopula
     } // Strategy != None
   } // !useSimplifiedVersion_
 }
@@ -790,7 +937,9 @@ Scalar PointConditionalDistribution::computeLogPDF(const Point & point) const
     return simplifiedVersion_.computeLogPDF(point);
   if (useGenericConditionalMethods_)
     return std::log(distribution_.computeConditionalPDF(point[0], conditioningValues_));
-  return distribution_.computeLogPDF(expandPoint(point)) - logNormalizationFactor_;
+  const Scalar distributionLogPDF = distribution_.computeLogPDF(expandPoint(point));
+  std::cerr << "point=" << point << ", distributionLogPDF=" << distributionLogPDF << ", logNormalizationFactor_=" << logNormalizationFactor_ << std::endl;
+  return distributionLogPDF - logNormalizationFactor_;
 }
 
 /* Get the PDF of the distribution */
@@ -836,6 +985,7 @@ Scalar PointConditionalDistribution::computeProbability(const Interval & interva
     if (isContinuous())
     {
       // Build the relevant parametric function to be integrated over the remaining parameters
+      std::cerr << "In PointConditionalDistribution::computeProbability, interval=" << interval << std::endl;
       const ParametricFunction kernel(PDFWrapper(distribution_.getImplementation()->clone()), conditioningIndices_, conditioningValues_);
       probability = integrationAlgorithm_.integrate(kernel, intersection)[0] / std::exp(logNormalizationFactor_);
     }

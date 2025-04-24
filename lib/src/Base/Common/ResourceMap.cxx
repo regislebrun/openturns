@@ -1160,9 +1160,11 @@ void ResourceMap::loadDefaultConfiguration()
   addAsBool("PointConditionalDistribution-InitializeTransformation", true);
   addAsBool("PointConditionalDistribution-UseSimplifiedVersion", true);
   addAsBool("PointConditionalDistribution-UseGenericConditionalMethods", true);
+  addAsScalar("PointConditionalDistribution-MinNu", 1.0);
+  addAsScalar("PointConditionalDistribution-MaxNu", 100.0);
   addAsString("PointConditionalDistribution-CubaAlgorithm", "cuhre", {"cuhre", "divonne", "suave", "vegas"});
   addAsString("PointConditionalDistribution-OptimizationAlgorithm", "Cobyla");
-  addAsString("PointConditionalDistribution-RangeAdaptationMethod", "NormalCopula", {"None", "Normal", "NormalCopula"});
+  addAsString("PointConditionalDistribution-RangeAdaptationMethod", "NormalCopula", {"None", "Normal", "NormalCopula", "StudentCopula"});
   addAsUnsignedInteger("PointConditionalDistribution-RatioUniformCandidateNumber", 10000);
   addAsUnsignedInteger("PointConditionalDistribution-SmallDimension", 6);
 
