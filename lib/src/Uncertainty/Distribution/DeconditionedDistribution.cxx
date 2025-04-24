@@ -20,15 +20,12 @@
  */
 #include <cmath>
 #include "openturns/DeconditionedDistribution.hxx"
-#include "openturns/JointDistribution.hxx"
 #include "openturns/Dirac.hxx"
 #include "openturns/Uniform.hxx"
 #include "openturns/Box.hxx"
-#include "openturns/WeightedExperiment.hxx"
-#include "openturns/GaussProductExperiment.hxx"
-#include "openturns/LowDiscrepancyExperiment.hxx"
-#include "openturns/MonteCarloExperiment.hxx"
 #include "openturns/SobolSequence.hxx"
+#include "openturns/GaussLegendre.hxx"
+#include "openturns/RandomGenerator.hxx"
 #include "openturns/PersistentObjectFactory.hxx"
 #include "openturns/SymbolicFunction.hxx"
 #include "openturns/IdentityFunction.hxx"
@@ -232,12 +229,15 @@ void DeconditionedDistribution::setConditionedAndConditioningDistributionsAndLin
     else
       throw InvalidArgumentException(HERE) << "Error: the conditioning marginal distributions must be either continuous or discrete, here marginal " << i << "=" << marginal << " is neither continuous nor discrete";
   } // Loop over the marginal distributions
-  // Integration measure for the continuous parameters
   const UnsignedInteger continuousDimension = continuousMarginalsIndices_.getSize();
+  const UnsignedInteger discreteDimension = discreteMarginalsIndices_.getSize();
+  // Waiting for the correct formulation of the mixed case
+  if ((continuousDimension > 0) && (discreteDimension > 0) && !conditioningDistribution.hasIndependentCopula()) throw NotYetImplementedException(HERE) << "Error: a conditioning distribution with both continuous and discrete marginals must have the independent copula";
+  const UnsignedInteger diracDimension = diracMarginalsIndices_.getSize();
+  // Integration measure for the continuous parameters
   UnsignedInteger continuousAtomsNumber = 0;
   if (continuousDimension > 0)
   {
-    const JointDistribution measure(Collection< Distribution >(continuousDimension, Uniform()));
     // Create the DOE for continuous integration
     const String method(ResourceMap::GetAsString("DeconditionedDistribution-ContinuousDiscretizationMethod"));
     const UnsignedInteger maximumIntegrationNumber = ResourceMap::GetAsUnsignedInteger( "DeconditionedDistribution-MaximumIntegrationNodesNumber" );
@@ -245,14 +245,24 @@ void DeconditionedDistribution::setConditionedAndConditioningDistributionsAndLin
     const UnsignedInteger maximumNumber = static_cast< UnsignedInteger > (round(std::pow(maximumIntegrationNumber, 1.0 / continuousDimension)));
     const UnsignedInteger candidateNumber = ResourceMap::GetAsUnsignedInteger( "DeconditionedDistribution-MarginalIntegrationNodesNumber" );
     if (candidateNumber > maximumNumber) LOGWARN(OSS() << "Warning! The requested number of marginal integration nodes=" << candidateNumber << " would lead to an excessive number of integration nodes=" << std::pow(candidateNumber, 1.0 * continuousDimension) << ". It has been reduced to " << maximumNumber << ". You should increase the ResourceMap key \"DeconditionedDistribution-MaximumIntegrationNodesNumber\" or decrease the ResourceMap key \"DeconditionedDistribution-MarginalIntegrationNodesNumber\"");
-    WeightedExperiment experiment;
     if (method == "GaussProduct")
-      experiment = GaussProductExperiment(measure, Indices(continuousDimension, std::min(maximumNumber, candidateNumber)));
+      {
+	const GaussLegendre algo(Indices(continuousDimension, std::min(maximumNumber, candidateNumber)));
+	continuousNodes_ = algo.getNodes();
+	continuousWeights_ = algo.getWeights();
+      }
     else if (method == "QMC")
-      experiment = LowDiscrepancyExperiment(SobolSequence(), measure, maximumIntegrationNumber);
+      {
+	continuousNodes_ = SobolSequence(continuousDimension).generate(maximumIntegrationNumber);
+	continuousWeights_ = Point(maximumIntegrationNumber, 1.0 / maximumIntegrationNumber);
+      }
     else
-      experiment = MonteCarloExperiment(measure, maximumIntegrationNumber);
-    continuousNodes_ = experiment.generateWithWeights(continuousWeights_);
+      {
+	SampleImplementation sample(maximumIntegrationNumber, continuousDimension);
+	sample.setData(RandomGenerator::Generate(continuousDimension * maximumIntegrationNumber));
+	continuousNodes_ = sample;
+	continuousWeights_ = Point(maximumIntegrationNumber, 1.0 / maximumIntegrationNumber);
+      }
     // Also adapt the integration nodes number in the upper class
     setIntegrationNodesNumber(std::min(maximumNumber, candidateNumber));
     // Normalization factor for the weights
@@ -262,7 +272,6 @@ void DeconditionedDistribution::setConditionedAndConditioningDistributionsAndLin
   } // continuousDimension > 0
 
   // Integration measure for the discrete parameters
-  const UnsignedInteger discreteDimension = discreteMarginalsIndices_.getSize();
   UnsignedInteger discreteAtomsNumber = 0;
   if (discreteDimension > 0)
   {
@@ -285,7 +294,6 @@ void DeconditionedDistribution::setConditionedAndConditioningDistributionsAndLin
     } // Loop over the discrete atoms
   } // discreteDimension > 0
   // Integration measure for the Dirac parameters
-  const UnsignedInteger diracDimension = diracMarginalsIndices_.getSize();
   /********************************
    * Build the equivalent mixture
    ********************************/
@@ -358,7 +366,7 @@ void DeconditionedDistribution::setConditionedAndConditioningDistributionsAndLin
     {
       // Complete the filling of theta using the Gauss integration node
       for (UnsignedInteger j = 0; j < continuousDimension; ++j)
-        currentY(i, continuousMarginalsIndices_[j]) = continuousLowerBounds_[j] + 0.5 * (1.0 + continuousNodes_(i, j)) * (continuousUpperBounds_[j] - continuousLowerBounds_[j]);
+        currentY(i, continuousMarginalsIndices_[j]) = continuousLowerBounds_[j] + continuousNodes_(i, j) * (continuousUpperBounds_[j] - continuousLowerBounds_[j]);
     }
     const Sample yPDF(conditioningDistribution.computePDF(currentY));
     const Sample parameters(linkFunction_(currentY));
@@ -406,7 +414,7 @@ void DeconditionedDistribution::setConditionedAndConditioningDistributionsAndLin
     {
       // Complete the filling of theta using the Gauss integration node
       for (UnsignedInteger k = 0; k < continuousDimension; ++k)
-        currentY[continuousMarginalsIndices_[k]] = continuousLowerBounds_[k] + 0.5 * (1.0 + continuousNodes_(j, k)) * (continuousUpperBounds_[k] - continuousLowerBounds_[k]);
+        currentY[continuousMarginalsIndices_[k]] = continuousLowerBounds_[k] + continuousNodes_(j, k) * (continuousUpperBounds_[k] - continuousLowerBounds_[k]);
       currentYs.add(currentY);
     }
   }
@@ -528,7 +536,7 @@ Point DeconditionedDistribution::computeExpectation(const Function & f,
     {
       // Complete the filling of theta using the Gauss integration node
       for (UnsignedInteger j = 0; j < continuousDimension; ++j)
-        currentTheta(i, continuousMarginalsIndices_[j]) = continuousLowerBounds_[j] + 0.5 * (1.0 + continuousNodes_(i, j)) * (subPoint[j] - continuousLowerBounds_[j]);
+        currentTheta(i, continuousMarginalsIndices_[j]) = continuousLowerBounds_[j] + continuousNodes_(i, j) * (subPoint[j] - continuousLowerBounds_[j]);
     }
     const Sample thetaPDF(conditioningDistribution_.computePDF(currentTheta));
     const Sample fTheta(f(currentTheta));
@@ -577,7 +585,7 @@ Point DeconditionedDistribution::computeExpectation(const Function & f,
       {
         // Complete the filling of theta using the Gauss integration node
         for (UnsignedInteger k = 0; k < continuousDimension; ++k)
-          currentTheta[continuousMarginalsIndices_[k]] = continuousLowerBounds_[k] + 0.5 * (1.0 + continuousNodes_(j, k)) * (subPoint[k] - continuousLowerBounds_[k]);
+          currentTheta[continuousMarginalsIndices_[k]] = continuousLowerBounds_[k] + continuousNodes_(j, k) * (subPoint[k] - continuousLowerBounds_[k]);
         currentThetas.add(currentTheta);
       } // Continuous atoms
     }
@@ -647,6 +655,13 @@ void DeconditionedDistribution::load(Advocate & adv)
   adv.loadAttribute( "continuousUpperBounds_", continuousUpperBounds_ );
   adv.loadAttribute( "continuousNodes_", continuousNodes_ );
   adv.loadAttribute( "continuousWeights_", continuousWeights_ );
+  if (adv.getStudyVersion() <= 102400)
+    {
+      // Nodes are in [-1.0, 1.0] in version <= 1.24
+      continuousNodes_ += 1.0;
+      continuousNodes_ *= 0.5;
+      continuousWeights_ *= 2.0;
+    }
   adv.loadAttribute( "discreteNodes_", discreteNodes_ );
   adv.loadAttribute( "diracValues_", diracValues_ );
   // The range is computed using the upper class
