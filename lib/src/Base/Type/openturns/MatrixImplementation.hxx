@@ -326,6 +326,10 @@ public:
   /** Compute the Gram matrix associated to the matrix. If transpose == true, compute M^T.M, else M.M^T. */
   virtual MatrixImplementation computeGram(const Bool transpose = true) const;
 
+  /** Scale the matrix M by a diagonal matrix D: returns D * M with D = diag(d) */
+  virtual MatrixImplementation scaleDiagonal(const Point & d) const;
+  virtual void scaleDiagonalInPlace(const Point & d);
+
   /** Comparison operators */
   using PersistentCollection::operator ==;
   Bool operator == (const MatrixImplementation & rhs) const;

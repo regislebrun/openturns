@@ -287,6 +287,18 @@ Matrix Matrix::computeQRInPlace(Matrix & R, const Bool fullQR)
   return getImplementation()->computeQRInPlace(*(R.getImplementation()), fullQR);
 }
 
+/* Scale the matrix by a diagonal matrix B = D * A with D = diag(d) */
+Matrix Matrix::scaleDiagonal(const Point & d) const
+{
+  return getImplementation()->scaleDiagonal(d);
+}
+
+void Matrix::scaleDiagonalInPlace(const Point & d)
+{
+  copyOnWrite();
+  return getImplementation()->scaleDiagonalInPlace(d);
+}
+
 /* Empty returns true if there is no element in the matrix */
 Bool Matrix::isEmpty() const
 {

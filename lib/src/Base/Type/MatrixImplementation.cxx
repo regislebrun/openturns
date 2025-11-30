@@ -1710,6 +1710,26 @@ MatrixImplementation MatrixImplementation::computeQRInPlace(MatrixImplementation
   return *this;
 }
 
+/* Scale the matrix by a diagonal matrix B = D * A with D = diag(d) */
+MatrixImplementation MatrixImplementation::scaleDiagonal(const Point & d) const
+{
+  MatrixImplementation X(*this);
+  X.scaleDiagonalInPlace(d);
+  return X;
+}
+
+void MatrixImplementation::scaleDiagonalInPlace(const Point & d)
+{
+  int m = nbRows_;
+  if (d.getSize() != m) throw InvalidArgumentException(HERE) << "Expected a vector of diagonal elements of size=" << m << ", got size=" << d.getSize();
+  int n = nbColumns_;
+  // Not in OpenBLAS
+  // dlascl2_(&m, &n, const_cast<double*>(&d[0]), const_cast<double*>(&(*this)(0, 0)), &m);
+  for (UnsignedInteger j = 0; j < n; ++j)
+    for (UnsignedInteger i = 0; i < m; ++i)
+      (*this)(i, j) *= d[i];
+}
+
 /* Method save() stores the object through the StorageManager */
 void MatrixImplementation::save(Advocate & adv) const
 {

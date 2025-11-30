@@ -172,6 +172,10 @@ public:
   virtual Matrix computeQR(Matrix & ROut, const Bool fullQR = false) const;
   virtual Matrix computeQRInPlace(Matrix & ROut, const Bool fullQR = false);
 
+  /** Scale the matrix M by a diagonal matrix D: returns D * M with D = diag(d) */
+  virtual Matrix scaleDiagonal(const Point & d) const;
+  virtual void scaleDiagonalInPlace(const Point & d);
+
   /** Compute the associated Gram matrix */
   virtual CovarianceMatrix computeGram(const Bool transpose = true) const;
 

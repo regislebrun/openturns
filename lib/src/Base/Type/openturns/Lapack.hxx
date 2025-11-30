@@ -185,6 +185,9 @@ void zgelsy_(int *m, int *n, int *nrhs, std::complex<double> *A, int *lda, std::
 /** Function dposv is to be used to solve a linear system with a symmetric definite positive matrix */
 void dposv_(char *uplo, int *n, int *nrhs, double *A, int *lda, double *B, int *ldb, int *info, int *luplo);
 
+/** Function dlascl2 is to be used to perform a diagonal scaling of a matrix */
+// void dlascl2_(int *m, int *n, double *d, double *x, int *ldx);
+
 END_C_DECLS
 
 #endif /* OPENTURNS_LAPACK_HXX */
