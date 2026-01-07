@@ -135,11 +135,11 @@ OT_LeastSquaresMethod_solve_doc
 // ---------------------------------------------------------------------
 
 %define OT_LeastSquaresMethod_solveNormal_doc
-"Solve the least-squares problem using normal equation.
+R"RAW(Solve the least-squares problem using normal equation.
 
 .. math::
 
-    M^T*M*x=M^T*b
+    (\Tr{M}M)x=\Tr{M}b
 
 Parameters
 ----------
@@ -149,7 +149,7 @@ b : sequence of float
 Returns
 -------
 x : :class:`~openturns.Point`
-    The solution."
+The solution.)RAW"
 %enddef
 %feature("docstring") OT::LeastSquaresMethodImplementation::solveNormal
 OT_LeastSquaresMethod_solveNormal_doc
@@ -157,16 +157,16 @@ OT_LeastSquaresMethod_solveNormal_doc
 // ---------------------------------------------------------------------
 
 %define OT_LeastSquaresMethod_getGramInverse_doc
-"Get the inverse Gram matrix of input sample.
+R"RAW(Get the inverse Gram matrix of input sample.
 
 .. math::
 
-    G^{-1} = (X^T * X)^{-1}
+    G^{-1} = (\Tr{X}X)^{-1}
 
 Returns
 -------
 c : :class:`~openturns.CovarianceMatrix`
-    The inverse Gram matrix."
+The inverse Gram matrix.)RAW"
 %enddef
 %feature("docstring") OT::LeastSquaresMethodImplementation::getGramInverse
 OT_LeastSquaresMethod_getGramInverse_doc
@@ -178,7 +178,7 @@ OT_LeastSquaresMethod_getGramInverse_doc
 
 .. math::
 
-    diag(G^{-1}) = diag((X^T * X)^{-1})
+    diag(G^{-1}) = diag((\Tr{X} X)^{-1})
 
 Returns
 -------
@@ -195,7 +195,7 @@ OT_LeastSquaresMethod_getGramInverseDiag_doc
 
 .. math::
 
-    Tr(G^{-1}) = Tr(x^T * x)^{-1}
+\trace{(G^{-1})} = \trace{(\Tr{X}X)^{-1}}
 
 Returns
 -------
@@ -212,7 +212,7 @@ OT_LeastSquaresMethod_getGramInverseTrace_doc
 
 .. math::
 
-    H = X * (X^T * X)^{-1} * X^T
+    H = X(\Tr{X}X)^{-1}\Tr{X}
 
 Returns
 -------
@@ -229,7 +229,7 @@ OT_LeastSquaresMethod_getH_doc
 
 .. math::
 
-    H = X * (X^T * X)^{-1} * X^T
+    H = X(\Tr{X}X)^{-1}\Tr{X}
 
 Returns
 -------
