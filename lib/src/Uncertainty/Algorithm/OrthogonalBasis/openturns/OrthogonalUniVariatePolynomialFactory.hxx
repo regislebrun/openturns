@@ -79,6 +79,15 @@ public:
   /** Measure accessor */
   Distribution getMeasure() const;
 
+  /** Affine coefficients accessors */
+  Scalar getA() const;
+ protected:
+  void setA(const Scalar a);
+ public:
+  Scalar getB() const;
+ protected:
+  void setB(const Scalar b);
+ public:
   /** Method save() stores the object through the StorageManager */
   void save(Advocate & adv) const override;
 
@@ -102,6 +111,10 @@ protected:
 
   /** The distribution of the particular Orthonormal polynomial */
   Distribution measure_;
+
+  /** The affine transformation mapping the measure to its standard representative */
+  Scalar a_ = 1.0;
+  Scalar b_ = 0.0;
 
   /** A cache to save already computed coefficients */
   mutable CoefficientsPersistentCollection coefficientsCache_;
