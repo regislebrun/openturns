@@ -566,7 +566,7 @@ ot_add_python_module(experimental experimental_module.i
                      UniVariateDistributionPolynomialFactory.i UniVariateDistributionPolynomialFactory_doc.i
                      VonMisesFisher.i VonMisesFisher_doc.i
                      VonMisesFisherFactory.i VonMisesFisherFactory_doc.i
-                    )
+                     UniVariateDistributionPolynomialFactory.i UniVariateDistributionPolynomialFactory_doc.i
 ot_add_python_module(model_process model_process_module.i
                       WhiteNoise.i WhiteNoise_doc.i
                       RandomWalk.i RandomWalk_doc.i
