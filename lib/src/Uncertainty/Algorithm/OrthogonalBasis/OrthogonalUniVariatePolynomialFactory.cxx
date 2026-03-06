@@ -56,6 +56,14 @@ OrthogonalUniVariatePolynomialFactory::OrthogonalUniVariatePolynomialFactory(con
 {
   // The derived class will have to call initializeCaches().
   if (measure.getDimension() != 1) throw InvalidArgumentException(HERE) << "Error, expected a distribution of dimension 1, got dimension=" << measure.getDimension();
+  const Interval initialRange(measure.getRange());
+  const Scalar ai = initialRange.getLowerBound()[0];
+  const Scalar bi = initialRange.getUpperBound()[0];
+  const Interval standardRange(measure.getStandardRepresentative().getRange());
+  const Scalar as = standardRange.getLowerBound()[0];
+  const Scalar bs = standardRange.getUpperBound()[0];
+  a_ = (bs - as) / (bi - ai);
+  b_ = (as * bi - bs * ai) / (bi - ai);
 }
 
 
@@ -80,7 +88,7 @@ OrthogonalUniVariatePolynomial OrthogonalUniVariatePolynomialFactory::build(cons
   const UnsignedInteger cacheSize = polynomialsCache_.getSize();
   if (degree < cacheSize) return polynomialsCache_[degree];
   for (UnsignedInteger i = cacheSize; i <= degree; ++i)
-    polynomialsCache_.add(OrthogonalUniVariatePolynomial(buildRecurrenceCoefficientsCollection(i), buildCoefficients(i)));
+    polynomialsCache_.add(OrthogonalUniVariatePolynomial(buildRecurrenceCoefficientsCollection(i), buildCoefficients(i), a_, b_));
   return polynomialsCache_[degree];
 }
 

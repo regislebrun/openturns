@@ -54,9 +54,13 @@ OrthogonalUniVariatePolynomial::OrthogonalUniVariatePolynomial(const Sample & re
 
 /* Constructor from recurrence coefficients and coefficients */
 OrthogonalUniVariatePolynomial::OrthogonalUniVariatePolynomial(const Sample & recurrenceCoefficients,
-    const Coefficients & coefficients)
+							       const Coefficients & coefficients,
+							       const Scalar a,
+							       const Scalar b)
   : UniVariatePolynomialImplementation()
   , recurrenceCoefficients_(recurrenceCoefficients.getImplementation()->getData())
+  , a_(a)
+  , b_(b)
 {
   // Set the value of the coefficients, stored in the upper class
   coefficients_ = coefficients;
@@ -68,6 +72,7 @@ OrthogonalUniVariatePolynomial::Coefficients OrthogonalUniVariatePolynomial::bui
 {
   // Constant polynomial equals to 1
   if (n == 0) return Coefficients(1, 1.0);
+  if ((a_ !=1.0) || (b_ != 0.0)) throw NotYetImplementedException(HERE) << "Cannot build the coefficients of an orthonormal polynomial when the affine transformation is not the identity";
   // Other cases
   Coefficients coefficientsN(n + 1);
   Coefficients coefficientsNMinus1(buildCoefficients(n - 1));
@@ -112,13 +117,15 @@ Scalar OrthogonalUniVariatePolynomial::operator() (const Scalar x) const
   Scalar uN = 1.0;
   // Special case: degree == 0, constant unitary polynomial
   if (size == 0) return uN;
+  // Apply the affine transformation
+  Scalar z = a_ * x + b_;
   UnsignedInteger index = size - 1;
   const Scalar aN2 = recurrenceCoefficients_[index];
   --index;
   const Scalar aN1 = recurrenceCoefficients_[index];
   --index;
   const Scalar aN0 = recurrenceCoefficients_[index];
-  Scalar uNMinus1 = aN0 * x + aN1;
+  Scalar uNMinus1 = aN0 * z + aN1;
   // Special case: degree == 1, affine polynomial
   if (size == 3) return uNMinus1;
   Scalar aN2uN = aN2 * uN;
@@ -126,7 +133,7 @@ Scalar OrthogonalUniVariatePolynomial::operator() (const Scalar x) const
   // General case, use Clenshaw's algorithm for a stable evaluation of the polynomial
   // The summation must be done in reverse order to get the best stability
   // The three terms recurrence relation is:
-  // Pn+1(x) = (a0[n] * x + a1[n]) * Pn(x) + a2[n] * Pn-1(x)
+  // Pn+1(z) = (a0[n] * z + a1[n]) * Pn(z) + a2[n] * Pn-1(z)
   // with P-1 = 0, P0 = 1
   Scalar aNMinus12, aNMinus11, aNMinus10;
   while (index > 0)
@@ -137,7 +144,7 @@ Scalar OrthogonalUniVariatePolynomial::operator() (const Scalar x) const
     aNMinus11 = recurrenceCoefficients_[index];
     --index;
     aNMinus10 = recurrenceCoefficients_[index];
-    uNMinus2 = (aNMinus10 * x + aNMinus11) * uNMinus1 + aN2uN;
+    uNMinus2 = (aNMinus10 * z + aNMinus11) * uNMinus1 + aN2uN;
     aN2uN = aNMinus12 * uNMinus1;
     uNMinus1 = uNMinus2;
   }
@@ -195,8 +202,29 @@ OrthogonalUniVariatePolynomial::ComplexCollection OrthogonalUniVariatePolynomial
   dstev_(&jobz, &ldz, &d[0], &e[0], &z(0, 0), &ldz, &work[0], &info, &ljobz);
   if (info != 0) throw InternalException(HERE) << "Lapack DSTEV: error code=" << info;
   ComplexCollection result(n);
-  for (UnsignedInteger i = 0; i < n; ++i) result[i] = Complex(d[i], 0.0);
+  for (UnsignedInteger i = 0; i < n; ++i) result[i] = (Complex(d[i], 0.0) - b_) / a_;
   return result;
+}
+
+/* Affine coefficients accessors */
+Scalar OrthogonalUniVariatePolynomial::getA() const
+{
+  return a_;
+}
+
+void OrthogonalUniVariatePolynomial::setA(const Scalar a)
+{
+  a_ = a;
+}
+  
+Scalar OrthogonalUniVariatePolynomial::getB() const
+{
+  return b_;
+}
+
+void OrthogonalUniVariatePolynomial::setB(const Scalar b)
+{
+  b_ = b;
 }
 
 /* Method save() stores the object through the StorageManager */
@@ -204,6 +232,8 @@ void OrthogonalUniVariatePolynomial::save(Advocate & adv) const
 {
   UniVariatePolynomialImplementation::save(adv);
   adv.saveAttribute( "recurrenceCoefficients_", recurrenceCoefficients_ );
+  adv.saveAttribute( "a_", a_ );
+  adv.saveAttribute( "b_", b_ );
 }
 
 /* Method load() reloads the object from the StorageManager */
@@ -224,6 +254,9 @@ void OrthogonalUniVariatePolynomial::load(Advocate & adv)
       for (UnsignedInteger j = 0; j < 3; ++j)
         recurrenceCoefficients_[3 * i + j] = coefficientsColl[i][j];
   }
+  // Affine transformation is introduced in version 1.17
+  if (adv.hasAttribute("a_")) adv.loadAttribute("a_", a_);
+  if (adv.hasAttribute("b_")) adv.loadAttribute("b_", b_);
 }
 
 
