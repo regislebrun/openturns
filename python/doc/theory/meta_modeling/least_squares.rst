@@ -38,7 +38,7 @@ the input vector defined by:
 
     \cX = \left\{ \vect{x}^{(1)}, \dots, \vect{x}^{(\sampleSize)} \right\},
 
-as well as the corresponding ouput vectors:
+as well as the corresponding output vectors:
 
 .. math::
 

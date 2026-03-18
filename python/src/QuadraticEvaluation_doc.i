@@ -18,16 +18,16 @@ This class implements the evaluation of a quadratic function :math:`f` defined a
 
 .. math::
 
-    f : & \Rset^d \rightarrow \Rset^p  \\
+    f : & \Rset^\inputDim \rightarrow \Rset^\outputDim  \\
         & \vect{c} + \vect{X} \mapsto \Tr{\mat{A}} ( \vect{X} - \vect{b} ) + \frac{1}{2} \Tr{( \vect{X} - \vect{b} )}.
         \underline{\underline{\underline{M}}}. ( \vect{X} - \vect{b} )
 
 where:
 
 - :math:`\mat{A}` is a matrix with :math:`d` lines and :math:`p` columns, called *linear*,
-- :math:`\vect{b}` is a vector in :math:`\Rset^d`, called *center*,
-- :math:`\vect{c}` is a  vector in :math:`\Rset^p`, called *constant*
-- :math:`\underline{\underline{\underline{M}}}` is a :math:`\Rset^p \times \Rset^d \times \Rset^d`
+- :math:`\vect{b}` is a vector in :math:`\Rset^\inputDim`, called *center*,
+- :math:`\vect{c}` is a  vector in :math:`\Rset^\outputDim`, called *constant*
+- :math:`\underline{\underline{\underline{M}}}` is a :math:`\Rset^\outputDim \times \Rset^\inputDim \times \Rset^\inputDim`
   symmetric  tensor, called *quadratic*.
 
 Examples
