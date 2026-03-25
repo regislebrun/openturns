@@ -96,6 +96,7 @@ Pareto ParetoFactory::buildMethodOfLeastSquares(const Sample & sample, const Sca
   const Sample rank(sample.rank());
   const UnsignedInteger size = sample.getSize();
   UnsignedInteger iMax;
+  UnsignedInteger iMax = size; // A guard value
   for (UnsignedInteger i = 0; i < size; ++i)
     if (rank(i, 0) == size - 1)
       {

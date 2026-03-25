@@ -89,6 +89,16 @@ The constant vector :math:`\vect{b}` is defined in :eq:`QuadraticLeastSquaresMMO
 
 // ---------------------------------------------------------------------
 
+%feature("docstring") OT::QuadraticLeastSquares::getCenter
+"Get the centering vector of the approximation.
+
+Returns
+-------
+centerVector : :class:`~openturns.Point`
+    Centering vector of the approximation, equal to :math:`c`."
+
+// ---------------------------------------------------------------------
+
 %feature("docstring") OT::QuadraticLeastSquares::getConstant
 "Get the constant vector of the approximation.
 

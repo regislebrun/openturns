@@ -88,6 +88,16 @@ The constant vector :math:`\vect{b}` is defined in :eq:`LinearLeastSquaresMMOpen
 
 // ---------------------------------------------------------------------
 
+%feature("docstring") OT::LinearLeastSquares::getCenter
+"Get the centering vector of the approximation.
+
+Returns
+-------
+centerVector : :class:`~openturns.Point`
+    Centering vector of the approximation, equal to :math:`c`."
+
+// ---------------------------------------------------------------------
+
 %feature("docstring") OT::LinearLeastSquares::getConstant
 "Get the constant vector of the approximation.
 
