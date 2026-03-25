@@ -16,21 +16,21 @@ This class estimates the meta model :math:`\metaModel: \Rset^\inputDim \rightarr
 
  .. math::
     :label: QuadraticLeastSquaresMMOpenTURNSAPI
-     \metaModel(\vect{x})  = \vect{c} + \vect{X} \mapsto \Tr{\mat{L}} ( \vect{X} - \vect{b} )
-     + \frac{1}{2} \Tr{( \vect{X} - \vect{b} )}.\underline{\underline{\underline{M}}}. ( \vect{X} - \vect{b} )
+     \metaModel(\vect{x})  = \vect{c} + \Tr{\mat{L}} ( \vect{x} - \vect{b} )
+     + \frac{1}{2} \Tr{( \vect{x} - \vect{b} )}.\underline{\underline{\underline{M}}}. ( \vect{x} - \vect{b} )
 
 from an experimental design :math:`\cX` of size :math:`\sampleSize`, that is, a set of observations of
 the input vector defined by:
 
 .. math::
     :label: inputData
-    \cX = \left\{ \vect{x}^{(1)}, \dots, \vect{x}^{(\sampleSize)} \right\},
+    \cX = \left \{ \vect{x}^{(1)}, \dots, \vect{x}^{(\sampleSize)} \right \},
 
 and the corresponding output vectors:
 
 .. math::
     :label: outputData
-    \cY = \left\{ \vect{y}^{(1)}, \dots, \vect{y}^{(\sampleSize)} \right\}.
+    \cY = \left \{ \vect{y}^{(1)}, \dots, \vect{y}^{(\sampleSize)} \right \}.
 
 where :math:`\vect{y}^{(k)} = \model{ \vect{x}^{(k)}}`. 
 
@@ -75,7 +75,7 @@ The input experimental design is defined in :eq:`inputData`."
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::QuadraticLeastSquares::getCenter
-"Get the centering vector of the approximation.
+R"RAW(Get the centering vector of the approximation.
 
 Returns
 -------
@@ -84,23 +84,13 @@ centerVector : :class:`~openturns.Point`
     
 Notes
 -----
-The constant vector :math:`\vect{b}` is defined in :eq:`QuadraticLeastSquaresMMOpenTURNSAPI`.
-"
-
-// ---------------------------------------------------------------------
-
-%feature("docstring") OT::QuadraticLeastSquares::getCenter
-"Get the centering vector of the approximation.
-
-Returns
--------
-centerVector : :class:`~openturns.Point`
-    Centering vector of the approximation, equal to :math:`c`."
+The centering vector :math:`\vect{b}` is defined in :eq:`QuadraticLeastSquaresMMOpenTURNSAPI`.
+)RAW"
 
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::QuadraticLeastSquares::getConstant
-"Get the constant vector of the approximation.
+R"RAW(Get the constant vector of the approximation.
 
 Returns
 -------
@@ -109,8 +99,9 @@ constantVector : :class:`~openturns.Point`
     
 Notes
 -----
-The constant vector :math:`\vect{c}` is defined in :eq:`QuadraticLeastSquaresMMOpenTURNSAPI`.
-"
+The constant vector :math:`\vect{c}` is defined in
+:eq:`QuadraticLeastSquaresMMOpenTURNSAPI`.
+)RAW"
 
 // ---------------------------------------------------------------------
 
@@ -134,12 +125,16 @@ The output experimental design is defined in :eq:`outputData`."
 Parameters
 ----------
 dataOut : 2-d sequence of float
-    Output data."
+    Output data.
+    
+Notes
+-----
+The output experimental design is defined in :eq:`outputData`."
 
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::QuadraticLeastSquares::getLinear
-"Get the linear matrix of the approximation.
+R"RAW(Get the linear matrix of the approximation.
 
 Returns
 -------
@@ -148,12 +143,13 @@ linearMatrix : :class:`~openturns.Matrix`
     
 Notes
 -----
-The linear matrix :math:`\mat{L}` is defined in :eq:`QuadraticLeastSquaresMMOpenTURNSAPI`."
+The linear matrix :math:`\mat{L}` is defined in :eq:`QuadraticLeastSquaresMMOpenTURNSAPI`.
+)RAW"
 
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::QuadraticLeastSquares::getQuadratic
-"Get the quadratic term of the approximation.
+R"RAW(Get the quadratic term of the approximation.
 
 Returns
 -------
@@ -162,7 +158,8 @@ tensor : :class:`~openturns.SymmetricTensor`
     
 Notes
 -----
-The symmetric tensor :math:`\underline{\underline{\underline{M}}}` is defined in :eq:`QuadraticLeastSquaresMMOpenTURNSAPI`."
+The symmetric tensor :math:`\underline{\underline{\underline{M}}}` is defined in :eq:`QuadraticLeastSquaresMMOpenTURNSAPI`.
+)RAW"
 
 // ---------------------------------------------------------------------
 

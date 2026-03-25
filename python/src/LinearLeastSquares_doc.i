@@ -16,9 +16,9 @@ This class estimates the meta model :math:`\metaModel: \Rset^\inputDim \rightarr
 
   .. math::
     :label: LinearLeastSquaresMMOpenTURNSAPI
-    \metaModel(\vect{x})  =  \vect{c} + \Tr{\mat{L}}(\vect{x} - \vect{b}}
+    \metaModel(\vect{x})  =  \vect{c} + \Tr{\mat{L}}(\vect{x} - \vect{b})
 
-from an experimental design :math:`\cX` of size :math:`\sampleSize`, that is, a set of observations of
+from an experimental design :math:`\cX` of size :math:`\sampleSize`, that is a set of observations of
 the input vector defined by:
 
 .. math::
@@ -74,7 +74,7 @@ The input experimental design is defined in :eq:`inputData`."
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::LinearLeastSquares::getCenter
-"Get the centering vector of the approximation.
+R"RAW(Get the centering vector of the approximation.
 
 Returns
 -------
@@ -83,23 +83,13 @@ centerVector : :class:`~openturns.Point`
     
 Notes
 -----
-The constant vector :math:`\vect{b}` is defined in :eq:`LinearLeastSquaresMMOpenTURNSAPI`.
-"
-
-// ---------------------------------------------------------------------
-
-%feature("docstring") OT::LinearLeastSquares::getCenter
-"Get the centering vector of the approximation.
-
-Returns
--------
-centerVector : :class:`~openturns.Point`
-    Centering vector of the approximation, equal to :math:`c`."
+The centering vector :math:`\vect{b}` is defined in :eq:`LinearLeastSquaresMMOpenTURNSAPI`.
+)RAW"
 
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::LinearLeastSquares::getConstant
-"Get the constant vector of the approximation.
+R"RAW(Get the constant vector of the approximation.
 
 Returns
 -------
@@ -109,7 +99,7 @@ constantVector : :class:`~openturns.Point`
 Notes
 -----
 The constant vector :math:`\vect{c}` is defined in :eq:`LinearLeastSquaresMMOpenTURNSAPI`.
-"
+)RAW"
 
 // ---------------------------------------------------------------------
 
@@ -133,12 +123,16 @@ The output experimental design is defined in :eq:`outputData`."
 Parameters
 ----------
 dataOut : 2-d sequence of float
-    Output data."
+    Output data.
+    
+Notes
+-----
+The output experimental design is defined in :eq:`outputData`."
 
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::LinearLeastSquares::getLinear
-"Get the linear matrix of the approximation.
+R"RAW(Get the linear matrix of the approximation.
 
 Returns
 -------
@@ -147,7 +141,8 @@ linearMatrix : :class:`~openturns.Matrix`
     
 Notes
 -----
-The linear matrix :math:`\mat{L}` is defined in :eq:`LinearLeastSquaresMMOpenTURNSAPI`."
+The linear matrix :math:`\mat{L}` is defined in :eq:`LinearLeastSquaresMMOpenTURNSAPI`.
+)RAW"
 
 // ---------------------------------------------------------------------
 
