@@ -69,6 +69,9 @@ public:
   virtual Mesh build(const LevelSet & levelSet,
                      const Interval & boundingBox,
                      const Bool project = true) const;
+  virtual Mesh build(const LevelSet & levelSet,
+                     const Field & field,
+                     const Bool project = true) const;
 
 protected:
 
