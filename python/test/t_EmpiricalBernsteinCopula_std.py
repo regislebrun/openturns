@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import math
 import openturns as ot
 import openturns.testing as ott
 
@@ -131,6 +132,54 @@ print(
     ")=",
     copula6D.computeSequentialConditionalQuantile(resCDF),
 )
+
+# Test isEmpiricalCopulaSample=True with size not multiple of binNumber
+ref_sample = ot.Normal(2).getSample(14)
+copula_raw = ot.EmpiricalBernsteinCopula(ref_sample, 4, True)
+print("isEmpiricalCopulaSample=True: ", copula_raw)
+ott.assert_almost_equal(copula_raw.getMean(), [0.5, 0.5])
+
+# Test setCopulaSample
+copula_cpy = ot.EmpiricalBernsteinCopula(ot.Normal(2).getSample(12), 3)
+copula_cpy.setCopulaSample(ot.Normal(2).getSample(20), True)
+print("After setCopulaSample: ", copula_cpy)
+
+# Test setBinNumber
+copula_cpy.setBinNumber(5)
+print("After setBinNumber: ", copula_cpy)
+
+# Test computeProbability
+prob = copula.computeProbability(ot.Interval([0.1, 0.2], [0.6, 0.8]))
+print("Probability interval=%.6f" % prob)
+
+# Test computeProbability with interval extending outside [0,1]^d
+prob_ext = copula.computeProbability(ot.Interval([-0.5, 0.2], [1.5, 0.8]))
+print("Probability interval (extended)=%.6f" % prob_ext)
+
+# Test getSpearmanCorrelation
+spearman = copula.getSpearmanCorrelation()
+print("Spearman correlation= ", spearman)
+
+# Test 1D case: hasEllipticalCopula and hasIndependentCopula return true
+copula1D = ot.EmpiricalBernsteinCopula(ot.Normal(1).getSample(10), 5)
+print("1D elliptical= ", copula1D.hasEllipticalCopula())
+print("1D independent= ", copula1D.hasIndependentCopula())
+
+# Test boundary values: PDF returns 0 at [0,0] and [1,1]
+print("PDF at 0=%.6f" % copula.computePDF([0.0, 0.0]))
+print("PDF at 1=%.6f" % copula.computePDF([1.0, 1.0]))
+print("LogPDF at 0=%.6f" % copula.computeLogPDF([0.0, 0.0]))
+
+# Test computeLogPDF vs log(computePDF)
+point = [0.3, 0.7]
+pdf_val = copula.computePDF(point)
+logpdf_val = copula.computeLogPDF(point)
+print("logPDF=%.6f log(PDF)=%.6f" % (logpdf_val, math.log(pdf_val)))
+
+# Test binNumber=1 edge case (PDF simplifies to 1.0)
+copula_b1 = ot.EmpiricalBernsteinCopula(ot.Normal(2).getSample(12), 1)
+print("binNumber=1 PDF=%.6f" % copula_b1.computePDF([0.3, 0.7]))
+print("binNumber=1 CDF=%.6f" % copula_b1.computeCDF([0.3, 0.7]))
 
 ot.Log.Show(ot.Log.TRACE)
 validation = ott.DistributionValidation(copula)

@@ -125,11 +125,11 @@ String EmpiricalBernsteinCopula::__repr__() const
   return oss;
 }
 
-String EmpiricalBernsteinCopula::__str__(const String & ) const
+String EmpiricalBernsteinCopula::__str__(const String & offset) const
 {
   OSS oss(false);
   oss << getClassName() << "("
-      << " copulaSample=" << copulaSample_
+      << " copulaSample=" << copulaSample_.__str__(offset)
       << " binNumber=" << binNumber_
       << ")";
   return oss;
@@ -327,8 +327,14 @@ Scalar EmpiricalBernsteinCopula::computeProbability(const Interval & interval) c
   const UnsignedInteger dimension = getDimension();
   Scalar probabilityValue = 0.0;
   const UnsignedInteger size = copulaSample_.getSize();
-  const Point lower(interval.getLowerBound());
-  const Point upper(interval.getUpperBound());
+  Point lower(interval.getLowerBound());
+  Point upper(interval.getUpperBound());
+  for (UnsignedInteger i = 0; i < dimension; ++i)
+  {
+    lower[i] = SpecFunc::Clip01(lower[i]);
+    upper[i] = SpecFunc::Clip01(upper[i]);
+  }
+  if (lower == upper) return 0.0;
   for (UnsignedInteger i = 0; i < size; ++i)
   {
     Scalar probabilityAtom = 1.0;
@@ -671,6 +677,7 @@ void EmpiricalBernsteinCopula::setParameter(const Point & parameter)
     }
   }
   binNumber_ = binNumber;
+  update();
 }
 
 Description EmpiricalBernsteinCopula::getParameterDescription() const

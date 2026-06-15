@@ -43,7 +43,7 @@ public:
   /** Default constructor */
   EmpiricalBernsteinCopula(const Sample & copulaSample,
                            const UnsignedInteger binNumber,
-                           const Bool isEmiricalCopulaSample = false);
+                           const Bool isEmpiricalCopulaSample = false);
 
   /** Comparison operator */
   using DistributionImplementation::operator ==;

@@ -47,7 +47,7 @@ Let :math:`r_i^j` and :math:`s_i^j` defined by:
 
 .. math::
 
-     r_i^j & = \lfloor m v_i^j \rfloor \\
+     r_i^j & = \lceil m v_i^j \rceil \\
      s_i^j & = m-r_i^j+1
 
 for all :math:`1 \leq i \leq \sampleSize` and :math:`1 \leq j \leq d` and where :math:`\lfloor x \rfloor` is
