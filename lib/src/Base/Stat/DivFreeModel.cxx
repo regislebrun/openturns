@@ -37,9 +37,12 @@ static SquareMatrix computeHessian(const CovarianceModel & model,
                                     const UnsignedInteger inputDimension)
 {
   SquareMatrix hessian(inputDimension);
-  const Scalar epsilon = std::cbrt(SpecFunc::ScalarEpsilon);
+  const Scalar baseEps = std::cbrt(SpecFunc::ScalarEpsilon);
+  const Point scale(model.getScale());
+  const Bool isotropic = (scale.getSize() == 1);
   for (UnsignedInteger j = 0; j < inputDimension; ++j)
   {
+    const Scalar epsilon = (isotropic ? scale[0] : scale[j]) * baseEps;
     Point tPlus(t);
     Point tMinus(t);
     tPlus[j] += epsilon;
@@ -62,10 +65,13 @@ static SquareMatrix computeHessianStationary(const CovarianceModel & model,
     const UnsignedInteger inputDimension)
 {
   SquareMatrix hessian(inputDimension);
-  const Scalar epsilon = std::cbrt(SpecFunc::ScalarEpsilon);
+  const Scalar baseEps = std::cbrt(SpecFunc::ScalarEpsilon);
+  const Point scale(model.getScale());
+  const Bool isotropic = (scale.getSize() == 1);
   const Point zero(inputDimension);
   for (UnsignedInteger j = 0; j < inputDimension; ++j)
   {
+    const Scalar epsilon = (isotropic ? scale[0] : scale[j]) * baseEps;
     Point tauPlus(tau);
     Point tauMinus(tau);
     tauPlus[j] += epsilon;
@@ -93,8 +99,11 @@ DivFreeModel::DivFreeModel(const UnsignedInteger inputDimension)
     LOGWARN(OSS() << "The divergence-free model is proven for d=2,3; for d>3 it is a conjecture, see [scheuerer2012].");
   outputDimension_ = inputDimension;
   isStationary_ = model_.isStationary();
-  amplitude_ = Point(outputDimension_, 1.0);
   activeParameter_ = model_.getActiveParameter();
+  amplitude_ = Point(outputDimension_);
+  const SquareMatrix C0(operator()(Point(inputDimension_)));
+  for (UnsignedInteger j = 0; j < outputDimension_; ++j)
+    amplitude_[j] = std::sqrt(std::abs(C0(j, j)));
   updateOutputCovariance();
 }
 
@@ -112,9 +121,12 @@ DivFreeModel::DivFreeModel(const CovarianceModel & model)
     LOGWARN(OSS() << "The divergence-free model is proven for d=2,3; for d>3 it is a conjecture, see [scheuerer2012].");
   outputDimension_ = model.getInputDimension();
   scale_ = model.getScale();
-  amplitude_ = Point(outputDimension_, 1.0);
   isStationary_ = model.isStationary();
   activeParameter_ = model.getActiveParameter();
+  amplitude_ = Point(outputDimension_);
+  const SquareMatrix C0(operator()(Point(inputDimension_)));
+  for (UnsignedInteger j = 0; j < outputDimension_; ++j)
+    amplitude_[j] = std::sqrt(std::abs(C0(j, j)));
   updateOutputCovariance();
 }
 
@@ -190,6 +202,10 @@ void DivFreeModel::setScale(const Point & scale)
 {
   model_.setScale(scale);
   scale_ = model_.getScale();
+  const SquareMatrix C0(operator()(Point(inputDimension_)));
+  for (UnsignedInteger j = 0; j < outputDimension_; ++j)
+    amplitude_[j] = std::sqrt(std::abs(C0(j, j)));
+  updateOutputCovariance();
 }
 
 
