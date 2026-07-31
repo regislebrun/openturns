@@ -21,6 +21,7 @@
 #include "openturns/HODLRMatrixFactory.hxx"
 #include "openturns/HODLRMatrix.hxx"
 #include "openturns/HODLRMatrixImplementation.hxx"
+#include "openturns/KDTree.hxx"
 #include "openturns/Sample.hxx"
 #include "openturns/Log.hxx"
 #include "openturns/OSS.hxx"
@@ -55,6 +56,18 @@ HODLRMatrixFactory::build(const Sample& sample, UnsignedInteger outputDimension,
   impl->n_ = n;
   impl->parameters_ = parameters;
   impl->symmetric_ = symmetric;
+
+  // Reorder the vertices along a space-filling curve so that the recursive
+  // split of the HODLR tree separates spatially close points at the leaves
+  if (parameters.getUseSpatialOrdering())
+  {
+    const Indices order = KDTree(sample).getOrdering();
+    Indices permutation(n);
+    for (UnsignedInteger k = 0; k < size; ++k)
+      for (UnsignedInteger d = 0; d < outputDimension; ++d)
+        permutation[k * outputDimension + d] = order[k] * outputDimension + d;
+    impl->setPermutation(permutation);
+  }
 
   return HODLRMatrix(impl);
 }

@@ -25,6 +25,7 @@
 #include "openturns/OTprivate.hxx"
 #include "openturns/Point.hxx"
 #include "openturns/Sample.hxx"
+#include "openturns/Indices.hxx"
 #include "openturns/CovarianceModel.hxx"
 #include "openturns/HODLRMatrixParameters.hxx"
 #include "openturns/HODLRCore.hxx"
@@ -133,6 +134,9 @@ public:
   void assemble(const HODLRRealAssemblyFunction& f, const HODLRMatrixParameters& parameters, char symmetry);
   void factorize(const String& method);
 
+  void setPermutation(const Indices& permutation);
+  Indices getPermutation() const;
+
   void scale(Scalar alpha);
   void gemv(char trans, Scalar alpha, const Point& x, Scalar beta, Point& y) const;
 
@@ -168,6 +172,8 @@ private:
   Scalar shiftAccumulated_;
   Pointer<const HODLREntryEvaluator> p_evaluator_;
   std::mt19937 rng_;
+  Indices permutation_;
+  Indices inversePermutation_;
 };
 
 END_NAMESPACE_OPENTURNS

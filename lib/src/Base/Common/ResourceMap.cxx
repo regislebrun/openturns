@@ -1758,6 +1758,7 @@ void ResourceMap::loadDefaultConfiguration()
   addAsScalar("HODLRMatrix-RegularizationFactor", 2.0);
   addAsUnsignedInteger("HODLRMatrix-RegularizationAttempts", 60);
   addAsScalar("HODLRMatrix-Nugget", 1.0e-8);
+  addAsBool("HODLRMatrix-UseSpatialOrdering", true);
 
   // GaussianProcess parameters //
   addAsUnsignedInteger("GaussianProcess-GibbsMaximumIteration", 100);

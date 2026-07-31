@@ -45,6 +45,9 @@ public:
   void assemble(const HODLRRealAssemblyFunction &f, const HODLRMatrixParameters& parameters, char symmetry);
   void factorize(const String& method);
 
+  void setPermutation(const Indices& permutation);
+  Indices getPermutation() const;
+
   void scale(Scalar alpha);
   void gemv(char trans, Scalar alpha, const Point& x, Scalar beta, Point& y) const;
 

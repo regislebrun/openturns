@@ -35,6 +35,7 @@ HODLRMatrixParameters::HODLRMatrixParameters()
   , minLeafSize_(ResourceMap::GetAsUnsignedInteger("HODLRMatrix-MinLeafSize"))
   , maxRank_(ResourceMap::GetAsUnsignedInteger("HODLRMatrix-MaxRank"))
   , factorizationMethod_(ResourceMap::GetAsString("HODLRMatrix-FactorizationMethod"))
+  , useSpatialOrdering_(ResourceMap::GetAsBool("HODLRMatrix-UseSpatialOrdering"))
 {
 }
 
@@ -93,6 +94,16 @@ String HODLRMatrixParameters::getFactorizationMethod() const
   return factorizationMethod_;
 }
 
+void HODLRMatrixParameters::setUseSpatialOrdering(const Bool useSpatialOrdering)
+{
+  useSpatialOrdering_ = useSpatialOrdering;
+}
+
+Bool HODLRMatrixParameters::getUseSpatialOrdering() const
+{
+  return useSpatialOrdering_;
+}
+
 String HODLRMatrixParameters::__repr__() const
 {
   OSS oss(true);
@@ -101,7 +112,8 @@ String HODLRMatrixParameters::__repr__() const
       << ", recompression epsilon= " << recompressionEpsilon_
       << ", min leaf size= " << minLeafSize_
       << ", max rank= " << maxRank_
-      << ", factorization method= " << factorizationMethod_;
+      << ", factorization method= " << factorizationMethod_
+      << ", use spatial ordering= " << useSpatialOrdering_;
   return oss;
 }
 
@@ -120,6 +132,7 @@ void HODLRMatrixParameters::save(Advocate & adv) const
   adv.saveAttribute("minLeafSize_", minLeafSize_);
   adv.saveAttribute("maxRank_", maxRank_);
   adv.saveAttribute("factorizationMethod_", factorizationMethod_);
+  adv.saveAttribute("useSpatialOrdering_", useSpatialOrdering_);
 }
 
 void HODLRMatrixParameters::load(Advocate & adv)
@@ -130,6 +143,7 @@ void HODLRMatrixParameters::load(Advocate & adv)
   adv.loadAttribute("minLeafSize_", minLeafSize_);
   adv.loadAttribute("maxRank_", maxRank_);
   adv.loadAttribute("factorizationMethod_", factorizationMethod_);
+  adv.loadAttribute("useSpatialOrdering_", useSpatialOrdering_);
 }
 
 END_NAMESPACE_OPENTURNS

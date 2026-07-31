@@ -3,6 +3,7 @@
 import openturns as ot
 import openturns.testing as ott
 import math as m
+import random
 
 ot.PlatformInfo.SetNumericalPrecision(3)
 ot.ResourceMap.SetAsUnsignedInteger("HODLRMatrix-MinLeafSize", 4)
@@ -462,6 +463,76 @@ assert cr23[0] == cr23[1], (
     f"full-rank tree should be stored densely ({cr23[0]}/{cr23[1]})"
 )
 print(f"  stored/total= {cr23[0]}/{cr23[1]}, solve err= {err23:.2e}")
+print("  PASS")
+
+# === Test 24: spatial ordering (KDTree permutation) ===
+print("\n=== Test 24: spatial ordering ===")
+# the flag is ON by default
+params24 = ot.HODLRMatrixParameters()
+assert params24.getUseSpatialOrdering(), "spatial ordering should be ON by default"
+# a factory-built matrix carries a valid permutation
+factory24 = ot.HODLRMatrixFactory()
+grid24 = ot.Sample([[i * 0.1] for i in range(40)])
+hodlr24 = factory24.build(grid24, 1, True, params24)
+perm24 = hodlr24.getPermutation()
+assert perm24.getSize() == 40
+assert sorted(perm24) == list(range(40)), "factory permutation must be a permutation"
+# an already-ordered 1D grid yields the identity permutation
+assert perm24 == list(range(40)), "an ordered 1D grid should give the identity permutation"
+# scrambled vertices yield a non-trivial permutation
+order24 = list(range(40))
+random.Random(0).shuffle(order24)
+scrambled24 = ot.Sample([[grid24[i][0]] for i in order24])
+hodlr_sc24 = factory24.build(scrambled24, 1, True, params24)
+assert hodlr_sc24.getPermutation() != list(range(40)), (
+    "scrambled vertices should give a non-identity permutation"
+)
+# invalid permutations are rejected
+with ott.assert_raises(TypeError):
+    hodlr24.setPermutation([0, 0, 1])
+with ott.assert_raises(TypeError):
+    hodlr24.setPermutation([0, 1, 2])
+# disabling the flag removes the permutation
+params_off24 = ot.HODLRMatrixParameters()
+params_off24.setUseSpatialOrdering(False)
+hodlr_off24 = factory24.build(scrambled24, 1, True, params_off24)
+assert hodlr_off24.getPermutation().getSize() == 0, (
+    "flag OFF should disable the permutation"
+)
+# scrambled 2D grid with a short correlation length: the spatial ordering
+# preserves the accuracy and compresses the tree, while the blind split of
+# the unordered vertices falls back to dense storage
+im24 = ot.IntervalMesher([15, 15])
+mesh24 = im24.build(ot.Interval([0.0, 0.0], [1.0, 1.0]))
+vertices24 = mesh24.getVertices()
+n24 = vertices24.getSize()
+order2d24 = list(range(n24))
+random.Random(1).shuffle(order2d24)
+scrambled2d24 = ot.Sample([vertices24[i] for i in order2d24])
+cov24 = ot.MaternModel([0.2, 0.2], [1.0], 2.5)
+K24 = ot.CovarianceMatrix(cov24.discretize(scrambled2d24))
+b24 = ot.Point(n24, 1.0)
+x_dense24 = K24.solveLinearSystem(b24)
+hodlr_on24 = cov24.discretizeHODLRMatrix(scrambled2d24, make_params(leaf=4, factorization="LLT"))
+hodlr_on24.factorize("LLT")
+x_on24 = hodlr_on24.solve(b24)
+err_on24 = (x_on24 - x_dense24).norm() / x_dense24.norm()
+hodlr_off24 = cov24.discretizeHODLRMatrix(scrambled2d24, params_off24)
+hodlr_off24.factorize("LLT")
+x_off24 = hodlr_off24.solve(b24)
+err_off24 = (x_off24 - x_dense24).norm() / x_dense24.norm()
+assert err_on24 < 1.0e-2, (
+    f"spatial ordering solve error {err_on24:.2e} should be small"
+)
+cr_on24 = hodlr_on24.compressionRatio()
+cr_off24 = hodlr_off24.compressionRatio()
+assert cr_on24[0] < cr_off24[0], (
+    "spatial ordering should compress the tree better than the blind split "
+    f"({cr_on24[0]}/{cr_on24[1]} vs {cr_off24[0]}/{cr_off24[1]})"
+)
+# the permutation preserves the diagonal
+ott.assert_almost_equal(hodlr_on24.getDiagonal(), ot.Point(n24, 1.0), 1.0e-9, 1.0e-9)
+print(f"  on err= {err_on24:.2e}, on storage= {cr_on24[0]}/{cr_on24[1]}, off storage= {cr_off24[0]}/{cr_off24[1]}")
 print("  PASS")
 
 print("\n=== ALL TESTS PASSED ===")

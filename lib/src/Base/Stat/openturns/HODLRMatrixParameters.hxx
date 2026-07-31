@@ -50,6 +50,9 @@ public:
   void setFactorizationMethod(const String & factorization);
   String getFactorizationMethod() const;
 
+  void setUseSpatialOrdering(const Bool useSpatialOrdering);
+  Bool getUseSpatialOrdering() const;
+
   String __repr__() const override;
   String __str__(const String & offset = "") const override;
 
@@ -62,6 +65,7 @@ private:
   UnsignedInteger minLeafSize_;
   UnsignedInteger maxRank_;
   String factorizationMethod_;
+  Bool useSpatialOrdering_;
 };
 
 END_NAMESPACE_OPENTURNS

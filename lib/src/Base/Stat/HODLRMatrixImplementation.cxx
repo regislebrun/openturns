@@ -55,6 +55,37 @@ private:
   Scalar alpha_;
 };
 
+/** Evaluator that permutes the indices of another evaluator. */
+class HODLRPermutedEvaluator
+  : public HODLREntryEvaluator
+{
+public:
+  HODLRPermutedEvaluator(Pointer<const HODLREntryEvaluator> inner, const Indices & permutation)
+    : inner_(inner)
+    , permutation_(permutation)
+  {
+  }
+
+  HODLRPermutedEvaluator* clone() const override
+  {
+    return new HODLRPermutedEvaluator(inner_, permutation_);
+  }
+
+  Scalar operator()(UnsignedInteger i, UnsignedInteger j) const override
+  {
+    return (*inner_)(permutation_[i], permutation_[j]);
+  }
+
+  UnsignedInteger getSize() const override
+  {
+    return inner_->getSize();
+  }
+
+private:
+  Pointer<const HODLREntryEvaluator> inner_;
+  Indices permutation_;
+};
+
 CLASSNAMEINIT(HODLRMatrixImplementation)
 
 HODLRMatrixImplementation::HODLRMatrixImplementation()
@@ -81,6 +112,8 @@ HODLRMatrixImplementation::HODLRMatrixImplementation(const HODLRMatrixImplementa
   , diagonal_(other.diagonal_)
   , shiftAccumulated_(0.0)
   , p_evaluator_(other.p_evaluator_)
+  , permutation_(other.permutation_)
+  , inversePermutation_(other.inversePermutation_)
 {
 }
 
@@ -109,6 +142,8 @@ HODLRMatrixImplementation& HODLRMatrixImplementation::operator=(const HODLRMatri
     diagonal_ = other.diagonal_;
     shiftAccumulated_ = 0.0;
     p_evaluator_ = other.p_evaluator_;
+    permutation_ = other.permutation_;
+    inversePermutation_ = other.inversePermutation_;
     rng_ = std::mt19937();
   }
   return *this;
@@ -127,6 +162,44 @@ UnsignedInteger HODLRMatrixImplementation::getNbColumns() const
 const HODLRMatrixParameters& HODLRMatrixImplementation::getParameters() const
 {
   return parameters_;
+}
+
+void HODLRMatrixImplementation::setPermutation(const Indices& permutation)
+{
+  const UnsignedInteger size = permutation.getSize();
+  if (size == 0)
+  {
+    permutation_.clear();
+    inversePermutation_.clear();
+  }
+  else
+  {
+    if (size != n_)
+      throw InvalidArgumentException(HERE) << "Expected a permutation of size " << n_ << ", got " << size;
+    Indices seen(size, 0);
+    for (UnsignedInteger i = 0; i < size; ++i)
+    {
+      if (permutation[i] >= size)
+        throw InvalidArgumentException(HERE) << "Permutation entry " << permutation[i] << " out of range [0, " << size << ")";
+      if (seen[permutation[i]] == 1)
+        throw InvalidArgumentException(HERE) << "Permutation entry " << permutation[i] << " appears more than once";
+      seen[permutation[i]] = 1;
+    }
+    permutation_ = permutation;
+    inversePermutation_ = Indices(size);
+    for (UnsignedInteger i = 0; i < size; ++i)
+      inversePermutation_[permutation_[i]] = i;
+  }
+  // The permutation is used at assembly time, so invalidate the assembled structure
+  p_node_.reset();
+  p_evaluator_.reset();
+  diagonal_.clear();
+  isFactorized_ = false;
+}
+
+Indices HODLRMatrixImplementation::getPermutation() const
+{
+  return permutation_;
 }
 
 void HODLRMatrixImplementation::assemble(const HODLRRealAssemblyFunction& f, char symmetry)
@@ -165,8 +238,10 @@ void HODLRMatrixImplementation::assemble(const HODLRRealAssemblyFunction& f,
   parameters_ = parameters;
 
   p_evaluator_.reset(f.clone());
+  if (permutation_.getSize() > 0)
+    p_evaluator_ = new HODLRPermutedEvaluator(p_evaluator_, permutation_);
 
-  // Build diagonal: the assembly function evaluates all entries including diagonal
+  // Build diagonal in the (possibly permuted) assembly order
   diagonal_ = Point(n_);
   for (UnsignedInteger i = 0; i < n_; ++i)
     diagonal_[i] = (*p_evaluator_)(i, i);
@@ -285,7 +360,8 @@ void HODLRMatrixImplementation::gemv(char trans, Scalar alpha, const Point& x, S
   Matrix ymat(n_, 1);
   for (UnsignedInteger i = 0; i < n_; ++i)
   {
-    xmat(i, 0) = x[i];
+    const UnsignedInteger iPerm = permutation_.getSize() > 0 ? permutation_[i] : i;
+    xmat(i, 0) = x[iPerm];
     ymat(i, 0) = 0.0;
   }
 
@@ -300,7 +376,10 @@ void HODLRMatrixImplementation::gemv(char trans, Scalar alpha, const Point& x, S
     p_node_->apply(ymat, xmat);
 
   for (UnsignedInteger i = 0; i < n_; ++i)
-    y[i] = alpha * ymat(i, 0) + beta * y[i];
+  {
+    const UnsignedInteger iPerm = permutation_.getSize() > 0 ? inversePermutation_[i] : i;
+    y[i] = alpha * ymat(iPerm, 0) + beta * y[i];
+  }
 }
 
 void HODLRMatrixImplementation::addIdentity(Scalar alpha)
@@ -332,7 +411,12 @@ Scalar HODLRMatrixImplementation::norm() const
 
 Point HODLRMatrixImplementation::getDiagonal() const
 {
-  return diagonal_;
+  Point result(n_);
+  if (permutation_.getSize() == 0)
+    return diagonal_;
+  for (UnsignedInteger i = 0; i < n_; ++i)
+    result[i] = diagonal_[inversePermutation_[i]];
+  return result;
 }
 
 Point HODLRMatrixImplementation::solve(const Point& b, Bool trans) const
@@ -348,13 +432,19 @@ Point HODLRMatrixImplementation::solve(const Point& b, Bool trans) const
 
   Matrix x(b.getDimension(), 1);
   for (UnsignedInteger i = 0; i < b.getDimension(); ++i)
-    x(i, 0) = b[i];
+  {
+    const UnsignedInteger iPerm = permutation_.getSize() > 0 ? permutation_[i] : i;
+    x(i, 0) = b[iPerm];
+  }
 
   p_node_->solve(x);
 
   Point result(b.getDimension());
   for (UnsignedInteger i = 0; i < b.getDimension(); ++i)
-    result[i] = x(i, 0);
+  {
+    const UnsignedInteger iPerm = permutation_.getSize() > 0 ? inversePermutation_[i] : i;
+    result[i] = x(iPerm, 0);
+  }
   return result;
 }
 
@@ -369,9 +459,24 @@ Matrix HODLRMatrixImplementation::solve(const Matrix& m, Bool trans) const
   if (!isFactorized_)
     throw InvalidArgumentException(HERE) << "HODLRMatrix not factorized";
 
-  Matrix x(m);
+  Matrix x(m.getNbRows(), m.getNbColumns());
+  for (UnsignedInteger j = 0; j < m.getNbColumns(); ++j)
+    for (UnsignedInteger i = 0; i < m.getNbRows(); ++i)
+    {
+      const UnsignedInteger iPerm = permutation_.getSize() > 0 ? permutation_[i] : i;
+      x(i, j) = m(iPerm, j);
+    }
+
   p_node_->solve(x);
-  return x;
+
+  Matrix result(m.getNbRows(), m.getNbColumns());
+  for (UnsignedInteger j = 0; j < m.getNbColumns(); ++j)
+    for (UnsignedInteger i = 0; i < m.getNbRows(); ++i)
+    {
+      const UnsignedInteger iPerm = permutation_.getSize() > 0 ? inversePermutation_[i] : i;
+      result(i, j) = x(iPerm, j);
+    }
+  return result;
 }
 
 Point HODLRMatrixImplementation::solveLower(const Point& b, Bool trans) const
@@ -387,13 +492,19 @@ Point HODLRMatrixImplementation::solveLower(const Point& b, Bool trans) const
 
   Matrix x(b.getDimension(), 1);
   for (UnsignedInteger i = 0; i < b.getDimension(); ++i)
-    x(i, 0) = b[i];
+  {
+    const UnsignedInteger iPerm = permutation_.getSize() > 0 ? permutation_[i] : i;
+    x(i, 0) = b[iPerm];
+  }
 
   p_node_->solveLower(x, trans);
 
   Point result(b.getDimension());
   for (UnsignedInteger i = 0; i < b.getDimension(); ++i)
-    result[i] = x(i, 0);
+  {
+    const UnsignedInteger iPerm = permutation_.getSize() > 0 ? inversePermutation_[i] : i;
+    result[i] = x(iPerm, 0);
+  }
   return result;
 }
 
@@ -408,9 +519,24 @@ Matrix HODLRMatrixImplementation::solveLower(const Matrix& m, Bool trans) const
   if (!isCholesky_)
     throw InvalidArgumentException(HERE) << "HODLRMatrix must be Cholesky-factorized to use solveLower";
 
-  Matrix x(m);
+  Matrix x(m.getNbRows(), m.getNbColumns());
+  for (UnsignedInteger j = 0; j < m.getNbColumns(); ++j)
+    for (UnsignedInteger i = 0; i < m.getNbRows(); ++i)
+    {
+      const UnsignedInteger iPerm = permutation_.getSize() > 0 ? permutation_[i] : i;
+      x(i, j) = m(iPerm, j);
+    }
+
   p_node_->solveLower(x, trans);
-  return x;
+
+  Matrix result(m.getNbRows(), m.getNbColumns());
+  for (UnsignedInteger j = 0; j < m.getNbColumns(); ++j)
+    for (UnsignedInteger i = 0; i < m.getNbRows(); ++i)
+    {
+      const UnsignedInteger iPerm = permutation_.getSize() > 0 ? inversePermutation_[i] : i;
+      result(i, j) = x(iPerm, j);
+    }
+  return result;
 }
 
 Scalar HODLRMatrixImplementation::logDeterminant() const

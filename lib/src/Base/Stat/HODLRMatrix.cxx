@@ -74,6 +74,17 @@ void HODLRMatrix::factorize(const String& method)
   getImplementation()->factorize(method);
 }
 
+void HODLRMatrix::setPermutation(const Indices& permutation)
+{
+  copyOnWrite();
+  getImplementation()->setPermutation(permutation);
+}
+
+Indices HODLRMatrix::getPermutation() const
+{
+  return getImplementation()->getPermutation();
+}
+
 void HODLRMatrix::scale(Scalar alpha)
 {
   copyOnWrite();

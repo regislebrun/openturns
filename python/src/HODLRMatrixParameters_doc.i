@@ -103,3 +103,22 @@ Parameters
 ----------
 maxRank : int
     Maximum rank used for the low-rank approximation during assembly."
+
+%feature("docstring") OT::HODLRMatrixParameters::getUseSpatialOrdering
+"Return whether the spatial ordering is used.
+
+Returns
+-------
+use : bool
+    True if the vertices are reordered along a space-filling curve
+    before assembly."
+
+%feature("docstring") OT::HODLRMatrixParameters::setUseSpatialOrdering
+"Set whether the spatial ordering is used.
+
+Parameters
+----------
+use : bool
+    If True (the default), the vertices are reordered along a
+    space-filling curve before assembly, so that the recursive split
+    of the HODLR tree separates spatially close points at the leaves."
