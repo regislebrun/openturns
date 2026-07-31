@@ -212,3 +212,35 @@ Examples
 %enddef
 %feature("docstring") OT::OrthogonalUniVariatePolynomialFactory::getRoots
 OT_OrthogonalUniVariatePolynomialFactory_getRoots_doc
+
+// ---------------------------------------------------------------------
+
+%define OT_OrthogonalUniVariatePolynomialFactory_getA_doc
+"Accessor to the scale coefficient of the affine transformation.
+
+The affine transformation maps the variable :math:`x` of the associated
+measure to the variable :math:`z = a x + b` of its standard representative.
+
+Returns
+-------
+a : float
+    The scale coefficient :math:`a` of the affine transformation."
+%enddef
+%feature("docstring") OT::OrthogonalUniVariatePolynomialFactory::getA
+OT_OrthogonalUniVariatePolynomialFactory_getA_doc
+
+// ---------------------------------------------------------------------
+
+%define OT_OrthogonalUniVariatePolynomialFactory_getB_doc
+"Accessor to the translation coefficient of the affine transformation.
+
+The affine transformation maps the variable :math:`x` of the associated
+measure to the variable :math:`z = a x + b` of its standard representative.
+
+Returns
+-------
+b : float
+    The translation coefficient :math:`b` of the affine transformation."
+%enddef
+%feature("docstring") OT::OrthogonalUniVariatePolynomialFactory::getB
+OT_OrthogonalUniVariatePolynomialFactory_getB_doc

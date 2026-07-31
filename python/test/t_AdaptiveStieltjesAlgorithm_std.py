@@ -37,7 +37,7 @@ for i in range(iMax):
 
 # Second test
 distribution = ot.Beta(0.5, 2.5, -1.0, 1.0)
-algo0 = ot.JacobiFactory(0.5, 3.0, 1)
+algo0 = ot.JacobiFactory(0.5, 2.5)
 algo1 = ot.AdaptiveStieltjesAlgorithm(distribution)
 print(algo1)
 for i in range(iMax):
