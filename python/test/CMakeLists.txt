@@ -241,6 +241,10 @@ if (HMAT_FOUND)
 ot_pyinstallcheck_test (HMatrix_std)
 endif ()
 
+ot_pyinstallcheck_test (HODLRMatrix_std IGNOREOUT)
+ot_pyinstallcheck_test (HODLRMatrix_leafsize IGNOREOUT)
+ot_pyinstallcheck_test (HODLRMatrix_fallback IGNOREOUT)
+
 # Geom
 ot_pyinstallcheck_test (Domain_std)
 ot_pyinstallcheck_test (Interval_std)
@@ -794,6 +798,7 @@ if (HMAT_FOUND)
   ot_pyinstallcheck_test (GaussianProcessRegression_std_hmat IGNOREOUT)
   ot_pyinstallcheck_test (GaussianProcessRegressionCrossValidation_std_hmat IGNOREOUT)
 endif ()
+ot_pyinstallcheck_test (GaussianProcessFitter_std_hodlr IGNOREOUT)
 if (NLopt_FOUND)
   ot_pyinstallcheck_test (GeneralLinearModelAlgorithm_nlopt IGNOREOUT)
   ot_pyinstallcheck_test (GaussianProcessFitter_nlopt IGNOREOUT)

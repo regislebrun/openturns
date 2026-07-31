@@ -150,7 +150,8 @@ void GaussianProcessFitterResult::setStandardizedOutput(const Point & rho)
 }
 
 void GaussianProcessFitterResult::setCholeskyFactor(const TriangularMatrix & covarianceCholeskyFactor,
-    const HMatrix & covarianceHMatrix)
+    const HMatrix & covarianceHMatrix,
+    const HODLRMatrix & covarianceHODLRMatrix)
 {
   const UnsignedInteger size = getInputSample().getSize();
   const UnsignedInteger outputDimension = getMetaModel().getOutputDimension();
@@ -165,12 +166,19 @@ void GaussianProcessFitterResult::setCholeskyFactor(const TriangularMatrix & cov
   }
   covarianceCholeskyFactor_ = covarianceCholeskyFactor;
   covarianceHMatrix_ = covarianceHMatrix;
+  covarianceHODLRMatrix_ = covarianceHODLRMatrix;
 }
 
 /* Method that returns the covariance factor - hmat */
 HMatrix GaussianProcessFitterResult::getHMatCholeskyFactor() const
 {
   return covarianceHMatrix_;
+}
+
+/* Method that returns the covariance factor - hodlr */
+HODLRMatrix GaussianProcessFitterResult::getHODLRCholeskyFactor() const
+{
+  return covarianceHODLRMatrix_;
 }
 
 /* Output sample noise accessor */

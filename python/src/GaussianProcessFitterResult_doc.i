@@ -26,7 +26,9 @@ linAlgMethod : int
 
     - ot.GaussianProcessFitterResult.LAPACK or 0: using `LAPACK` to fit the model,
 
-    - ot.GaussianProcessFitterResult.HMAT or 1: using `HMAT` to fit the model.
+    - ot.GaussianProcessFitterResult.HMAT or 1: using `HMAT` to fit the model,
+
+    - ot.GaussianProcessFitterResult.HODLR or 2: using `HODLR` to fit the model.
 
 Notes
 -----
@@ -121,7 +123,9 @@ linAlgMethod : int
 
     - ot.GaussianProcessFitterResult.LAPACK or 0: using `LAPACK` to fit the model,
 
-    - ot.GaussianProcessFitterResult.HMAT or 1: using `HMAT` to fit the model.
+    - ot.GaussianProcessFitterResult.HMAT or 1: using `HMAT` to fit the model,
+
+    - ot.GaussianProcessFitterResult.HODLR or 2: using `HODLR` to fit the model.
 "
 
 // ---------------------------------------------------------------------

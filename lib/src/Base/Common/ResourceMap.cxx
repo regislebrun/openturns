@@ -1001,7 +1001,7 @@ void ResourceMap::loadDefaultConfiguration()
 
   // KarhunenLoeveP1Algorithm parameters //
   addAsScalar("KarhunenLoeveP1Algorithm-RegularizationFactor", 0.0);
-  addAsString("KarhunenLoeveP1Algorithm-CovarianceMatrixStorage", "DENSE");
+  addAsString("KarhunenLoeveP1Algorithm-CovarianceMatrixStorage", "DENSE", {"DENSE", "HMAT", "HODLR"});
   addAsString("KarhunenLoeveP1Algorithm-EigenvaluesSolver", "LAPACK");
 
   // AdaptiveStieltjesAlgorithm parameters //
@@ -1630,7 +1630,7 @@ void ResourceMap::loadDefaultConfiguration()
   addAsScalar("GaussianProcessFitter-OptimizationLowerBoundScaleFactor", 1.0e-3);
   addAsScalar("GaussianProcessFitter-OptimizationUpperBoundScaleFactor", 2.0);
   addAsString("GaussianProcessFitter-DefaultOptimizationAlgorithm", "Cobyla");
-  addAsString("GaussianProcessFitter-LinearAlgebra", "LAPACK", {"LAPACK", "HMAT"});
+  addAsString("GaussianProcessFitter-LinearAlgebra", "LAPACK", {"LAPACK", "HMAT", "HODLR"});
 
   // GaussianProcessConditionalCovariance parameters //
   addAsScalar("GaussianProcessConditionalCovariance-DefaultConfidenceLevel", 0.95);
@@ -1744,6 +1744,19 @@ void ResourceMap::loadDefaultConfiguration()
   addAsUnsignedInteger("HMatrix-MaxLeafSize", 250);
   addAsUnsignedInteger("HMatrix-ValidationDump", 0);
   addAsUnsignedInteger("HMatrix-ValidationRerun", 0);
+
+  // HODLRMatrix parameters //
+  addAsScalar("HODLRMatrix-AssemblyEpsilon", 1.0e-6);
+  addAsScalar("HODLRMatrix-RecompressionEpsilon", 1.0e-6);
+  addAsUnsignedInteger("HODLRMatrix-MinLeafSize", 250);
+  addAsUnsignedInteger("HODLRMatrix-MaxRank", 10);
+  addAsString("HODLRMatrix-FactorizationMethod", "LLt", {"LU", "LLt"});
+  addAsUnsignedInteger("HODLRMatrix-FactorizationIterations", 20);
+  addAsUnsignedInteger("HODLRMatrix-DenseThreshold", 256);
+  addAsScalar("HODLRMatrix-RegularizationEpsilon", 1.0e-4);
+  addAsScalar("HODLRMatrix-MaxRegularization", 1.0);
+  addAsScalar("HODLRMatrix-RegularizationFactor", 2.0);
+  addAsUnsignedInteger("HODLRMatrix-RegularizationAttempts", 60);
 
   // GaussianProcess parameters //
   addAsUnsignedInteger("GaussianProcess-GibbsMaximumIteration", 100);

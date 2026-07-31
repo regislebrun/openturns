@@ -11,8 +11,10 @@
  * MultivariateUniform, MultivariateUniformFactory (openturns.experimental)
  * SquaredNormalFactory (openturns.experimental)
  * TruncatedDistributionFactory (openturns.experimental)
+ * HODLRMatrix, HODLRMatrixFactory, HODLRMatrixImplementation, HODLRMatrixParameters (self-contained HODLR compressed matrices)
 
 ==== API changes ====
+ * GaussianProcessFitter, GeneralLinearModelAlgorithm and GaussianProcessRegression now support HODLR as a linear algebra backend (ResourceMap key "GaussianProcessFitter-LinearAlgebra" = "HODLR")
  * Removed deprecated DistributionFactory.setKnownParameter(Point, Indices)
  * Removed deprecated Graph.setDrawable(Drawable, int)
  * Removed deprecated SpecFunc.IsNormal

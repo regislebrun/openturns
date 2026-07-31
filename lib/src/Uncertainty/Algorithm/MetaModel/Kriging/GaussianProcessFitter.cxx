@@ -22,6 +22,8 @@
 #include "openturns/GaussianProcessFitter.hxx"
 #include "openturns/PersistentObjectFactory.hxx"
 #include "openturns/HMatrixFactory.hxx"
+#include "openturns/HODLRMatrixFactory.hxx"
+#include "openturns/HODLRMatrixParameters.hxx"
 #include "openturns/Log.hxx"
 #include "openturns/SpecFunc.hxx"
 #include "openturns/NonCenteredFiniteDifferenceGradient.hxx"
@@ -325,9 +327,10 @@ void GaussianProcessFitter::run()
       const Scalar sigma = reducedCovarianceModel_.getAmplitude()[0];
       // Case of LAPACK backend
       if (method_ == GaussianProcessFitterResult::LAPACK) covarianceCholeskyFactor_ = covarianceCholeskyFactor_ * sigma;
-      else covarianceCholeskyFactorHMatrix_.scale(sigma);
+      else if (method_ == GaussianProcessFitterResult::HMAT) covarianceCholeskyFactorHMatrix_.scale(sigma);
+      // HODLR: amplitude is already in the assembled matrix, no scaling needed
     }
-    result_.setCholeskyFactor(covarianceCholeskyFactor_, covarianceCholeskyFactorHMatrix_);
+    result_.setCholeskyFactor(covarianceCholeskyFactor_, covarianceCholeskyFactorHMatrix_, covarianceCholeskyFactorHODLR_);
   }
   hasRun_ = true;
 }
@@ -464,12 +467,16 @@ Point GaussianProcessFitter::computeReducedLogLikelihood(const Point & parameter
   // matrix. As a by-product, also compute rho.
   if (method_ == GaussianProcessFitterResult::LAPACK)
     logDeterminant = computeLapackLogDeterminantCholesky();
-  else
+  else if (method_ == GaussianProcessFitterResult::HMAT)
     logDeterminant = computeHMatLogDeterminantCholesky();
+  else
+    logDeterminant = computeHODLRLogDeterminantCholesky();
   // Compute the amplitude using an analytical formula if needed
   // and update the reduced log-likelihood.
   if (analyticalAmplitude_)
   {
+    if (method_ == GaussianProcessFitterResult::HODLR)
+      throw NotYetImplementedException(HERE) << "Analytical amplitude is not yet supported with HODLR method";
     LOGDEBUG("Analytical amplitude");
     // J(\sigma)=-\log(\sqrt{\sigma^{2N}\det{R}})-(Y-M)^tR^{-1}(Y-M)/(2\sigma^2)
     //          =-N\log(\sigma)-\log(\det{R})/2-(Y-M)^tR^{-1}(Y-M)/(2\sigma^2)
@@ -485,7 +492,7 @@ Point GaussianProcessFitter::computeReducedLogLikelihood(const Point & parameter
   } // analyticalAmplitude
 
   LOGDEBUG(OSS(false) << "log-determinant=" << logDeterminant << ", rho=" << rho_);
-  const Scalar epsilon = rho_.normSquare();
+  const Scalar epsilon = (method_ == GaussianProcessFitterResult::HODLR) ? lastQuadraticForm_ : rho_.normSquare();
   LOGDEBUG(OSS(false) << "epsilon=||rho||^2=" << epsilon);
   if (epsilon <= 0) lastReducedLogLikelihood_ = SpecFunc::LowestScalar;
   // For the general multidimensional case, we have to compute the general log-likelihood (ie including marginal variances)
@@ -611,6 +618,55 @@ Scalar GaussianProcessFitter::computeHMatLogDeterminantCholesky()
   return 2.0 * logDetL;
 }
 
+Scalar GaussianProcessFitter::computeHODLRLogDeterminantCholesky()
+{
+  LOGDEBUG(OSS(false) << "Compute the HODLR log-determinant of the Cholesky factor for covariance=" << reducedCovarianceModel_);
+
+  if (noise_.getSize() > 0)
+    throw NotYetImplementedException(HERE) << "Noise is not handled with HODLR method";
+
+  const UnsignedInteger covarianceDimension = reducedCovarianceModel_.getOutputDimension();
+
+  HODLRMatrixParameters parameters;
+  HODLRMatrixFactory factory;
+  covarianceCholeskyFactorHODLR_ = factory.build(inputSample_, covarianceDimension, true, parameters);
+
+  HODLRCovarianceAssemblyFunction evaluator(reducedCovarianceModel_, inputSample_);
+  covarianceCholeskyFactorHODLR_.assemble(evaluator, 'L');
+  covarianceCholeskyFactorHODLR_.factorize(parameters.getFactorizationMethod());
+
+  // y corresponds to output data
+  const Point y(outputSample_.getImplementation()->getData());
+  // Compute C^{-1} y via full solve
+  LOGDEBUG("Solve C^{-1} y via HODLR");
+  Point Cinv_y(covarianceCholeskyFactorHODLR_.solve(y));
+
+  if (basis_.getSize() > 0)
+  {
+    // Compute C^{-1} F
+    LOGDEBUG("Solve C^{-1} F via HODLR");
+    Matrix Cinv_F(covarianceCholeskyFactorHODLR_.solve(F_));
+    // Normal equations: (F^T C^{-1} F) beta = F^T C^{-1} y
+    LOGDEBUG("Solve normal equations for beta");
+    const Matrix FtCinvF(F_.transpose() * Cinv_F);
+    Point FtCinv_y(F_.transpose() * Cinv_y);
+    beta_ = FtCinvF.solveLinearSystem(FtCinv_y);
+    // Residual
+    Point residual(y - F_ * beta_);
+    // Quadratic form: residual^T C^{-1} residual
+    Point Cinv_residual(covarianceCholeskyFactorHODLR_.solve(residual));
+    lastQuadraticForm_ = residual.dot(Cinv_residual);
+    rho_ = residual;
+  }
+  else
+  {
+    lastQuadraticForm_ = y.dot(Cinv_y);
+    rho_ = y;
+  }
+
+  return covarianceCholeskyFactorHODLR_.logDeterminant();
+}
+
 /* Optimization solver accessor */
 OptimizationAlgorithm GaussianProcessFitter::getOptimizationAlgorithm() const
 {
@@ -688,8 +744,11 @@ Function GaussianProcessFitter::getReducedLogLikelihoodFunction()
 
 void GaussianProcessFitter::initializeMethod()
 {
-  if (ResourceMap::GetAsString("GaussianProcessFitter-LinearAlgebra") == "HMAT")
+  const String method(ResourceMap::GetAsString("GaussianProcessFitter-LinearAlgebra"));
+  if (method == "HMAT")
     setMethod(GaussianProcessFitterResult::HMAT);
+  else if (method == "HODLR")
+    setMethod(GaussianProcessFitterResult::HODLR);
 }
 
 GaussianProcessFitter::LinearAlgebra GaussianProcessFitter::getMethod() const
@@ -704,8 +763,10 @@ void GaussianProcessFitter::reset()
   // Same remark for setCovarianceModel & setData
   covarianceCholeskyFactor_ = TriangularMatrix();
   covarianceCholeskyFactorHMatrix_ = HMatrix();
+  covarianceCholeskyFactorHODLR_ = HODLRMatrix();
   hasRun_ = false;
   lastReducedLogLikelihood_ = SpecFunc::LowestScalar;
+  lastQuadraticForm_ = 0.0;
   beta_ = Point();
   rho_ = Point();
   // The current output Gram matrix
@@ -718,8 +779,8 @@ void GaussianProcessFitter::setMethod(const LinearAlgebra method)
   // First update only if method has changed. It avoids useless reset
   if (method != method_)
   {
-    if (method > 1)
-      throw InvalidArgumentException(HERE) << "Expecting 0 (LAPACK) or 1 (HMAT)";
+    if (method > 2)
+      throw InvalidArgumentException(HERE) << "Expecting 0 (LAPACK), 1 (HMAT) or 2 (HODLR)";
     // Set new method
     method_ = method;
     // reset for new computation

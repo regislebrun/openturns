@@ -1,0 +1,94 @@
+import openturns as ot
+import openturns.testing as ottest
+
+ot.TESTPREAMBLE()
+
+ot.ResourceMap.SetAsString("GaussianProcessFitter-LinearAlgebra", "HODLR")
+ot.ResourceMap.SetAsUnsignedInteger("HODLRMatrix-MinLeafSize", 4)
+ot.ResourceMap.SetAsScalar("HODLRMatrix-AssemblyEpsilon", 1.0e-6)
+ot.ResourceMap.SetAsScalar("HODLRMatrix-RecompressionEpsilon", 1.0e-6)
+
+
+def test_simple():
+    """1D GP with HODLR: compare against LAPACK reference."""
+    sampleSize = 10
+    dimension = 1
+
+    f = ot.SymbolicFunction(["x0"], ["x0 * sin(x0)"])
+
+    X = ot.Sample(sampleSize, dimension)
+    for i in range(sampleSize):
+        X[i, 0] = -2.0 + 4.0 * i / (sampleSize - 1)
+    Y = f(X)
+
+    basis = ot.ConstantBasisFactory(dimension).build()
+    covarianceModel = ot.SquaredExponential([1.0], [1.0])
+
+    # LAPACK reference
+    ot.ResourceMap.SetAsString("GaussianProcessFitter-LinearAlgebra", "LAPACK")
+    fit_lapack = ot.GaussianProcessFitter(X, Y, covarianceModel, basis)
+    fit_lapack.setOptimizeParameters(False)
+    fit_lapack.run()
+    gpr_lapack = ot.GaussianProcessRegression(fit_lapack.getResult())
+    gpr_lapack.run()
+    Yhat_ref = gpr_lapack.getResult().getMetaModel()(X)
+
+    # HODLR
+    ot.ResourceMap.SetAsString("GaussianProcessFitter-LinearAlgebra", "HODLR")
+    fit_hodlr = ot.GaussianProcessFitter(X, Y, covarianceModel, basis)
+    fit_hodlr.setOptimizeParameters(False)
+    fit_hodlr.run()
+    gpr_hodlr = ot.GaussianProcessRegression(fit_hodlr.getResult())
+    gpr_hodlr.run()
+    Yhat_hodlr = gpr_hodlr.getResult().getMetaModel()(X)
+
+    # HODLR should match LAPACK closely for interpolation
+    ottest.assert_almost_equal(Yhat_hodlr, Yhat_ref, 1.0e-4, 1.0e-4)
+    print("test_simple PASSED")
+
+
+def test_two_dimensional():
+    """2D GP with HODLR: interpolation and prediction."""
+    inputDimension = 2
+    levels = [4, 3]
+    box = ot.Box(levels)
+    inputSample = box.generate()
+    inputSample *= 10.0
+
+    model = ot.SymbolicFunction(["x", "y"], ["cos(0.5*x) + sin(y)"])
+    outputSample = model(inputSample)
+
+    sampleSize = 5
+    inputValidSample = ot.JointDistribution(2 * [ot.Uniform(0, 10.0)]).getSample(sampleSize)
+
+    covarianceModel = ot.SquaredExponential([5.0, 3.0], [1.0])
+    basis = ot.ConstantBasisFactory(inputDimension).build()
+
+    # LAPACK reference
+    ot.ResourceMap.SetAsString("GaussianProcessFitter-LinearAlgebra", "LAPACK")
+    fit_lapack = ot.GaussianProcessFitter(inputSample, outputSample, covarianceModel, basis)
+    fit_lapack.setOptimizeParameters(False)
+    fit_lapack.run()
+    gpr_lapack = ot.GaussianProcessRegression(fit_lapack.getResult())
+    gpr_lapack.run()
+    Yhat_ref = gpr_lapack.getResult().getMetaModel()
+    pred_ref = Yhat_ref(inputValidSample)
+
+    # HODLR
+    ot.ResourceMap.SetAsString("GaussianProcessFitter-LinearAlgebra", "HODLR")
+    fit_hodlr = ot.GaussianProcessFitter(inputSample, outputSample, covarianceModel, basis)
+    fit_hodlr.setOptimizeParameters(False)
+    fit_hodlr.run()
+    gpr_hodlr = ot.GaussianProcessRegression(fit_hodlr.getResult())
+    gpr_hodlr.run()
+    Yhat_hodlr = gpr_hodlr.getResult().getMetaModel()
+    pred_hodlr = Yhat_hodlr(inputValidSample)
+
+    # HODLR predictions should match LAPACK
+    ottest.assert_almost_equal(pred_hodlr, pred_ref, 0.1, 0.1)
+    print("test_two_dimensional PASSED")
+
+
+if __name__ == "__main__":
+    test_simple()
+    test_two_dimensional()

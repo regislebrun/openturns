@@ -28,6 +28,7 @@
 #include "openturns/TriangularMatrix.hxx"
 #include "openturns/KPermutationsDistribution.hxx"
 #include "openturns/HMatrixFactory.hxx"
+#include "openturns/HODLRMatrixParameters.hxx"
 #include "openturns/ConstantFunction.hxx"
 #include "openturns/Normal.hxx"
 
@@ -116,6 +117,13 @@ void GaussianProcess::initialize() const
     }
     covarianceHMatrix_.factorize(hmatrixParameters.getFactorizationMethod());
   }
+  else if (samplingMethod_ == SamplingMethod::HODLR)
+  {
+    LOGINFO(OSS() << "Assemble and factor the HODLR covariance matrix");
+    HODLRMatrixParameters hodlrParameters;
+    covarianceHODLRMatrix_ = covarianceModel_.discretizeHODLRMatrix(mesh_, hodlrParameters);
+    covarianceHODLRMatrix_.factorize("LLT");
+  }
   else
   {
     // LAPACK
@@ -161,6 +169,7 @@ void GaussianProcess::setMesh(const Mesh & mesh)
   isInitialized_ = false;
   covarianceCholeskyFactor_ = TriangularMatrix();
   covarianceHMatrix_ = HMatrix();
+  covarianceHODLRMatrix_ = HODLRMatrix();
 }
 
 /* TimeGrid accessor */
@@ -178,8 +187,8 @@ GaussianProcess::SamplingMethod GaussianProcess::getSamplingMethod() const
 /** Set sampling method accessor */
 void GaussianProcess::setSamplingMethod(const SamplingMethod samplingMethod)
 {
-  if (samplingMethod > 2)
-    throw InvalidArgumentException(HERE) << "Sampling method should be 0 (Cholesky), 1 (H-Matrix implementation) or 2 (Gibbs)";
+  if (samplingMethod > SamplingMethod::HODLR)
+    throw InvalidArgumentException(HERE) << "Sampling method should be 0 (Cholesky), 1 (H-Matrix), 2 (Gibbs) or 3 (HODLR)";
 
   // Set the sampling method
   if (samplingMethod != samplingMethod_)
@@ -188,6 +197,7 @@ void GaussianProcess::setSamplingMethod(const SamplingMethod samplingMethod)
     isInitialized_ = false;
     covarianceCholeskyFactor_ = TriangularMatrix();
     covarianceHMatrix_ = HMatrix();
+    covarianceHODLRMatrix_ = HODLRMatrix();
   }
 
 }
@@ -214,6 +224,8 @@ Field GaussianProcess::getRealization() const
       values = getRealizationGibbs();
     else if (samplingMethod_ == 1)
       values = getRealizationHMatrix();
+    else if (samplingMethod_ == SamplingMethod::HODLR)
+      values = getRealizationHODLR();
     else values = getRealizationCholesky();
   }
   // If constant trend
@@ -286,6 +298,20 @@ Sample GaussianProcess::getRealizationHMatrix() const
 
   Point y(fullSize);
   covarianceHMatrix_.gemv('N', 1.0, gaussianPoint, 0.0, y);
+  Sample values(size, getOutputDimension());
+  values.getImplementation()->setData(y);
+  return values;
+}
+
+Sample GaussianProcess::getRealizationHODLR() const
+{
+  if (!isInitialized_) initialize();
+  const UnsignedInteger size = getMesh().getVerticesNumber();
+  const UnsignedInteger fullSize = covarianceHODLRMatrix_.getNbRows();
+  const Point gaussianPoint(DistFunc::rNormal(fullSize));
+
+  Point y(fullSize);
+  covarianceHODLRMatrix_.gemv('N', 1.0, gaussianPoint, 0.0, y);
   Sample values(size, getOutputDimension());
   values.getImplementation()->setData(y);
   return values;
