@@ -223,6 +223,10 @@ UnsignedInteger HODLRNode::lowRankApprox(UnsignedInteger startRow, UnsignedInteg
       {
         // All rows tested, none gave a valid pivot. Fall back to a
         // deterministic rank-maxRank approximation using the first columns.
+        if ((maxRank_ > 0) && (maxRank_ < maxRankBound))
+          LOGWARN(OSS() << "HODLRMatrix: rank-starved block (" << nRows << "x" << nCols
+                 << ") reached the max rank " << maxRank_ << " before the assembly tolerance; "
+                 << "accuracy may be degraded. Set HODLRMatrix-MaxRank to 0 for adaptive (tolerance-driven) rank");
         if (rank >= maxRank) break;
         Uout = Matrix(nRows, maxRank);
         Vout = Matrix(nCols, maxRank);
@@ -332,6 +336,11 @@ UnsignedInteger HODLRNode::lowRankApprox(UnsignedInteger startRow, UnsignedInteg
     std::copy(Udata.begin(), Udata.begin() + nRows * rank, &UoutImpl[0]);
     std::copy(Vdata.begin(), Vdata.begin() + nCols * rank, &VoutImpl[0]);
   }
+
+  if ((maxRank_ > 0) && (rank >= maxRank_) && (rank < maxRankBound))
+    LOGWARN(OSS() << "HODLRMatrix: rank-starved block (" << nRows << "x" << nCols
+           << ") reached the max rank " << maxRank_ << " before the assembly tolerance; "
+           << "accuracy may be degraded. Set HODLRMatrix-MaxRank to 0 for adaptive (tolerance-driven) rank");
 
   return rank;
 }

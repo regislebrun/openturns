@@ -16,6 +16,7 @@
 ==== API changes ====
  * GaussianProcessFitter, GeneralLinearModelAlgorithm and GaussianProcessRegression now support HODLR as a linear algebra backend (ResourceMap key "GaussianProcessFitter-LinearAlgebra" = "HODLR")
  * HODLRMatrix: new method applyNugget() adds a relative nugget to the diagonal of the covariance matrix, enabled by default in the GP covariance assembly path via the ResourceMap key "HODLRMatrix-Nugget" (default 1.0e-8, set to zero to disable)
+ * HODLRMatrix: the max rank of the low-rank blocks is now adaptive by default (ResourceMap key "HODLRMatrix-MaxRank", default 0): each block is compressed up to the assembly epsilon instead of being capped at 10, and a warning is emitted when a user-set cap starves a block
  * Removed deprecated DistributionFactory.setKnownParameter(Point, Indices)
  * Removed deprecated Graph.setDrawable(Drawable, int)
  * Removed deprecated SpecFunc.IsNormal

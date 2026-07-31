@@ -399,4 +399,43 @@ ott.assert_almost_equal(hodlr21c.getDiagonal(), ot.Point(n21, 1.0), 1.0e-9, 1.0e
 ot.ResourceMap.SetAsScalar("HODLRMatrix-Nugget", 1.0e-8)
 print("  PASS")
 
+# === Test 22: adaptive max rank (tolerance-driven by default) ===
+print("\n=== Test 22: adaptive max rank ===")
+# the default max rank is zero: each block is compressed up to the
+# assembly epsilon instead of being capped
+params22 = ot.HODLRMatrixParameters()
+ott.assert_almost_equal(ot.Point([params22.getMaxRank()]), ot.Point([0]))
+# long-correlation 2D case: the adaptive default is accurate, a small
+# explicit cap starves the blocks and degrades the solve
+im22 = ot.IntervalMesher([8, 8])
+mesh22 = im22.build(ot.Interval([0.0, 0.0], [1.0, 1.0]))
+vertices22 = mesh22.getVertices()
+vertices22 *= 2.0
+vertices22 -= 1.0
+n22 = vertices22.getSize()
+cov22 = ot.MaternModel([1.0, 1.0], [1.0], 2.5)
+K22 = ot.CovarianceMatrix(cov22.discretize(vertices22))
+b22 = ot.Point(n22, 1.0)
+x_dense22 = K22.solveLinearSystem(b22)
+
+hodlr_adaptive22 = cov22.discretizeHODLRMatrix(vertices22, make_params(leaf=4, factorization="LLT"))
+hodlr_adaptive22.factorize("LLT")
+x_adaptive22 = hodlr_adaptive22.solve(b22)
+err_adaptive22 = (x_adaptive22 - x_dense22).norm() / x_dense22.norm()
+assert err_adaptive22 < 1.0e-2, (
+    f"adaptive rank solve error {err_adaptive22:.2e} should be small"
+)
+
+params_capped22 = make_params(leaf=4, factorization="LLT")
+params_capped22.setMaxRank(2)
+hodlr_capped22 = cov22.discretizeHODLRMatrix(vertices22, params_capped22)
+hodlr_capped22.factorize("LLT")
+x_capped22 = hodlr_capped22.solve(b22)
+err_capped22 = (x_capped22 - x_dense22).norm() / x_dense22.norm()
+assert err_capped22 > err_adaptive22, (
+    "an explicit small max rank should degrade the solve accuracy"
+)
+print(f"  adaptive err= {err_adaptive22:.2e}, capped(maxRank=2) err= {err_capped22:.2e}")
+print("  PASS")
+
 print("\n=== ALL TESTS PASSED ===")

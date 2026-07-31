@@ -51,6 +51,27 @@ Parameters
 size : int
     Minimum number of rows/columns for a leaf block."
 
+%feature("docstring") OT::HODLRMatrixParameters::getMaxRank
+"Return the maximum rank for low-rank blocks.
+
+Returns
+-------
+rank : int
+    Maximum rank of the low-rank blocks. Zero means the rank is
+    adaptive, i.e. driven by the assembly epsilon."
+
+%feature("docstring") OT::HODLRMatrixParameters::setMaxRank
+"Set the maximum rank for low-rank blocks.
+
+Parameters
+----------
+rank : int
+    Maximum rank of the low-rank blocks. Zero (the default) means the
+    rank is adaptive, i.e. each block is compressed up to the assembly
+    epsilon. A positive value caps the rank of every block; blocks that
+    hit the cap before reaching the assembly epsilon are reported by a
+    warning as rank-starved."
+
 %feature("docstring") OT::HODLRMatrixParameters::getFactorizationMethod
 "Return the factorization method.
 

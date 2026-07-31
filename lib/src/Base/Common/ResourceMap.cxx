@@ -1749,7 +1749,7 @@ void ResourceMap::loadDefaultConfiguration()
   addAsScalar("HODLRMatrix-AssemblyEpsilon", 1.0e-6);
   addAsScalar("HODLRMatrix-RecompressionEpsilon", 1.0e-6);
   addAsUnsignedInteger("HODLRMatrix-MinLeafSize", 250);
-  addAsUnsignedInteger("HODLRMatrix-MaxRank", 10);
+  addAsUnsignedInteger("HODLRMatrix-MaxRank", 0);
   addAsString("HODLRMatrix-FactorizationMethod", "LLt", {"LU", "LLt"});
   addAsUnsignedInteger("HODLRMatrix-FactorizationIterations", 20);
   addAsUnsignedInteger("HODLRMatrix-DenseThreshold", 256);
