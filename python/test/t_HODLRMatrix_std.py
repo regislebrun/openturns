@@ -342,4 +342,44 @@ b20 = ot.Point(size20, 1.0)
 ott.assert_almost_equal(hodlr20.solve(b20), K20.solveLinearSystem(b20), 1.0e-4, 1.0e-4)
 print("  PASS")
 
+# === Test 21: relative nugget via discretizeHODLRMatrix ===
+print("\n=== Test 21: relative nugget ===")
+nugget = 1.0e-4
+ot.ResourceMap.SetAsScalar("HODLRMatrix-Nugget", nugget)
+cov21 = ot.MaternModel([2.0], [1.0], 2.5)
+grid21 = ot.Box([40]).generate()
+grid21 *= 2.0
+grid21 -= 1.0
+n21 = grid21.getSize()
+params21 = make_params(leaf=5, factorization="LLT")
+params21.setMaxRank(40)
+hodlr21 = cov21.discretizeHODLRMatrix(grid21, params21)
+# kernel has unit amplitude: the diagonal grows by the relative nugget
+diag_ref21 = ot.Point(n21, 1.0 + nugget)
+ott.assert_almost_equal(hodlr21.getDiagonal(), diag_ref21, 1.0e-9, 1.0e-9)
+hodlr21.factorize("LLT")
+b21 = ot.Point(n21, 1.0)
+K21 = ot.CovarianceMatrix(cov21.discretize(grid21))
+for i in range(n21):
+    K21[i, i] += nugget
+ott.assert_almost_equal(hodlr21.solve(b21), K21.solveLinearSystem(b21), 1.0e-6, 1.0e-6)
+ld21 = hodlr21.logDeterminant()
+ld_ref21 = K21.computeLogAbsoluteDeterminant()[0]
+ott.assert_almost_equal(ot.Point([ld21]), ot.Point([ld_ref21]), 1.0e-4, 1.0e-4)
+
+# direct applyNugget on a factory-built matrix
+ot.ResourceMap.SetAsScalar("HODLRMatrix-Nugget", 2.0e-3)
+factory21 = ot.HODLRMatrixFactory()
+hodlr21b = factory21.build(grid21, 1, True, make_params(leaf=5))
+hodlr21b.assembleReal(HODLRTestAssemblyFunction(grid21, 0.1), 'L')
+hodlr21b.applyNugget()
+ott.assert_almost_equal(hodlr21b.getDiagonal(), ot.Point(n21, 1.0 + 2.0e-3), 1.0e-9, 1.0e-9)
+
+# a zero nugget disables the regularization
+ot.ResourceMap.SetAsScalar("HODLRMatrix-Nugget", 0.0)
+hodlr21c = cov21.discretizeHODLRMatrix(grid21, params21)
+ott.assert_almost_equal(hodlr21c.getDiagonal(), ot.Point(n21, 1.0), 1.0e-9, 1.0e-9)
+ot.ResourceMap.SetAsScalar("HODLRMatrix-Nugget", 1.0e-8)
+print("  PASS")
+
 print("\n=== ALL TESTS PASSED ===")

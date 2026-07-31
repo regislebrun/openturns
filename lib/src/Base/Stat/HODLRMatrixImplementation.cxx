@@ -306,6 +306,18 @@ void HODLRMatrixImplementation::addIdentity(Scalar alpha)
   isFactorized_ = false;
 }
 
+void HODLRMatrixImplementation::applyNugget()
+{
+  const Scalar nugget = ResourceMap::GetAsScalar("HODLRMatrix-Nugget");
+  if (nugget <= 0.0)
+    return;
+  Scalar meanDiagonal = 0.0;
+  for (UnsignedInteger i = 0; i < n_; ++i)
+    meanDiagonal += diagonal_[i];
+  meanDiagonal /= n_;
+  addIdentity(nugget * meanDiagonal);
+}
+
 Scalar HODLRMatrixImplementation::norm() const
 {
   throw NotYetImplementedException(HERE) << "HODLRMatrixImplementation::norm";

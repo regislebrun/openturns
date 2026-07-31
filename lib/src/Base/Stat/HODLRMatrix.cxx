@@ -91,6 +91,12 @@ void HODLRMatrix::addIdentity(Scalar alpha)
   getImplementation()->addIdentity(alpha);
 }
 
+void HODLRMatrix::applyNugget()
+{
+  copyOnWrite();
+  getImplementation()->applyNugget();
+}
+
 Scalar HODLRMatrix::norm() const
 {
   return getImplementation()->norm();

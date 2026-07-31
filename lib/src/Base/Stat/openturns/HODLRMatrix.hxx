@@ -49,6 +49,7 @@ public:
   void gemv(char trans, Scalar alpha, const Point& x, Scalar beta, Point& y) const;
 
   void addIdentity(Scalar alpha);
+  void applyNugget();
   Scalar norm() const;
   Point getDiagonal() const;
 

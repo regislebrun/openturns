@@ -633,6 +633,7 @@ Scalar GaussianProcessFitter::computeHODLRLogDeterminantCholesky()
 
   HODLRCovarianceAssemblyFunction evaluator(reducedCovarianceModel_, inputSample_);
   covarianceCholeskyFactorHODLR_.assemble(evaluator, 'L');
+  covarianceCholeskyFactorHODLR_.applyNugget();
   covarianceCholeskyFactorHODLR_.factorize(parameters.getFactorizationMethod());
 
   // y corresponds to output data

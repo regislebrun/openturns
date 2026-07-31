@@ -875,6 +875,7 @@ HODLRMatrix CovarianceModelImplementation::discretizeHODLRMatrix(const Sample & 
   HODLRMatrix covarianceHODLR = factory.build(vertices, outputDimension_, true, parameters);
   HODLRCovarianceAssemblyFunction evaluator(*this, vertices);
   covarianceHODLR.assemble(evaluator, 'L');
+  covarianceHODLR.applyNugget();
   return covarianceHODLR;
 }
 

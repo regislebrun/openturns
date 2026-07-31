@@ -58,3 +58,18 @@ Returns
 -------
 logdet : float
     Logarithm of the absolute value of the determinant."
+
+%feature("docstring") OT::HODLRMatrix::applyNugget
+"Add a relative nugget to the diagonal.
+
+Adds a small multiple of the mean diagonal to the matrix, following
+the formulation C = sigma^2 I + K used in the HODLR Gaussian-process
+literature. The relative factor is read from the resource key
+'HODLRMatrix-Nugget' (default 1.0e-8); setting it to zero disables
+the nugget. The nugget bounds the condition number of ill-conditioned
+covariance matrices (e.g. long-correlation kernels) and is applied
+through the same mechanism as :meth:`addIdentity`.
+
+Notes
+-----
+This method must be called after assembly and before factorization."
