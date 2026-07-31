@@ -150,6 +150,23 @@ HODLRNode::HODLRNode(Pointer<const HODLREntryEvaluator> eval,
         start_, half,
         tolerance, rng, U_[1], V_[0]);
 
+    // Fall back to dense when the block is not low-rank: if the ACA reached
+    // the full rank min(rows, cols), store the block exactly as U_[1] = A01
+    // and V_[0] = I instead of keeping a truncated (and inexact) product.
+    const UnsignedInteger s1 = size_ - half;
+    if (rank_ == std::min(s1, half))
+    {
+      U_[1] = Matrix(s1, half);
+      V_[0] = Matrix(half, half);
+      MatrixImplementation& U1Impl = *U_[1].getImplementation();
+      MatrixImplementation& V0Impl = *V_[0].getImplementation();
+      for (UnsignedInteger j = 0; j < half; ++j)
+        V0Impl[j + j * half] = 1.0;
+      for (UnsignedInteger j = 0; j < half; ++j)
+        for (UnsignedInteger i = 0; i < s1; ++i)
+          U1Impl[i + j * s1] = (*p_eval_)(start_ + half + i, start_ + j);
+    }
+
     // Symmetric: A10 = A01^T = V_[0] * U_[1]^T, so:
     U_[0] = V_[0];
     V_[1] = U_[1];

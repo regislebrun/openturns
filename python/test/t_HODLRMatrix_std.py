@@ -438,4 +438,30 @@ assert err_capped22 > err_adaptive22, (
 print(f"  adaptive err= {err_adaptive22:.2e}, capped(maxRank=2) err= {err_capped22:.2e}")
 print("  PASS")
 
+# === Test 23: full-rank blocks fall back to dense storage ===
+print("\n=== Test 23: dense fallback for full-rank blocks ===")
+# 3-level 1D tree: every off-diagonal block reaches min(rows, cols), so each
+# block is stored densely (U = A01, V = I) instead of being truncated.
+ot.ResourceMap.SetAsScalar("HODLRMatrix-Nugget", 0.0)
+n23 = 40
+vertices23 = ot.Sample([[i * 2.0 / (n23 - 1) - 1.0] for i in range(n23)])
+af23 = HODLRTestAssemblyFunction(vertices23, 0.1)
+K23 = build_dense_matrix(af23, n23)
+b23 = ot.Point(n23, 1.0)
+x_dense23 = K23.solveLinearSystem(b23)
+
+params23 = make_params(leaf=5, factorization="LLT")
+params23.setMaxRank(20)
+hodlr23 = build_hodlr(vertices23, af23, params=params23)
+x_h23 = hodlr23.solve(b23)
+err23 = (x_h23 - x_dense23).norm() / x_dense23.norm()
+assert err23 < 1.0e-8, f"dense fallback solve error {err23:.2e} should be small"
+cr23 = hodlr23.compressionRatio()
+# every block reached its full rank: the tree is stored densely
+assert cr23[0] == cr23[1], (
+    f"full-rank tree should be stored densely ({cr23[0]}/{cr23[1]})"
+)
+print(f"  stored/total= {cr23[0]}/{cr23[1]}, solve err= {err23:.2e}")
+print("  PASS")
+
 print("\n=== ALL TESTS PASSED ===")
