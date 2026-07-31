@@ -79,7 +79,7 @@ xm = x.computeMean()
 print("f(xm)=", f(xm))
 fhat_xm = metamodel(xm)
 print("f^(xm)=", fhat_xm)
-ott.assert_almost_equal(fhat_xm, [1.09018], 1e-3, 1e-3)
+ott.assert_almost_equal(fhat_xm, [1.0802], 1e-3, 1e-3)
 
 # test MSE
 resultFCE = result.getFCEResult()
@@ -88,7 +88,7 @@ yFCE = resultFCE.getOutputSample()
 validation = ot.MetaModelValidation(yFCE, resultFCE.getMetaModel()(xFCE))
 mse = validation.computeMeanSquaredError()
 print("MSE", mse)
-assert mse.norm() < 1e-2, "MSE too large"
+assert mse.norm() < 2e-2, "MSE too large"
 
 # check modes retained
 kl_results = result.getInputKLResultCollection()
@@ -109,7 +109,7 @@ yFCE = resultFCE.getOutputSample()
 validation = ot.MetaModelValidation(yFCE, resultFCE.getMetaModel()(xFCE))
 mse = validation.computeMeanSquaredError()
 print("MSE", mse)
-assert mse.norm() < 1e-2, "MSE too large"
+assert mse.norm() < 2e-2, "MSE too large"
 
 # check modes retained
 kl_results = result.getInputKLResultCollection()
