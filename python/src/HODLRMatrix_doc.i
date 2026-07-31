@@ -56,6 +56,28 @@ Returns
 permutation : :class:`~openturns.Indices`
     The permutation used at assembly time, empty for the identity."
 
+%feature("docstring") OT::HODLRMatrix::setPermutation
+"Set the spatial permutation.
+
+The matrix is assembled in the permuted order, so this method must be
+called before :meth:`assemble`. The permutation is a bijection of
+``[0, ..., n-1]`` mapping the permuted index to the original one; an
+empty permutation restores the original order.
+
+Parameters
+----------
+permutation : sequence of int
+    Permutation of ``[0, ..., n-1]``, or an empty sequence for the
+    identity."
+
+%feature("docstring") OT::HODLRMatrix::getPermutation
+"Return the spatial permutation.
+
+Returns
+-------
+permutation : :class:`~openturns.Indices`
+    The permutation used at assembly time, empty for the identity."
+
 %feature("docstring") OT::HODLRMatrix::solve
 "Solve a linear system.
 
