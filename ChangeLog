@@ -19,6 +19,9 @@
  * HODLRMatrix: the max rank of the low-rank blocks is now adaptive by default (ResourceMap key "HODLRMatrix-MaxRank", default 0): each block is compressed up to the assembly epsilon instead of being capped at 10, and a warning is emitted when a user-set cap starves a block
  * HODLRMatrix: off-diagonal blocks whose numerical rank reaches min(rows, cols) are now stored densely (U = A01, V = I) instead of as truncated low-rank factors
  * HODLRMatrix: the vertices are now reordered along a space-filling curve (KDTree::getOrdering) before assembly, so that the recursive split of the HODLR tree separates spatially close points at the leaves; enabled by default via the ResourceMap key "HODLRMatrix-UseSpatialOrdering" (default true), opt-out via HODLRMatrixParameters.setUseSpatialOrdering(False)
+ * HODLRMatrix: the adaptive cross approximation now uses max-element (partial-pivoting) pivots, which compress low-rank blocks reliably on smooth kernels; the former random-pivot selection was removed
+ * HODLRMatrix: fixed gemv() after a Cholesky factorization, which applied the factor L instead of the full matrix A = L L^T
+ * HODLRMatrix: leaf blocks are now assembled from the lower-triangular kernel evaluations only, mirroring them into the upper triangle (the HODLR tree is symmetric), which halves the kernel evaluations in the leaf assembly
  * KDTree: new method getOrdering() returns a deterministic space-filling ordering of the points
  * Removed deprecated DistributionFactory.setKnownParameter(Point, Indices)
  * Removed deprecated Graph.setDrawable(Drawable, int)

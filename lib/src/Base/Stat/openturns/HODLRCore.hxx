@@ -28,7 +28,6 @@
 #include "openturns/Matrix.hxx"
 #include "openturns/Pointer.hxx"
 
-#include <random>
 #include <vector>
 #include <functional>
 
@@ -181,7 +180,6 @@ public:
             UnsignedInteger minLeafSize,
             UnsignedInteger maxRank,
             Scalar tolerance,
-            std::mt19937& rng,
             SignedInteger direction = 0,
             HODLRNode* parent = nullptr);
 
@@ -206,10 +204,9 @@ public:
   void setShift(Scalar shift);
 
 private:
-  UnsignedInteger lowRankApprox(UnsignedInteger startRow, UnsignedInteger nRows,
-                                UnsignedInteger startCol, UnsignedInteger nCols,
-                                Scalar tol, std::mt19937& rng,
-                                Matrix& Uout, Matrix& Vout);
+  UnsignedInteger lowRankApproxPartialPivot(UnsignedInteger startRow, UnsignedInteger nRows,
+      UnsignedInteger startCol, UnsignedInteger nCols,
+      Scalar tol, Matrix& Uout, Matrix& Vout);
   void factorize();
   void factorizeLeafCholesky();
   void factorizeLeafCholeskyCorrected(const Matrix& K, const Matrix& U1, Scalar lambda);  // Bypass evaluator, use dgemm correction
@@ -229,7 +226,6 @@ private:
   UnsignedInteger minLeafSize_;
   UnsignedInteger denseThreshold_;
   Scalar tolerance_;
-  std::mt19937* p_rng_; // non-owning pointer to shared rng (evolves across the tree)
   bool isLeaf_;
   bool isCholesky_;
   Scalar logDet_;

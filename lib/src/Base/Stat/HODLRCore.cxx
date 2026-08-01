@@ -27,7 +27,6 @@
 #include "openturns/ResourceMap.hxx"
 
 #include <algorithm>
-#include <numeric>
 #include <cmath>
 
 BEGIN_NAMESPACE_OPENTURNS
@@ -99,6 +98,28 @@ void HODLRDpotrs(const char* uplo, int* n, int* nrhs, double* a, int* lda,
   dpotrs_(const_cast<char*>(uplo), n, nrhs, a, lda, b, ldb, info, &luplo);
 }
 
+// Fill a symmetric dense leaf block using only the lower-triangular kernel
+// evaluations and mirror them into the upper triangle. The HODLR tree is
+// symmetric by construction, and the entry evaluators used (kernel,
+// permuted, corrected) all satisfy f(i,j) = f(j,i), so the mirrored values
+// are exact.
+void HODLRSymmetricLeafFill(MatrixImplementation& Sfact,
+                            UnsignedInteger size,
+                            UnsignedInteger start,
+                            const HODLREntryEvaluator& eval)
+{
+  for (UnsignedInteger j = 0; j < size; ++j)
+  {
+    for (UnsignedInteger i = j; i < size; ++i)
+    {
+      const Scalar v = eval(start + i, start + j);
+      Sfact[i + j * size] = v;
+      if (i != j)
+        Sfact[j + i * size] = v;
+    }
+  }
+}
+
 }  // namespace
 
 HODLRNode::HODLRNode(Pointer<const HODLREntryEvaluator> eval,
@@ -108,7 +129,6 @@ HODLRNode::HODLRNode(Pointer<const HODLREntryEvaluator> eval,
                      UnsignedInteger minLeafSize,
                      UnsignedInteger maxRank,
                      Scalar tolerance,
-                     std::mt19937& rng,
                      SignedInteger direction,
                      HODLRNode* parent)
   : p_diag_(diag)
@@ -121,7 +141,6 @@ HODLRNode::HODLRNode(Pointer<const HODLREntryEvaluator> eval,
   , minLeafSize_(minLeafSize)
   , denseThreshold_(0)
   , tolerance_(tolerance)
-  , p_rng_(&rng)
   , isLeaf_(false)
   , isCholesky_(false)
   , logDet_(0.0)
@@ -145,10 +164,11 @@ HODLRNode::HODLRNode(Pointer<const HODLREntryEvaluator> eval,
 
     // Low-rank approximation of off-diagonal block A01:
     // A[child1, child0] = U_[1] * V_[0]^T
-    rank_ = lowRankApprox(
+    // Max-element (partial-pivoting) ACA.
+    rank_ = lowRankApproxPartialPivot(
         start_ + half, size_ - half,
         start_, half,
-        tolerance, rng, U_[1], V_[0]);
+        tolerance, U_[1], V_[0]);
 
     // Fall back to dense when the block is not low-rank: if the ACA reached
     // the full rank min(rows, cols), store the block exactly as U_[1] = A01
@@ -173,8 +193,8 @@ HODLRNode::HODLRNode(Pointer<const HODLREntryEvaluator> eval,
 
     totalRank_ = rank_;
 
-    p_child0_ = new HODLRNode(p_eval_, p_diag_, start_, half, minLeafSize, maxRank_, tolerance, rng, 0, this);
-    p_child1_ = new HODLRNode(p_eval_, p_diag_, start_ + half, size_ - half, minLeafSize, maxRank_, tolerance, rng, 1, this);
+    p_child0_ = new HODLRNode(p_eval_, p_diag_, start_, half, minLeafSize, maxRank_, tolerance_, 0, this);
+    p_child1_ = new HODLRNode(p_eval_, p_diag_, start_ + half, size_ - half, minLeafSize, maxRank_, tolerance_, 1, this);
   }
   else
   {
@@ -210,41 +230,56 @@ HODLRBlasGuard::~HODLRBlasGuard()
 #endif
 }
 
-UnsignedInteger HODLRNode::lowRankApprox(UnsignedInteger startRow, UnsignedInteger nRows,
-                                         UnsignedInteger startCol, UnsignedInteger nCols,
-                                         Scalar tol, std::mt19937& rng,
-                                         Matrix& Uout, Matrix& Vout)
+UnsignedInteger HODLRNode::lowRankApproxPartialPivot(UnsignedInteger startRow, UnsignedInteger nRows,
+    UnsignedInteger startCol, UnsignedInteger nCols,
+    Scalar tol, Matrix& Uout, Matrix& Vout)
 {
   const UnsignedInteger maxRankBound = std::min(nRows, nCols);
   const UnsignedInteger maxRank = (maxRank_ > 0) ? std::min(maxRankBound, maxRank_) : maxRankBound;
 
+  // Residual matrix in column-major layout, filled from the evaluator
+  std::vector<Scalar> R(nRows * nCols);
+  for (UnsignedInteger j = 0; j < nCols; ++j)
+    for (UnsignedInteger i = 0; i < nRows; ++i)
+      R[i + j * nRows] = (*p_eval_)(startRow + i, startCol + j);
+
   std::vector<Scalar> Udata(nRows * maxRank, 0.0);
   std::vector<Scalar> Vdata(nCols * maxRank, 0.0);
-
-  std::vector<UnsignedInteger> index(nRows);
-  std::iota(index.begin(), index.end(), static_cast<UnsignedInteger>(0));
-  std::shuffle(index.begin(), index.end(), rng);
 
   UnsignedInteger rank = 0;
   Scalar norm = 0.0;
   const Scalar tol2 = tol * tol;
 
-  while (true)
+  while (rank < maxRank)
   {
-    SignedInteger i = -1;
-    UnsignedInteger j = 0;
-
-    while (true)
-    {
-      if (index.empty())
+    // Partial (max-element) pivoting over the current residual
+    Scalar maxVal = 0.0;
+    UnsignedInteger pivotRow = 0;
+    UnsignedInteger pivotCol = 0;
+    for (UnsignedInteger j = 0; j < nCols; ++j)
+      for (UnsignedInteger i = 0; i < nRows; ++i)
       {
-        // All rows tested, none gave a valid pivot. Fall back to a
-        // deterministic rank-maxRank approximation using the first columns.
+        const Scalar absVal = std::abs(R[i + j * nRows]);
+        if (absVal > maxVal)
+        {
+          maxVal = absVal;
+          pivotRow = i;
+          pivotCol = j;
+        }
+      }
+
+    if (maxVal < 1e-14)
+    {
+      if (rank == 0)
+      {
+        // The block is numerically zero: no pivot survives the hard-coded
+        // threshold. Keep the deterministic rank-maxRank representation used
+        // by lowRankApprox (U = first columns of A, V = I) so downstream code
+        // never has to deal with an empty U/V pair.
         if ((maxRank_ > 0) && (maxRank_ < maxRankBound))
           LOGWARN(OSS() << "HODLRMatrix: rank-starved block (" << nRows << "x" << nCols
                  << ") reached the max rank " << maxRank_ << " before the assembly tolerance; "
                  << "accuracy may be degraded. Set HODLRMatrix-MaxRank to 0 for adaptive (tolerance-driven) rank");
-        if (rank >= maxRank) break;
         Uout = Matrix(nRows, maxRank);
         Vout = Matrix(nCols, maxRank);
         MatrixImplementation& UoutImpl = *Uout.getImplementation();
@@ -269,80 +304,47 @@ UnsignedInteger HODLRNode::lowRankApprox(UnsignedInteger startRow, UnsignedInteg
         }
         return maxRank;
       }
-
-      std::uniform_int_distribution<UnsignedInteger> dist(0, index.size() - 1);
-      const UnsignedInteger k = dist(rng);
-      i = static_cast<SignedInteger>(index[k]);
-      index[k] = index.back();
-      index.pop_back();
-
-      for (UnsignedInteger n = 0; n < nCols; ++n)
-        Vdata[n + rank * nCols] = (*p_eval_)(startRow + i, startCol + n);
-
-      for (UnsignedInteger r = 0; r < rank; ++r)
-      {
-        const Scalar uir = Udata[i + r * nRows];
-        for (UnsignedInteger n = 0; n < nCols; ++n)
-          Vdata[n + rank * nCols] -= uir * Vdata[n + r * nCols];
-      }
-
-      Scalar maxVal = std::abs(Vdata[rank * nCols]);
-      j = 0;
-      for (UnsignedInteger n = 1; n < nCols; ++n)
-      {
-        const Scalar v = std::abs(Vdata[n + rank * nCols]);
-        if (v > maxVal)
-        {
-          maxVal = v;
-          j = n;
-        }
-      }
-
-      if (maxVal >= 1e-14) break;
+      break;
     }
 
-    if (i < 0) break;
-
-    const Scalar scale = 1.0 / Vdata[j + rank * nCols];
-    for (UnsignedInteger n = 0; n < nCols; ++n)
-      Vdata[n + rank * nCols] *= scale;
-
-    for (UnsignedInteger n = 0; n < nRows; ++n)
-      Udata[n + rank * nRows] = (*p_eval_)(startRow + n, startCol + j);
-
-    for (UnsignedInteger r = 0; r < rank; ++r)
-    {
-      const Scalar vjr = Vdata[j + r * nCols];
-      for (UnsignedInteger n = 0; n < nRows; ++n)
-        Udata[n + rank * nRows] -= vjr * Udata[n + r * nRows];
-    }
-
-    ++rank;
-    if (rank >= maxRank) break;
+    const Scalar pivot = R[pivotRow + pivotCol * nRows];
+    const Scalar* ucol = &R[pivotCol * nRows];
+    const Scalar* vrow = &R[pivotRow];
 
     Scalar uNorm2 = 0.0;
+    for (UnsignedInteger i = 0; i < nRows; ++i)
+      uNorm2 += ucol[i] * ucol[i];
     Scalar vNorm2 = 0.0;
-    for (UnsignedInteger n = 0; n < nRows; ++n)
-      uNorm2 += Udata[n + (rank - 1) * nRows] * Udata[n + (rank - 1) * nRows];
-    for (UnsignedInteger n = 0; n < nCols; ++n)
-      vNorm2 += Vdata[n + (rank - 1) * nCols] * Vdata[n + (rank - 1) * nCols];
-    Scalar rowcolNorm = uNorm2 * vNorm2;
+    for (UnsignedInteger j = 0; j < nCols; ++j)
+    {
+      const Scalar v = vrow[j * nRows] / pivot;
+      vNorm2 += v * v;
+    }
+    const Scalar rowcolNorm = uNorm2 * vNorm2;
 
     if (rowcolNorm < tol2 * norm) break;
 
     norm += rowcolNorm;
-    if (rank > 1)
+
+    // Store the rank-one factor
+    for (UnsignedInteger i = 0; i < nRows; ++i)
+      Udata[i + rank * nRows] = ucol[i];
+    for (UnsignedInteger j = 0; j < nCols; ++j)
+      Vdata[j + rank * nCols] = vrow[j * nRows] / pivot;
+
+    // Exact rank-one update R -= u * v^T (zeroes the pivot row and column).
+    // The source column is Udata, not R: R's pivot column is zeroed in place
+    // while this loop is running.
+    const Scalar* u = &Udata[rank * nRows];
+    for (UnsignedInteger j = 0; j < nCols; ++j)
     {
-      for (UnsignedInteger r = 0; r < rank - 1; ++r)
-      {
-        Scalar dotU = 0.0, dotV = 0.0;
-        for (UnsignedInteger n = 0; n < nRows; ++n)
-          dotU += Udata[n + r * nRows] * Udata[n + (rank - 1) * nRows];
-        for (UnsignedInteger n = 0; n < nCols; ++n)
-          dotV += Vdata[n + r * nCols] * Vdata[n + (rank - 1) * nCols];
-        norm += 2.0 * dotU * dotV;
-      }
+      const Scalar vj = vrow[j * nRows] / pivot;
+      Scalar* rcol = &R[j * nRows];
+      for (UnsignedInteger i = 0; i < nRows; ++i)
+        rcol[i] -= u[i] * vj;
     }
+
+    ++rank;
   }
 
   Uout = Matrix(nRows, rank);
@@ -557,7 +559,7 @@ void HODLRNode::computeCholesky()
       if (useDenseFallback)
       {
         p_child1_ = new HODLRNode(p_eval_, p_diag_, start_ + s0, s1,
-                                  s1 + 1, maxRank_, tolerance_, *p_rng_, 1, this);
+                                  s1 + 1, maxRank_, tolerance_, 1, this);
         p_child1_->setShift(shift_);
         try
         {
@@ -594,7 +596,7 @@ void HODLRNode::computeCholesky()
               p_eval_, start_ + s0, s1, U_[1], K, lambda);
         }
         p_child1_ = new HODLRNode(correctedEval, p_diag_, start_ + s0, s1,
-                                  minLeafSize_, maxRank_, tolerance_, *p_rng_, 1, this);
+                                  minLeafSize_, maxRank_, tolerance_, 1, this);
         p_child1_->setShift(shift_);
         try
         {
@@ -685,9 +687,7 @@ void HODLRNode::factorize()
     Sfactor_ = Matrix(size_, size_);
     {
       MatrixImplementation& Sfact = *Sfactor_.getImplementation();
-      for (UnsignedInteger i = 0; i < size_; ++i)
-        for (UnsignedInteger j = 0; j < size_; ++j)
-          Sfact[i + j * size_] = (*p_eval_)(start_ + i, start_ + j);
+      HODLRSymmetricLeafFill(Sfact, size_, start_, *p_eval_);
       if (shift_ != 0.0)
         for (UnsignedInteger i = 0; i < size_; ++i)
           Sfact[i + i * size_] += shift_;
@@ -839,9 +839,7 @@ void HODLRNode::factorizeLeafCholesky()
       const UnsignedInteger leafStart = start_;
 
       // Fill with root original evaluator entries
-      for (UnsignedInteger i = 0; i < n; ++i)
-        for (UnsignedInteger j = 0; j < n; ++j)
-          Sfact[i + j * n] = (*original)(leafStart + i, leafStart + j);
+      HODLRSymmetricLeafFill(Sfact, n, leafStart, *original);
 
       // Apply global shift to all diagonals (from addIdentity)
       if (shift_ != 0.0)
@@ -889,9 +887,7 @@ void HODLRNode::factorizeLeafCholesky()
     }
     else
     {
-      for (UnsignedInteger i = 0; i < size_; ++i)
-        for (UnsignedInteger j = 0; j < size_; ++j)
-          Sfact[i + j * size_] = (*p_eval_)(start_ + i, start_ + j);
+      HODLRSymmetricLeafFill(Sfact, size_, start_, *p_eval_);
       if (shift_ != 0.0)
         for (UnsignedInteger i = 0; i < size_; ++i)
           Sfact[i + i * size_] += shift_;
@@ -927,9 +923,7 @@ void HODLRNode::factorizeLeafCholeskyCorrected(const Matrix& K, const Matrix& U1
   MatrixImplementation& Sfact = *Sfactor_.getImplementation();
 
   // 1. Fill with original evaluator entries
-  for (UnsignedInteger i = 0; i < n; ++i)
-    for (UnsignedInteger j = 0; j < n; ++j)
-      Sfact[i + j * n] = (*p_eval_)(start_ + i, start_ + j);
+  HODLRSymmetricLeafFill(Sfact, n, start_, *p_eval_);
 
   // 2. Compute correction = U1 * K * U1^T via dgemm
   if (rank > 0)
@@ -1021,25 +1015,30 @@ void HODLRNode::applyInverse(Matrix& x, UnsignedInteger start) const
   const Scalar* V0_data = &(*V_[0].getImplementation())[0];
   const Scalar* U0_data = &(*U_[0].getImplementation())[0];
   const Scalar* U1_data = &(*U_[1].getImplementation())[0];
+  const UnsignedInteger nxRows = x.getNbRows();
+  x.copyOnWrite();
+  Scalar* x_data = &(*x.getImplementation())[0];
 
   // temp[0:rank_, :] = V1^T * x[s0:s0+s1, :]
   // temp[rank_:2*rank_, :] = V0^T * x[0:s0, :]
-  Matrix temp(2 * rank_, nrhs, 0.0);
+  const UnsignedInteger ntRows = 2 * rank_;
+  Matrix temp(ntRows, nrhs, 0.0);
+  MatrixImplementation& tempImpl = *temp.getImplementation();
   for (UnsignedInteger j = 0; j < nrhs; ++j)
   {
     for (UnsignedInteger i = 0; i < rank_; ++i)
     {
       Scalar sum = 0.0;
       for (UnsignedInteger r = 0; r < s1; ++r)
-        sum += V1_data[r + i * s1] * x(offset + s0 + r, j);
-      temp(i, j) = sum;
+        sum += V1_data[r + i * s1] * x_data[(offset + s0 + r) + j * nxRows];
+      tempImpl[i + j * ntRows] = sum;
     }
     for (UnsignedInteger i = 0; i < rank_; ++i)
     {
       Scalar sum = 0.0;
       for (UnsignedInteger r = 0; r < s0; ++r)
-        sum += V0_data[r + i * s0] * x(offset + r, j);
-      temp(rank_ + i, j) = sum;
+        sum += V0_data[r + i * s0] * x_data[(offset + r) + j * nxRows];
+      tempImpl[(rank_ + i) + j * ntRows] = sum;
     }
   }
 
@@ -1053,7 +1052,7 @@ void HODLRNode::applyInverse(Matrix& x, UnsignedInteger start) const
     char trans = 'N';
     Matrix Scopy(Sfactor_);
     std::vector<int> ipivCopy(ipiv_.begin(), ipiv_.end());
-    HODLRDgetrs(&trans, &n, &nr, &Scopy(0, 0), &n, ipivCopy.data(), &temp(0, 0), &ldb, &info);
+    HODLRDgetrs(&trans, &n, &nr, &(*Scopy.getImplementation())[0], &n, ipivCopy.data(), &tempImpl[0], &ldb, &info);
     if (info != 0)
       throw InternalException(HERE) << "Solve failed, info=" << info;
   }
@@ -1066,15 +1065,15 @@ void HODLRNode::applyInverse(Matrix& x, UnsignedInteger start) const
     {
       Scalar sum = 0.0;
       for (UnsignedInteger i = 0; i < rank_; ++i)
-        sum += U0_data[r + i * s0] * temp(i, j);
-      x(offset + r, j) -= sum;
+        sum += U0_data[r + i * s0] * tempImpl[i + j * ntRows];
+      x_data[(offset + r) + j * nxRows] -= sum;
     }
     for (UnsignedInteger r = 0; r < s1; ++r)
     {
       Scalar sum = 0.0;
       for (UnsignedInteger i = 0; i < rank_; ++i)
-        sum += U1_data[r + i * s1] * temp(rank_ + i, j);
-      x(offset + s0 + r, j) -= sum;
+        sum += U1_data[r + i * s1] * tempImpl[(rank_ + i) + j * ntRows];
+      x_data[(offset + s0 + r) + j * nxRows] -= sum;
     }
   }
 }
@@ -1089,20 +1088,25 @@ void HODLRNode::applyInverseLeaf(Matrix& x, UnsignedInteger start) const
   int info = 0;
   char trans = 'N';
 
+  const UnsignedInteger nxRows = x.getNbRows();
+  x.copyOnWrite();
+  Scalar* x_data = &(*x.getImplementation())[0];
+
   Matrix block(size_, nrhs);
+  MatrixImplementation& blockImpl = *block.getImplementation();
   for (UnsignedInteger j = 0; j < nrhs; ++j)
     for (UnsignedInteger i = 0; i < size_; ++i)
-      block(i, j) = x(offset + i, j);
+      blockImpl[i + j * size_] = x_data[(offset + i) + j * nxRows];
 
   Matrix Dcopy(Sfactor_);
   std::vector<int> ipivCopy(ipiv_.begin(), ipiv_.end());
-  HODLRDgetrs(&trans, &n, &nr, &Dcopy(0, 0), &n, ipivCopy.data(), &block(0, 0), &ldb, &info);
+  HODLRDgetrs(&trans, &n, &nr, &(*Dcopy.getImplementation())[0], &n, ipivCopy.data(), &blockImpl[0], &ldb, &info);
   if (info != 0)
     throw InternalException(HERE) << "Solve failed, info=" << info;
 
   for (UnsignedInteger j = 0; j < nrhs; ++j)
     for (UnsignedInteger i = 0; i < size_; ++i)
-      x(offset + i, j) = block(i, j);
+      x_data[(offset + i) + j * nxRows] = blockImpl[i + j * size_];
 }
 
 void HODLRNode::applyInverseCholeskyLeaf(Matrix& x, UnsignedInteger start) const
@@ -1114,20 +1118,25 @@ void HODLRNode::applyInverseCholeskyLeaf(Matrix& x, UnsignedInteger start) const
   int ldb = n;
   int info = 0;
 
+  const UnsignedInteger nxRows = x.getNbRows();
+  x.copyOnWrite();
+  Scalar* x_data = &(*x.getImplementation())[0];
+
   Matrix block(size_, nrhs);
+  MatrixImplementation& blockImpl = *block.getImplementation();
   for (UnsignedInteger j = 0; j < nrhs; ++j)
     for (UnsignedInteger i = 0; i < size_; ++i)
-      block(i, j) = x(offset + i, j);
+      blockImpl[i + j * size_] = x_data[(offset + i) + j * nxRows];
 
   // Solve L * L^T * block = block  =>  block = C^{-1} * block
   Matrix Lcopy(Sfactor_);
-  HODLRDpotrs("L", &n, &nr, &Lcopy(0, 0), &n, &block(0, 0), &ldb, &info);
+  HODLRDpotrs("L", &n, &nr, &(*Lcopy.getImplementation())[0], &n, &blockImpl[0], &ldb, &info);
   if (info != 0)
     throw InternalException(HERE) << "Solve failed, info=" << info;
 
   for (UnsignedInteger j = 0; j < nrhs; ++j)
     for (UnsignedInteger i = 0; i < size_; ++i)
-      x(offset + i, j) = block(i, j);
+      x_data[(offset + i) + j * nxRows] = blockImpl[i + j * size_];
 }
 
 void HODLRNode::applyInverseFactor(Matrix& x) const
@@ -1135,6 +1144,9 @@ void HODLRNode::applyInverseFactor(Matrix& x) const
   // Applies L^{-1} * x in-place where L is this node's HODLR Cholesky factor.
   // x must have size_ rows.
   const UnsignedInteger nrhs = x.getNbColumns();
+  const UnsignedInteger nxRows = x.getNbRows();
+  x.copyOnWrite();
+  Scalar* x_data = &(*x.getImplementation())[0];
 
   if (isLeaf_)
   {
@@ -1143,7 +1155,7 @@ void HODLRNode::applyInverseFactor(Matrix& x) const
     int nrhs_int = static_cast<int>(nrhs);
     double one = 1.0;
     HODLRDtrsm("L", "L", "N", "N", &n, &nrhs_int, &one,
-           const_cast<double*>(&Sfactor_(0, 0)), &n, &x(0, 0), &n);
+           const_cast<double*>(&(*Sfactor_.getImplementation())[0]), &n, x_data, &n);
     return;
   }
 
@@ -1160,9 +1172,10 @@ void HODLRNode::applyInverseFactor(Matrix& x) const
 
   // Step 1: y0 = L00^{-1} * x0
   Matrix x0(s0, nrhs);
+  MatrixImplementation& x0Impl = *x0.getImplementation();
   for (UnsignedInteger j = 0; j < nrhs; ++j)
     for (UnsignedInteger i = 0; i < s0; ++i)
-      x0(i, j) = x(i, j);
+      x0Impl[i + j * s0] = x_data[i + j * nxRows];
   p_child0_->applyInverseFactor(x0);
 
   if (isCholesky_ && rank_ > 0)
@@ -1177,7 +1190,8 @@ void HODLRNode::applyInverseFactor(Matrix& x) const
     int ldX0 = static_cast<int>(s0);
     int ldT = static_cast<int>(rank_);
     Matrix temp(mT, nT);
-    HODLRDgemm("T", "N", &mT, &nT, &kT, &one, const_cast<double*>(&W_(0, 0)), &ldW, const_cast<double*>(&x0(0, 0)), &ldX0, &zero, &temp(0, 0), &ldT);
+    MatrixImplementation& tempImpl = *temp.getImplementation();
+    HODLRDgemm("T", "N", &mT, &nT, &kT, &one, const_cast<double*>(&(*W_.getImplementation())[0]), &ldW, &x0Impl[0], &ldX0, &zero, &tempImpl[0], &ldT);
 
     // x1 -= U_[1] * temp  via dgemm
     int mU = static_cast<int>(s1);
@@ -1186,14 +1200,15 @@ void HODLRNode::applyInverseFactor(Matrix& x) const
     int ldU1 = static_cast<int>(s1);
     int ldTemp = static_cast<int>(rank_);
     int ldX = static_cast<int>(size_);
-    HODLRDgemm("N", "N", &mU, &nU, &kU, &neg, const_cast<double*>(&U_[1](0, 0)), &ldU1, &temp(0, 0), &ldTemp, &one, &x(s0, 0), &ldX);
+    HODLRDgemm("N", "N", &mU, &nU, &kU, &neg, const_cast<double*>(&(*U_[1].getImplementation())[0]), &ldU1, &tempImpl[0], &ldTemp, &one, &x_data[s0], &ldX);
   }
 
   // Step 3: x1 = L11^{-1} * x1  (recursive on child1)
   Matrix x1(s1, nrhs);
+  MatrixImplementation& x1Impl = *x1.getImplementation();
   for (UnsignedInteger j = 0; j < nrhs; ++j)
     for (UnsignedInteger i = 0; i < s1; ++i)
-      x1(i, j) = x(s0 + i, j);
+      x1Impl[i + j * s1] = x_data[(s0 + i) + j * nxRows];
 
   p_child1_->applyInverseFactor(x1);
 
@@ -1201,9 +1216,9 @@ void HODLRNode::applyInverseFactor(Matrix& x) const
   for (UnsignedInteger j = 0; j < nrhs; ++j)
   {
     for (UnsignedInteger i = 0; i < s0; ++i)
-      x(i, j) = x0(i, j);
+      x_data[i + j * nxRows] = x0Impl[i + j * s0];
     for (UnsignedInteger i = 0; i < s1; ++i)
-      x(s0 + i, j) = x1(i, j);
+      x_data[(s0 + i) + j * nxRows] = x1Impl[i + j * s1];
   }
 }
 
@@ -1212,6 +1227,9 @@ void HODLRNode::applyInverseFactorTranspose(Matrix& x) const
   // Applies L^{-T} * x in-place where L is this node's HODLR Cholesky factor.
   // x must have size_ rows.
   const UnsignedInteger nrhs = x.getNbColumns();
+  const UnsignedInteger nxRows = x.getNbRows();
+  x.copyOnWrite();
+  Scalar* x_data = &(*x.getImplementation())[0];
 
   if (isLeaf_)
   {
@@ -1220,7 +1238,7 @@ void HODLRNode::applyInverseFactorTranspose(Matrix& x) const
     int nrhs_int = static_cast<int>(nrhs);
     double one = 1.0;
     HODLRDtrsm("L", "L", "T", "N", &n, &nrhs_int, &one,
-           const_cast<double*>(&Sfactor_(0, 0)), &n, &x(0, 0), &n);
+           const_cast<double*>(&(*Sfactor_.getImplementation())[0]), &n, x_data, &n);
     return;
   }
 
@@ -1237,9 +1255,10 @@ void HODLRNode::applyInverseFactorTranspose(Matrix& x) const
 
   // Step 1: L11^T * x1 = x1  (recursive on child1)
   Matrix x1(s1, nrhs);
+  MatrixImplementation& x1Impl = *x1.getImplementation();
   for (UnsignedInteger j = 0; j < nrhs; ++j)
     for (UnsignedInteger i = 0; i < s1; ++i)
-      x1(i, j) = x(s0 + i, j);
+      x1Impl[i + j * s1] = x_data[(s0 + i) + j * nxRows];
   p_child1_->applyInverseFactorTranspose(x1);
 
   if (isCholesky_ && rank_ > 0)
@@ -1254,7 +1273,8 @@ void HODLRNode::applyInverseFactorTranspose(Matrix& x) const
     int ldX1 = static_cast<int>(s1);
     int ldT = static_cast<int>(rank_);
     Matrix temp(mU, nU);
-    HODLRDgemm("T", "N", &mU, &nU, &kU, &one, const_cast<double*>(&U_[1](0, 0)), &ldU1, const_cast<double*>(&x1(0, 0)), &ldX1, &zero, &temp(0, 0), &ldT);
+    MatrixImplementation& tempImpl = *temp.getImplementation();
+    HODLRDgemm("T", "N", &mU, &nU, &kU, &one, const_cast<double*>(&(*U_[1].getImplementation())[0]), &ldU1, &x1Impl[0], &ldX1, &zero, &tempImpl[0], &ldT);
 
     // x0 -= W * temp  via dgemm
     int mW = static_cast<int>(s0);
@@ -1263,23 +1283,24 @@ void HODLRNode::applyInverseFactorTranspose(Matrix& x) const
     int ldW = static_cast<int>(s0);
     int ldTemp = static_cast<int>(rank_);
     int ldX0 = static_cast<int>(s0);
-    HODLRDgemm("N", "N", &mW, &nW, &kW, &neg, const_cast<double*>(&W_(0, 0)), &ldW, &temp(0, 0), &ldTemp, &one, &x(0, 0), &ldX0);
+    HODLRDgemm("N", "N", &mW, &nW, &kW, &neg, const_cast<double*>(&(*W_.getImplementation())[0]), &ldW, &tempImpl[0], &ldTemp, &one, x_data, &ldX0);
   }
 
   // Step 3: L00^T * x0 = x0  (recursive on child0)
   Matrix x0(s0, nrhs);
+  MatrixImplementation& x0Impl = *x0.getImplementation();
   for (UnsignedInteger j = 0; j < nrhs; ++j)
     for (UnsignedInteger i = 0; i < s0; ++i)
-      x0(i, j) = x(i, j);
+      x0Impl[i + j * s0] = x_data[i + j * nxRows];
   p_child0_->applyInverseFactorTranspose(x0);
 
   // Write back
   for (UnsignedInteger j = 0; j < nrhs; ++j)
   {
     for (UnsignedInteger i = 0; i < s0; ++i)
-      x(i, j) = x0(i, j);
+      x_data[i + j * nxRows] = x0Impl[i + j * s0];
     for (UnsignedInteger i = 0; i < s1; ++i)
-      x(s0 + i, j) = x1(i, j);
+      x_data[(s0 + i) + j * nxRows] = x1Impl[i + j * s1];
   }
 }
 
@@ -1317,9 +1338,13 @@ Scalar HODLRNode::dotSolve(Matrix& x) const
   Matrix b(x);
   solve(b);
   Scalar result = 0.0;
-  for (UnsignedInteger j = 0; j < x.getNbColumns(); ++j)
-    for (UnsignedInteger i = 0; i < x.getNbRows(); ++i)
-      result += x(i, j) * b(i, j);
+  const UnsignedInteger nrhs = x.getNbColumns();
+  const UnsignedInteger nxRows = x.getNbRows();
+  const Scalar* x_data = &(*x.getImplementation())[0];
+  const Scalar* b_data = &(*b.getImplementation())[0];
+  for (UnsignedInteger j = 0; j < nrhs; ++j)
+    for (UnsignedInteger i = 0; i < nxRows; ++i)
+      result += x_data[i + j * nxRows] * b_data[i + j * nxRows];
   return result;
 }
 
@@ -1332,14 +1357,19 @@ void HODLRNode::apply(Matrix& y, const Matrix& x) const
   {
     // y[start_:start_+size_] += leafMatrix_ * x[start_:start_+size_]
     const Scalar* leaf_data = &(*leafMatrix_.getImplementation())[0];
+    const UnsignedInteger nxRows = x.getNbRows();
+    const Scalar* x_data = &(*x.getImplementation())[0];
+    y.copyOnWrite();
+    const UnsignedInteger nyRows = y.getNbRows();
+    Scalar* y_data = &(*y.getImplementation())[0];
     for (UnsignedInteger j = 0; j < nrhs; ++j)
     {
       for (UnsignedInteger i = 0; i < size_; ++i)
       {
         Scalar sum = 0.0;
         for (UnsignedInteger k = 0; k < size_; ++k)
-          sum += leaf_data[i + k * size_] * x(start_ + k, j);
-        y(start_ + i, j) += sum;
+          sum += leaf_data[i + k * size_] * x_data[(start_ + k) + j * nxRows];
+        y_data[(start_ + i) + j * nyRows] += sum;
       }
     }
     return;
@@ -1347,6 +1377,13 @@ void HODLRNode::apply(Matrix& y, const Matrix& x) const
 
   const UnsignedInteger s0 = size_ / 2;
   const UnsignedInteger s1 = size_ - s0;
+  const Scalar* V0_data = &(*V_[0].getImplementation())[0];
+  const Scalar* U1orig_data = &(*Uorig_[1].getImplementation())[0];
+  const UnsignedInteger nxRows = x.getNbRows();
+  const Scalar* x_data = &(*x.getImplementation())[0];
+  y.copyOnWrite();
+  const UnsignedInteger nyRows = y.getNbRows();
+  Scalar* y_data = &(*y.getImplementation())[0];
 
   // Recurse on children for diagonal blocks
   p_child0_->apply(y, x);
@@ -1355,15 +1392,14 @@ void HODLRNode::apply(Matrix& y, const Matrix& x) const
   if (rank_ == 0)
     return;
 
-  const Scalar* V0_data = &(*V_[0].getImplementation())[0];
-  const Scalar* U1orig_data = &(*Uorig_[1].getImplementation())[0];
-
   // Off-diagonal: A[child1, child0] = Uorig_[1] * V_[0]^T
   // A[child0, child1] = V_[0] * Uorig_[1]^T  (symmetric)
   // temp0 = V_[0]^T * x[start_:start_+s0]     (rank_ x nrhs)
   // temp1 = Uorig_[1]^T * x[start_+s0:...]     (rank_ x nrhs)
   Matrix temp0(rank_, nrhs, 0.0);
   Matrix temp1(rank_, nrhs, 0.0);
+  MatrixImplementation& temp0Impl = *temp0.getImplementation();
+  MatrixImplementation& temp1Impl = *temp1.getImplementation();
 
   for (UnsignedInteger j = 0; j < nrhs; ++j)
   {
@@ -1372,11 +1408,11 @@ void HODLRNode::apply(Matrix& y, const Matrix& x) const
       Scalar s0_val = 0.0;
       Scalar s1_val = 0.0;
       for (UnsignedInteger k = 0; k < s0; ++k)
-        s0_val += V0_data[k + r * s0] * x(start_ + k, j);
+        s0_val += V0_data[k + r * s0] * x_data[(start_ + k) + j * nxRows];
       for (UnsignedInteger k = 0; k < s1; ++k)
-        s1_val += U1orig_data[k + r * s1] * x(start_ + s0 + k, j);
-      temp0(r, j) = s0_val;
-      temp1(r, j) = s1_val;
+        s1_val += U1orig_data[k + r * s1] * x_data[(start_ + s0 + k) + j * nxRows];
+      temp0Impl[r + j * rank_] = s0_val;
+      temp1Impl[r + j * rank_] = s1_val;
     }
   }
 
@@ -1388,15 +1424,15 @@ void HODLRNode::apply(Matrix& y, const Matrix& x) const
     {
       Scalar sum = 0.0;
       for (UnsignedInteger k = 0; k < rank_; ++k)
-        sum += U1orig_data[r + k * s1] * temp0(k, j);
-      y(start_ + s0 + r, j) += sum;
+        sum += U1orig_data[r + k * s1] * temp0Impl[k + j * rank_];
+      y_data[(start_ + s0 + r) + j * nyRows] += sum;
     }
     for (UnsignedInteger r = 0; r < s0; ++r)
     {
       Scalar sum = 0.0;
       for (UnsignedInteger k = 0; k < rank_; ++k)
-        sum += V0_data[r + k * s0] * temp1(k, j);
-      y(start_ + r, j) += sum;
+        sum += V0_data[r + k * s0] * temp1Impl[k + j * rank_];
+      y_data[(start_ + r) + j * nyRows] += sum;
     }
   }
 }
@@ -1405,6 +1441,11 @@ void HODLRNode::applyFactor(Matrix& y, const Matrix& x) const
 {
   HODLRBlasGuard blasGuard;
   const UnsignedInteger nrhs = x.getNbColumns();
+  const UnsignedInteger nxRows = x.getNbRows();
+  const Scalar* x_data = &(*x.getImplementation())[0];
+  y.copyOnWrite();
+  const UnsignedInteger nyRows = y.getNbRows();
+  Scalar* y_data = &(*y.getImplementation())[0];
 
   if (isLeaf_)
   {
@@ -1415,12 +1456,12 @@ void HODLRNode::applyFactor(Matrix& y, const Matrix& x) const
       // Copy x vector for dtrmv (it writes result in-place)
       std::vector<double> tmp(size_);
       for (UnsignedInteger i = 0; i < size_; ++i)
-        tmp[i] = x(start_ + i, j);
+        tmp[i] = x_data[(start_ + i) + j * nxRows];
       int n = static_cast<int>(size_);
       int incx = 1;
-      HODLRDtrmv("L", "N", "N", &n, const_cast<double*>(&Sfactor_(0, 0)), &n, tmp.data(), &incx);
+      HODLRDtrmv("L", "N", "N", &n, const_cast<double*>(&(*Sfactor_.getImplementation())[0]), &n, tmp.data(), &incx);
       for (UnsignedInteger i = 0; i < size_; ++i)
-        y(start_ + i, j) += tmp[i];
+        y_data[(start_ + i) + j * nyRows] += tmp[i];
     }
     return;
   }
@@ -1442,14 +1483,15 @@ void HODLRNode::applyFactor(Matrix& y, const Matrix& x) const
   // y[start_+s0:...] += U_[1] * (W_^T * x[start_:start_+s0])
   // temp = W_^T * x0   (rank_ x nrhs)
   Matrix temp(rank_, nrhs, 0.0);
+  MatrixImplementation& tempImpl = *temp.getImplementation();
   for (UnsignedInteger j = 0; j < nrhs; ++j)
   {
     for (UnsignedInteger r = 0; r < rank_; ++r)
     {
       Scalar sum = 0.0;
       for (UnsignedInteger k = 0; k < s0; ++k)
-        sum += W_data[k + r * s0] * x(start_ + k, j);
-      temp(r, j) = sum;
+        sum += W_data[k + r * s0] * x_data[(start_ + k) + j * nxRows];
+      tempImpl[r + j * rank_] = sum;
     }
   }
 
@@ -1460,8 +1502,8 @@ void HODLRNode::applyFactor(Matrix& y, const Matrix& x) const
     {
       Scalar sum = 0.0;
       for (UnsignedInteger k = 0; k < rank_; ++k)
-        sum += U1_data[r + k * s1] * temp(k, j);
-      y(start_ + s0 + r, j) += sum;
+        sum += U1_data[r + k * s1] * tempImpl[k + j * rank_];
+      y_data[(start_ + s0 + r) + j * nyRows] += sum;
     }
   }
 }
@@ -1470,6 +1512,11 @@ void HODLRNode::applyFactorTranspose(Matrix& y, const Matrix& x) const
 {
   HODLRBlasGuard blasGuard;
   const UnsignedInteger nrhs = x.getNbColumns();
+  const UnsignedInteger nxRows = x.getNbRows();
+  const Scalar* x_data = &(*x.getImplementation())[0];
+  y.copyOnWrite();
+  const UnsignedInteger nyRows = y.getNbRows();
+  Scalar* y_data = &(*y.getImplementation())[0];
 
   if (isLeaf_)
   {
@@ -1478,12 +1525,12 @@ void HODLRNode::applyFactorTranspose(Matrix& y, const Matrix& x) const
     {
       std::vector<double> tmp(size_);
       for (UnsignedInteger i = 0; i < size_; ++i)
-        tmp[i] = x(start_ + i, j);
+        tmp[i] = x_data[(start_ + i) + j * nxRows];
       int n = static_cast<int>(size_);
       int incx = 1;
-      HODLRDtrmv("L", "T", "N", &n, const_cast<double*>(&Sfactor_(0, 0)), &n, tmp.data(), &incx);
+      HODLRDtrmv("L", "T", "N", &n, const_cast<double*>(&(*Sfactor_.getImplementation())[0]), &n, tmp.data(), &incx);
       for (UnsignedInteger i = 0; i < size_; ++i)
-        y(start_ + i, j) += tmp[i];
+        y_data[(start_ + i) + j * nyRows] += tmp[i];
     }
     return;
   }
@@ -1491,7 +1538,7 @@ void HODLRNode::applyFactorTranspose(Matrix& y, const Matrix& x) const
   const UnsignedInteger s0 = size_ / 2;
   const UnsignedInteger s1 = size_ - s0;
 
-  // Recurse on children for diagonal blocks: L00^T, L11^T
+  // Recurse on children for the diagonal blocks: L00^T, L11^T
   p_child0_->applyFactorTranspose(y, x);
   p_child1_->applyFactorTranspose(y, x);
 
@@ -1501,30 +1548,32 @@ void HODLRNode::applyFactorTranspose(Matrix& y, const Matrix& x) const
   const Scalar* W_data = &(*W_.getImplementation())[0];
   const Scalar* U1_data = &(*U_[1].getImplementation())[0];
 
-  // Off-diagonal: L^T[child0, child1] = (U_[1] * W_^T)^T = W_ * U_[1]^T
+  // Off-diagonal: L[child1, child0] = U_[1] * W_^T, so the transposed block
+  // is L[child0, child1]^T = W_ * U_[1]^T:
   // y[start_:start_+s0] += W_ * (U_[1]^T * x[start_+s0:...])
   // temp = U_[1]^T * x1   (rank_ x nrhs)
   Matrix temp(rank_, nrhs, 0.0);
+  MatrixImplementation& tempImpl = *temp.getImplementation();
   for (UnsignedInteger j = 0; j < nrhs; ++j)
   {
     for (UnsignedInteger r = 0; r < rank_; ++r)
     {
       Scalar sum = 0.0;
       for (UnsignedInteger k = 0; k < s1; ++k)
-        sum += U1_data[k + r * s1] * x(start_ + s0 + k, j);
-      temp(r, j) = sum;
+        sum += U1_data[k + r * s1] * x_data[(start_ + s0 + k) + j * nxRows];
+      tempImpl[r + j * rank_] = sum;
     }
   }
 
-  // y[0:s0] += W_ * temp
+  // y[s0:s0+s1]... no: y[0:s0] += W_ * temp
   for (UnsignedInteger j = 0; j < nrhs; ++j)
   {
     for (UnsignedInteger r = 0; r < s0; ++r)
     {
       Scalar sum = 0.0;
       for (UnsignedInteger k = 0; k < rank_; ++k)
-        sum += W_data[r + k * s0] * temp(k, j);
-      y(start_ + r, j) += sum;
+        sum += W_data[r + k * s0] * tempImpl[k + j * rank_];
+      y_data[(start_ + r) + j * nyRows] += sum;
     }
   }
 }

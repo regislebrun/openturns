@@ -144,7 +144,6 @@ HODLRMatrixImplementation& HODLRMatrixImplementation::operator=(const HODLRMatri
     p_evaluator_ = other.p_evaluator_;
     permutation_ = other.permutation_;
     inversePermutation_ = other.inversePermutation_;
-    rng_ = std::mt19937();
   }
   return *this;
 }
@@ -250,12 +249,10 @@ void HODLRMatrixImplementation::assemble(const HODLRRealAssemblyFunction& f,
   p_node_.reset();
   isFactorized_ = false;
 
-  rng_.seed(42);
   p_node_ = new HODLRNode(p_evaluator_, &diagonal_[0], 0, n_,
                         parameters.getMinLeafSize(),
                         parameters.getMaxRank(),
-                        parameters.getAssemblyEpsilon(),
-                        rng_);
+                        parameters.getAssemblyEpsilon());
 
   LOGDEBUG(OSS() << "HODLRMatrixImplementation::assemble done, n=" << n_);
 }
@@ -267,8 +264,7 @@ void HODLRMatrixImplementation::rebuild()
   p_node_ = new HODLRNode(p_evaluator_, &diagonal_[0], 0, n_,
                           parameters_.getMinLeafSize(),
                           parameters_.getMaxRank(),
-                          parameters_.getAssemblyEpsilon(),
-                          rng_);
+                          parameters_.getAssemblyEpsilon());
 }
 
 void HODLRMatrixImplementation::factorize(const String& method)
@@ -367,10 +363,12 @@ void HODLRMatrixImplementation::gemv(char trans, Scalar alpha, const Point& x, S
 
   if (isCholesky_)
   {
-    // A = L * L^T, so A * x = L * (L^T * x)
-    Matrix tmpmat(n_, 1, 0.0);
-    p_node_->applyFactorTranspose(tmpmat, xmat);
-    p_node_->applyFactor(ymat, tmpmat);
+    // A x = L (L^T x): after the Cholesky factorization the tree describes
+    // the Schur complements (not the original matrix), so the full matrix
+    // product is obtained by applying the factor and its transpose.
+    Matrix zmat(n_, 1, 0.0);
+    p_node_->applyFactorTranspose(zmat, xmat);
+    p_node_->applyFactor(ymat, zmat);
   }
   else
     p_node_->apply(ymat, xmat);
@@ -431,10 +429,11 @@ Point HODLRMatrixImplementation::solve(const Point& b, Bool trans) const
     throw InvalidArgumentException(HERE) << "HODLRMatrix not factorized";
 
   Matrix x(b.getDimension(), 1);
+  MatrixImplementation& xImpl = *x.getImplementation();
   for (UnsignedInteger i = 0; i < b.getDimension(); ++i)
   {
     const UnsignedInteger iPerm = permutation_.getSize() > 0 ? permutation_[i] : i;
-    x(i, 0) = b[iPerm];
+    xImpl[i] = b[iPerm];
   }
 
   p_node_->solve(x);
@@ -443,7 +442,7 @@ Point HODLRMatrixImplementation::solve(const Point& b, Bool trans) const
   for (UnsignedInteger i = 0; i < b.getDimension(); ++i)
   {
     const UnsignedInteger iPerm = permutation_.getSize() > 0 ? inversePermutation_[i] : i;
-    result[i] = x(iPerm, 0);
+    result[i] = xImpl[iPerm];
   }
   return result;
 }
@@ -460,21 +459,27 @@ Matrix HODLRMatrixImplementation::solve(const Matrix& m, Bool trans) const
     throw InvalidArgumentException(HERE) << "HODLRMatrix not factorized";
 
   Matrix x(m.getNbRows(), m.getNbColumns());
-  for (UnsignedInteger j = 0; j < m.getNbColumns(); ++j)
-    for (UnsignedInteger i = 0; i < m.getNbRows(); ++i)
+  MatrixImplementation& xImpl = *x.getImplementation();
+  const Scalar* m_data = &(*m.getImplementation())[0];
+  const UnsignedInteger nRhs = m.getNbColumns();
+  const UnsignedInteger nRows = m.getNbRows();
+  for (UnsignedInteger j = 0; j < nRhs; ++j)
+    for (UnsignedInteger i = 0; i < nRows; ++i)
     {
       const UnsignedInteger iPerm = permutation_.getSize() > 0 ? permutation_[i] : i;
-      x(i, j) = m(iPerm, j);
+      xImpl[i + j * nRows] = m_data[iPerm + j * nRows];
     }
 
   p_node_->solve(x);
 
   Matrix result(m.getNbRows(), m.getNbColumns());
-  for (UnsignedInteger j = 0; j < m.getNbColumns(); ++j)
-    for (UnsignedInteger i = 0; i < m.getNbRows(); ++i)
+  MatrixImplementation& resultImpl = *result.getImplementation();
+  Scalar* x_data = &(*x.getImplementation())[0];
+  for (UnsignedInteger j = 0; j < nRhs; ++j)
+    for (UnsignedInteger i = 0; i < nRows; ++i)
     {
       const UnsignedInteger iPerm = permutation_.getSize() > 0 ? inversePermutation_[i] : i;
-      result(i, j) = x(iPerm, j);
+      resultImpl[i + j * nRows] = x_data[iPerm + j * nRows];
     }
   return result;
 }
@@ -491,10 +496,11 @@ Point HODLRMatrixImplementation::solveLower(const Point& b, Bool trans) const
     throw InvalidArgumentException(HERE) << "HODLRMatrix must be Cholesky-factorized to use solveLower";
 
   Matrix x(b.getDimension(), 1);
+  MatrixImplementation& xImpl = *x.getImplementation();
   for (UnsignedInteger i = 0; i < b.getDimension(); ++i)
   {
     const UnsignedInteger iPerm = permutation_.getSize() > 0 ? permutation_[i] : i;
-    x(i, 0) = b[iPerm];
+    xImpl[i] = b[iPerm];
   }
 
   p_node_->solveLower(x, trans);
@@ -503,7 +509,7 @@ Point HODLRMatrixImplementation::solveLower(const Point& b, Bool trans) const
   for (UnsignedInteger i = 0; i < b.getDimension(); ++i)
   {
     const UnsignedInteger iPerm = permutation_.getSize() > 0 ? inversePermutation_[i] : i;
-    result[i] = x(iPerm, 0);
+    result[i] = xImpl[iPerm];
   }
   return result;
 }
@@ -520,21 +526,27 @@ Matrix HODLRMatrixImplementation::solveLower(const Matrix& m, Bool trans) const
     throw InvalidArgumentException(HERE) << "HODLRMatrix must be Cholesky-factorized to use solveLower";
 
   Matrix x(m.getNbRows(), m.getNbColumns());
-  for (UnsignedInteger j = 0; j < m.getNbColumns(); ++j)
-    for (UnsignedInteger i = 0; i < m.getNbRows(); ++i)
+  MatrixImplementation& xImpl = *x.getImplementation();
+  const Scalar* m_data = &(*m.getImplementation())[0];
+  const UnsignedInteger nRhs = m.getNbColumns();
+  const UnsignedInteger nRows = m.getNbRows();
+  for (UnsignedInteger j = 0; j < nRhs; ++j)
+    for (UnsignedInteger i = 0; i < nRows; ++i)
     {
       const UnsignedInteger iPerm = permutation_.getSize() > 0 ? permutation_[i] : i;
-      x(i, j) = m(iPerm, j);
+      xImpl[i + j * nRows] = m_data[iPerm + j * nRows];
     }
 
   p_node_->solveLower(x, trans);
 
   Matrix result(m.getNbRows(), m.getNbColumns());
-  for (UnsignedInteger j = 0; j < m.getNbColumns(); ++j)
-    for (UnsignedInteger i = 0; i < m.getNbRows(); ++i)
+  MatrixImplementation& resultImpl = *result.getImplementation();
+  Scalar* x_data = &(*x.getImplementation())[0];
+  for (UnsignedInteger j = 0; j < nRhs; ++j)
+    for (UnsignedInteger i = 0; i < nRows; ++i)
     {
       const UnsignedInteger iPerm = permutation_.getSize() > 0 ? inversePermutation_[i] : i;
-      result(i, j) = x(iPerm, j);
+      resultImpl[i + j * nRows] = x_data[iPerm + j * nRows];
     }
   return result;
 }

@@ -441,16 +441,27 @@ print("  PASS")
 
 # === Test 23: full-rank blocks fall back to dense storage ===
 print("\n=== Test 23: dense fallback for full-rank blocks ===")
-# 3-level 1D tree: every off-diagonal block reaches min(rows, cols), so each
-# block is stored densely (U = A01, V = I) instead of being truncated.
+# Use a random SPD kernel: its off-diagonal blocks have no low-rank structure,
+# so the ACA cannot converge below the tolerance and reaches min(rows, cols),
+# and each block is stored densely (U = A01, V = I) instead of being truncated.
 ot.ResourceMap.SetAsScalar("HODLRMatrix-Nugget", 0.0)
 n23 = 40
-vertices23 = ot.Sample([[i * 2.0 / (n23 - 1) - 1.0] for i in range(n23)])
-af23 = HODLRTestAssemblyFunction(vertices23, 0.1)
-K23 = build_dense_matrix(af23, n23)
+random.seed(1234)
+B = [[random.random() - 0.5 for _ in range(n23)] for __ in range(n23)]
+K23 = ot.Matrix(n23, n23)
 b23 = ot.Point(n23, 1.0)
+for i in range(n23):
+    for j in range(n23):
+        s = sum(B[i][k] * B[j][k] for k in range(n23))
+        K23[i, j] = s + (1.0 if i == j else 0.0)
 x_dense23 = K23.solveLinearSystem(b23)
 
+
+def af23(i, j):
+    return K23[i, j]
+
+
+vertices23 = ot.Sample([[float(i)] for i in range(n23)])
 params23 = make_params(leaf=5, factorization="LLT")
 params23.setMaxRank(20)
 hodlr23 = build_hodlr(vertices23, af23, params=params23)
@@ -533,6 +544,56 @@ assert cr_on24[0] < cr_off24[0], (
 # the permutation preserves the diagonal
 ott.assert_almost_equal(hodlr_on24.getDiagonal(), ot.Point(n24, 1.0), 1.0e-9, 1.0e-9)
 print(f"  on err= {err_on24:.2e}, on storage= {cr_on24[0]}/{cr_on24[1]}, off storage= {cr_off24[0]}/{cr_off24[1]}")
+print("  PASS")
+
+# === Test 25: ACA with max-element (partial) pivoting ===
+print("\n=== Test 25: ACA with max-element pivoting ===")
+# The ACA is the only low-rank assembly method and uses max-element
+# (partial-pivoting) pivots: on a smooth 1D kernel it reaches the assembly
+# tolerance with a small rank per block and stays accurate.
+n25 = 2000
+vertices25 = ot.Sample([[i / (n25 - 1.0)] for i in range(n25)])
+cov25 = ot.MaternModel([0.1], [1.0], 2.5)
+b25 = ot.Point(n25, 1.0)
+K25 = ot.CovarianceMatrix(cov25.discretize(vertices25))
+x_dense25 = K25.solveLinearSystem(b25)
+
+params25 = make_params(leaf=16, factorization="LLT")
+hodlr25 = cov25.discretizeHODLRMatrix(vertices25, params25)
+hodlr25.factorize("LLT")
+x25 = hodlr25.solve(b25)
+err25 = (x25 - x_dense25).norm() / x_dense25.norm()
+assert err25 < 1.0e-2, f"max-element ACA solve error {err25:.2e} should be small"
+cr25 = hodlr25.compressionRatio()
+# the smooth 1D kernel is strongly compressible: less than half the entries
+# of the dense matrix are stored by the factorized tree
+assert cr25[0] < 0.5 * cr25[1], (
+    f"max-element ACA should compress the tree ({cr25[0]}/{cr25[1]})"
+)
+print(f"  stored= {cr25[0]}/{cr25[1]}, solve err= {err25:.2e}")
+print("  PASS")
+
+# === Test 26: gemv after a Cholesky factorization ===
+print("\n=== Test 26: gemv after Cholesky factorization ===")
+# After LLT the tree describes the Schur complements, so the matrix-vector
+# product is assembled as L (L^T x); it must reproduce the dense product.
+n26 = 50
+vertices26 = ot.Sample([[i * 0.02] for i in range(n26)])
+af26 = HODLRTestAssemblyFunction(vertices26, 0.1)
+params26 = make_params(leaf=25, factorization="LLT")
+params26.setMaxRank(50)
+hodlr26 = build_hodlr(vertices26, af26, params=params26)
+x26 = ot.Point([float(i) / n26 for i in range(n26)])
+K26 = build_dense_matrix(af26, n26)
+y26_dense = ot.Point(n26, 0.0)
+for i in range(n26):
+    s = 0.0
+    for j in range(n26):
+        s += K26[i, j] * x26[j]
+    y26_dense[i] = s
+y26 = ot.Point(n26, 0.0)
+hodlr26.gemv('N', 1.0, x26, 0.0, y26)
+ott.assert_almost_equal(y26, y26_dense, 1.0e-10, 1.0e-10)
 print("  PASS")
 
 print("\n=== ALL TESTS PASSED ===")

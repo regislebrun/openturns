@@ -30,7 +30,6 @@
 #include "openturns/HODLRMatrixParameters.hxx"
 #include "openturns/HODLRCore.hxx"
 
-#include <random>
 #include <functional>
 
 BEGIN_NAMESPACE_OPENTURNS
@@ -171,7 +170,6 @@ private:
   Point diagonal_;
   Scalar shiftAccumulated_;
   Pointer<const HODLREntryEvaluator> p_evaluator_;
-  std::mt19937 rng_;
   Indices permutation_;
   Indices inversePermutation_;
 };
