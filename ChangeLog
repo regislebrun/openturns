@@ -22,6 +22,7 @@
  * HODLRMatrix: the adaptive cross approximation now uses max-element (partial-pivoting) pivots, which compress low-rank blocks reliably on smooth kernels; the former random-pivot selection was removed
  * HODLRMatrix: fixed gemv() after a Cholesky factorization, which applied the factor L instead of the full matrix A = L L^T
  * HODLRMatrix: leaf blocks are now assembled from the lower-triangular kernel evaluations only, mirroring them into the upper triangle (the HODLR tree is symmetric), which halves the kernel evaluations in the leaf assembly
+ * HODLRMatrix: the default assembly epsilon is now 1e-7 (with the recompression and regularization epsilons aligned), so that a Cholesky factorization of a Matern covariance with correlation length 0.1 of the domain size reaches a relative log-likelihood accuracy of 1e-5 with margin
  * KDTree: new method getOrdering() returns a deterministic space-filling ordering of the points
  * Removed deprecated DistributionFactory.setKnownParameter(Point, Indices)
  * Removed deprecated Graph.setDrawable(Drawable, int)

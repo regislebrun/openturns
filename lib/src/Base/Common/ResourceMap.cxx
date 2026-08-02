@@ -1746,14 +1746,14 @@ void ResourceMap::loadDefaultConfiguration()
   addAsUnsignedInteger("HMatrix-ValidationRerun", 0);
 
   // HODLRMatrix parameters //
-  addAsScalar("HODLRMatrix-AssemblyEpsilon", 1.0e-6);
-  addAsScalar("HODLRMatrix-RecompressionEpsilon", 1.0e-6);
+  addAsScalar("HODLRMatrix-AssemblyEpsilon", 1.0e-7);
+  addAsScalar("HODLRMatrix-RecompressionEpsilon", 1.0e-7);
   addAsUnsignedInteger("HODLRMatrix-MinLeafSize", 250);
   addAsUnsignedInteger("HODLRMatrix-MaxRank", 0);
   addAsString("HODLRMatrix-FactorizationMethod", "LLt", {"LU", "LLt"});
   addAsUnsignedInteger("HODLRMatrix-FactorizationIterations", 20);
   addAsUnsignedInteger("HODLRMatrix-DenseThreshold", 256);
-  addAsScalar("HODLRMatrix-RegularizationEpsilon", 1.0e-4);
+  addAsScalar("HODLRMatrix-RegularizationEpsilon", 1.0e-7);
   addAsScalar("HODLRMatrix-MaxRegularization", 1.0);
   addAsScalar("HODLRMatrix-RegularizationFactor", 2.0);
   addAsUnsignedInteger("HODLRMatrix-RegularizationAttempts", 60);
