@@ -197,6 +197,7 @@ public:
   void solveLower(Matrix& x, Bool trans) const;  // L^{-1} or L^{-T} times x for the Cholesky factor L
   void apply(Matrix& y, const Matrix& x) const;
   void applyFactor(Matrix& y, const Matrix& x) const;
+  void applyFactorTranspose(Matrix& y, const Matrix& x) const;
 
   Scalar getLogDeterminant() const { return logDet_; }
   UnsignedInteger getTotalRank() const { return totalRank_; }

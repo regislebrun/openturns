@@ -261,6 +261,8 @@ void HODLRMatrixImplementation::scale(Scalar alpha)
   for (UnsignedInteger i = 0; i < n_; ++i)
     diagonal_[i] *= alpha;
 
+  shiftAccumulated_ *= alpha;
+
   p_evaluator_ = new HODLRScalingEvaluator(p_evaluator_, alpha);
   rebuild();
 }
@@ -288,7 +290,12 @@ void HODLRMatrixImplementation::gemv(char trans, Scalar alpha, const Point& x, S
   }
 
   if (isCholesky_)
-    p_node_->applyFactor(ymat, xmat);
+  {
+    // A = L * L^T, so A * x = L * (L^T * x)
+    Matrix tmpmat(n_, 1, 0.0);
+    p_node_->applyFactorTranspose(tmpmat, xmat);
+    p_node_->applyFactor(ymat, tmpmat);
+  }
   else
     p_node_->apply(ymat, xmat);
 

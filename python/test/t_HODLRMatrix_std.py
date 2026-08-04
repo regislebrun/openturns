@@ -257,6 +257,21 @@ X_forward = L13.solveLinearSystem(B13)
 ott.assert_almost_equal(X_lower, X_forward, 1.0e-4, 1.0e-4)
 print("  PASS (Matrix)")
 
+# === Test 13b: gemv with LLt factorization ===
+print("\n=== Test 13b: gemv with LLt ===")
+# gemv must return A * x (not L * x) when the matrix is Cholesky-factorized
+x13b = ot.Point([float(i) / n12 for i in range(n12)])
+y13b = ot.Point(n12, 0.0)
+hodlr12.gemv('N', 1.0, x13b, 0.0, y13b)
+y13b_dense = ot.Point(n12, 0.0)
+for i in range(n12):
+    s = 0.0
+    for j in range(n12):
+        s += af12(i, j) * x13b[j]
+    y13b_dense[i] = s
+ott.assert_almost_equal(y13b, y13b_dense, 1.0e-4, 1.0e-4)
+print("  PASS")
+
 # === Test 14: solve with trans ===
 print("\n=== Test 14: solve with trans=True ===")
 b14 = ot.Point(20, 1.0)

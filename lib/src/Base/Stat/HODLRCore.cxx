@@ -319,7 +319,7 @@ UnsignedInteger HODLRNode::lowRankApprox(UnsignedInteger startRow, UnsignedInteg
           dotU += Udata[n + r * nRows] * Udata[n + (rank - 1) * nRows];
         for (UnsignedInteger n = 0; n < nCols; ++n)
           dotV += Vdata[n + r * nCols] * Vdata[n + (rank - 1) * nCols];
-        norm += 2.0 * std::abs(dotU) + 2.0 * std::abs(dotV);
+        norm += 2.0 * dotU * dotV;
       }
     }
   }
@@ -987,6 +987,10 @@ void HODLRNode::applyInverse(Matrix& x, UnsignedInteger start) const
 
   const UnsignedInteger s0 = size_ / 2;
   const UnsignedInteger s1 = size_ - s0;
+
+  if (rank_ == 0)
+    return;
+
   const Scalar* V1_data = &(*V_[1].getImplementation())[0];
   const Scalar* V0_data = &(*V_[0].getImplementation())[0];
   const Scalar* U0_data = &(*U_[0].getImplementation())[0];
@@ -1317,8 +1321,6 @@ void HODLRNode::apply(Matrix& y, const Matrix& x) const
 
   const UnsignedInteger s0 = size_ / 2;
   const UnsignedInteger s1 = size_ - s0;
-  const Scalar* V0_data = &(*V_[0].getImplementation())[0];
-  const Scalar* U1orig_data = &(*Uorig_[1].getImplementation())[0];
 
   // Recurse on children for diagonal blocks
   p_child0_->apply(y, x);
@@ -1326,6 +1328,9 @@ void HODLRNode::apply(Matrix& y, const Matrix& x) const
 
   if (rank_ == 0)
     return;
+
+  const Scalar* V0_data = &(*V_[0].getImplementation())[0];
+  const Scalar* U1orig_data = &(*Uorig_[1].getImplementation())[0];
 
   // Off-diagonal: A[child1, child0] = Uorig_[1] * V_[0]^T
   // A[child0, child1] = V_[0] * Uorig_[1]^T  (symmetric)
@@ -1396,8 +1401,6 @@ void HODLRNode::applyFactor(Matrix& y, const Matrix& x) const
 
   const UnsignedInteger s0 = size_ / 2;
   const UnsignedInteger s1 = size_ - s0;
-  const Scalar* W_data = &(*W_.getImplementation())[0];
-  const Scalar* U1_data = &(*U_[1].getImplementation())[0];
 
   // Recurse on children for diagonal blocks: L00, L11
   p_child0_->applyFactor(y, x);
@@ -1405,6 +1408,9 @@ void HODLRNode::applyFactor(Matrix& y, const Matrix& x) const
 
   if (rank_ == 0 || !isCholesky_)
     return;
+
+  const Scalar* W_data = &(*W_.getImplementation())[0];
+  const Scalar* U1_data = &(*U_[1].getImplementation())[0];
 
   // Off-diagonal: L[child1, child0] = U_[1] * W_^T
   // y[start_+s0:...] += U_[1] * (W_^T * x[start_:start_+s0])
@@ -1430,6 +1436,69 @@ void HODLRNode::applyFactor(Matrix& y, const Matrix& x) const
       for (UnsignedInteger k = 0; k < rank_; ++k)
         sum += U1_data[r + k * s1] * temp(k, j);
       y(start_ + s0 + r, j) += sum;
+    }
+  }
+}
+
+void HODLRNode::applyFactorTranspose(Matrix& y, const Matrix& x) const
+{
+  HODLRBlasGuard blasGuard;
+  const UnsignedInteger nrhs = x.getNbColumns();
+
+  if (isLeaf_)
+  {
+    // y += L^T * x where L is the lower-triangular Cholesky factor in Sfactor_
+    for (UnsignedInteger j = 0; j < nrhs; ++j)
+    {
+      std::vector<double> tmp(size_);
+      for (UnsignedInteger i = 0; i < size_; ++i)
+        tmp[i] = x(start_ + i, j);
+      int n = static_cast<int>(size_);
+      int incx = 1;
+      HODLRDtrmv("L", "T", "N", &n, const_cast<double*>(&Sfactor_(0, 0)), &n, tmp.data(), &incx);
+      for (UnsignedInteger i = 0; i < size_; ++i)
+        y(start_ + i, j) += tmp[i];
+    }
+    return;
+  }
+
+  const UnsignedInteger s0 = size_ / 2;
+  const UnsignedInteger s1 = size_ - s0;
+
+  // Recurse on children for diagonal blocks: L00^T, L11^T
+  p_child0_->applyFactorTranspose(y, x);
+  p_child1_->applyFactorTranspose(y, x);
+
+  if (rank_ == 0 || !isCholesky_)
+    return;
+
+  const Scalar* W_data = &(*W_.getImplementation())[0];
+  const Scalar* U1_data = &(*U_[1].getImplementation())[0];
+
+  // Off-diagonal: L^T[child0, child1] = (U_[1] * W_^T)^T = W_ * U_[1]^T
+  // y[start_:start_+s0] += W_ * (U_[1]^T * x[start_+s0:...])
+  // temp = U_[1]^T * x1   (rank_ x nrhs)
+  Matrix temp(rank_, nrhs, 0.0);
+  for (UnsignedInteger j = 0; j < nrhs; ++j)
+  {
+    for (UnsignedInteger r = 0; r < rank_; ++r)
+    {
+      Scalar sum = 0.0;
+      for (UnsignedInteger k = 0; k < s1; ++k)
+        sum += U1_data[k + r * s1] * x(start_ + s0 + k, j);
+      temp(r, j) = sum;
+    }
+  }
+
+  // y[0:s0] += W_ * temp
+  for (UnsignedInteger j = 0; j < nrhs; ++j)
+  {
+    for (UnsignedInteger r = 0; r < s0; ++r)
+    {
+      Scalar sum = 0.0;
+      for (UnsignedInteger k = 0; k < rank_; ++k)
+        sum += W_data[r + k * s0] * temp(k, j);
+      y(start_ + r, j) += sum;
     }
   }
 }
