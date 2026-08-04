@@ -169,9 +169,9 @@ cr = hodlr.compressionRatio()
 fr = hodlr.fullrkRatio()
 assert cr[0] > 0, "stored entries should be positive"
 assert cr[0] <= cr[1], "compressed should be <= total"
-assert fr[0] > 0, "rank should be positive"
+assert fr[1] > 0, "rank should be positive"
 print(f"  compressionRatio: stored={cr[0]}, total={cr[1]}")
-print(f"  fullrkRatio: rank={fr[0]}, total={fr[1]}")
+print(f"  fullrkRatio: full={fr[0]}, rank={fr[1]}")
 print("  PASS")
 
 # === Test 10: HODLRMatrixParameters getters/setters ===
@@ -196,10 +196,12 @@ params2.setFactorizationMethod("LLt")
 ott.assert_almost_equal(
     ot.Point([len(params2.getFactorizationMethod())]), ot.Point([3])
 )
+assert params2.getFactorizationMethod() == "LLt", "factorization method should be 'LLt'"
 params2.setFactorizationMethod("LU")
 ott.assert_almost_equal(
     ot.Point([len(params2.getFactorizationMethod())]), ot.Point([2])
 )
+assert params2.getFactorizationMethod() == "LU", "factorization method should be 'LU'"
 print("  PASS")
 
 # === Test 12: LLt factorization ===

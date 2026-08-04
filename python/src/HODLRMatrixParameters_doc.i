@@ -66,3 +66,19 @@ Parameters
 ----------
 method : str
     Factorization method, either 'LU' or 'LLt'."
+
+%feature("docstring") OT::HODLRMatrixParameters::getMaxRank
+"Return the maximum rank of the low-rank blocks.
+
+Returns
+-------
+maxRank : int
+    Maximum rank used for the low-rank approximation during assembly."
+
+%feature("docstring") OT::HODLRMatrixParameters::setMaxRank
+"Set the maximum rank of the low-rank blocks.
+
+Parameters
+----------
+maxRank : int
+    Maximum rank used for the low-rank approximation during assembly."

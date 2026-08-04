@@ -57,13 +57,8 @@ x_dense = K_dense.solveLinearSystem(rhs)
 leaf_sizes = [2, 4, 8, 16, 32, 64, 128, 256]
 accuracy_target = 1.0e-4
 
-results = []
-best_leaf = None
 
-for leaf in leaf_sizes:
-    if leaf >= total_size:
-        break
-
+def sweep(leaf):
     params = ot.HODLRMatrixParameters()
     params.setAssemblyEpsilon(1.0e-6)
     params.setRecompressionEpsilon(1.0e-6)
@@ -85,17 +80,39 @@ for leaf in leaf_sizes:
 
     compressed, total_entries = hodlr.compressionRatio()
     ratio = compressed / total_entries
+    return err, ratio, t_assembly + t_factor
 
-    results.append((leaf, err, ratio, t_assembly + t_factor))
+
+results = []
+best_leaf = None
+
+for leaf in leaf_sizes:
+    if leaf >= total_size:
+        continue
+
+    err, ratio, elapsed = sweep(leaf)
+    results.append((leaf, err, ratio, elapsed))
     print(
         f"leaf= {leaf:>4d}  "
         f"err= {err:.2e}  "
         f"ratio= {ratio:.4f}  "
-        f"time= {t_assembly + t_factor:.4f}s"
+        f"time= {elapsed:.4f}s"
     )
 
     if best_leaf is None and err <= accuracy_target:
         best_leaf = leaf
+
+# Whole-dense leaf: leaf = total_size leaves the root block uncompressed.
+err, ratio, elapsed = sweep(total_size)
+results.append((total_size, err, ratio, elapsed))
+print(
+    f"leaf= {total_size:>4d}  "
+    f"err= {err:.2e}  "
+    f"ratio= {ratio:.4f}  "
+    f"time= {elapsed:.4f}s"
+)
+if best_leaf is None and err <= accuracy_target:
+    best_leaf = total_size
 
 # --- Assertions ---
 

@@ -257,6 +257,19 @@ L : :class:`~openturns.HMatrix`
 
 // ---------------------------------------------------------------------
 
+%feature("docstring") OT::GaussianProcessFitterResult::getHODLRCholeskyFactor
+R"RAW(Accessor to the HODLR Cholesky factor of the covariance matrix.
+
+Only available with HODLR algebra.
+
+Returns
+-------
+L : :class:`~openturns.HODLRMatrix`
+    Cholesky factor :math:`\mat{L}_{\vect{p}^*}` of the covariance matrix,
+    which can be written :math:`\mat{L}_{\vect{p}^*} \mat{L}_{\vect{p}^*}^T`.)RAW"
+
+// ---------------------------------------------------------------------
+
 %feature("docstring") OT::GaussianProcessFitterResult::getStandardizedOutput
 R"RAW(Accessor to the standardized output.
 
