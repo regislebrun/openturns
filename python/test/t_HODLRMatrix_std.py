@@ -276,9 +276,9 @@ print("  PASS")
 print("\n=== Test 14: solve with trans=True ===")
 b14 = ot.Point(20, 1.0)
 x_normal = hodlr.solve(b14, False)
-x_trans = hodlr.solve(b14, True)
-# For symmetric matrix, A^T = A, so solve(A^T, b) == solve(A, b)
-ott.assert_almost_equal(x_normal, x_trans, 1.0e-4, 1.0e-4)
+# The transposed solve is not implemented: trans=True must be rejected
+with ott.assert_raises(RuntimeError):
+    hodlr.solve(b14, True)
 print("  PASS")
 
 # === Test 15: 1D line, n=50 ===

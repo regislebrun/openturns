@@ -335,8 +335,11 @@ Point HODLRMatrixImplementation::getDiagonal() const
   return diagonal_;
 }
 
-Point HODLRMatrixImplementation::solve(const Point& b, Bool /* trans */) const
+Point HODLRMatrixImplementation::solve(const Point& b, Bool trans) const
 {
+  if (trans)
+    throw NotYetImplementedException(HERE) << "transposed not yet supported in HODLRMatrixImplementation::solve";
+
   if (!p_node_)
     throw InvalidArgumentException(HERE) << "HODLRMatrix not assembled";
 
@@ -355,8 +358,11 @@ Point HODLRMatrixImplementation::solve(const Point& b, Bool /* trans */) const
   return result;
 }
 
-Matrix HODLRMatrixImplementation::solve(const Matrix& m, Bool /* trans */) const
+Matrix HODLRMatrixImplementation::solve(const Matrix& m, Bool trans) const
 {
+  if (trans)
+    throw NotYetImplementedException(HERE) << "transposed not yet supported in HODLRMatrixImplementation::solve";
+
   if (!p_node_)
     throw InvalidArgumentException(HERE) << "HODLRMatrix not assembled";
 
