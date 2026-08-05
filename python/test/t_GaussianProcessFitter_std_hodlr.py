@@ -89,6 +89,61 @@ def test_two_dimensional():
     print("test_two_dimensional PASSED")
 
 
+def test_conditional_covariance():
+    """Conditional covariance/mean must work with HODLR results.
+
+    Regression test: solveTriangularSystem used to branch on the HMAT factor
+    for any non-LAPACK result, crashing with 'Empty HMatrix' for HODLR.
+    """
+    sampleSize = 6
+    dimension = 1
+
+    X = ot.Sample(sampleSize, dimension)
+    for i in range(sampleSize):
+        X[i, 0] = 3.0 + i
+    X[0, 0] = 1.0
+    f = ot.SymbolicFunction(["x0"], ["x0 * sin(x0)"])
+    Y = f(X)
+
+    basis = ot.ConstantBasisFactory(dimension).build()
+    covarianceModel = ot.SquaredExponential([1.0], [1.0])
+
+    ot.ResourceMap.SetAsString("GaussianProcessFitter-LinearAlgebra", "HODLR")
+    fit = ot.GaussianProcessFitter(X, Y, covarianceModel, basis)
+    fit.setOptimizeParameters(False)
+    fit.run()
+    gpr = ot.GaussianProcessRegression(fit.getResult())
+    gpr.run()
+    gccc = ot.GaussianProcessConditionalCovariance(gpr.getResult())
+
+    mean = gccc.getConditionalMean(X)
+    ottest.assert_almost_equal(mean, Y, 1.0e-4, 1.0e-4)
+
+    covariance = gccc.getConditionalCovariance(X)
+    nullMatrix = ot.Matrix(sampleSize, sampleSize)
+    ottest.assert_almost_equal(covariance, nullMatrix, 1.0e-5, 1.0e-5)
+
+    var = gccc.getConditionalMarginalVariance(X)
+    ottest.assert_almost_equal(var, ot.Sample(sampleSize, 1), 1.0e-5, 1.0e-5)
+
+    # Compare against the LAPACK reference on validation points
+    X2 = ot.Sample([[1.5], [3.5], [5.5]])
+    covHodlr = gccc.getConditionalCovariance(X2)
+
+    ot.ResourceMap.SetAsString("GaussianProcessFitter-LinearAlgebra", "LAPACK")
+    fitLapack = ot.GaussianProcessFitter(X, Y, covarianceModel, basis)
+    fitLapack.setOptimizeParameters(False)
+    fitLapack.run()
+    gprLapack = ot.GaussianProcessRegression(fitLapack.getResult())
+    gprLapack.run()
+    gcccLapack = ot.GaussianProcessConditionalCovariance(gprLapack.getResult())
+    covLapack = gcccLapack.getConditionalCovariance(X2)
+
+    ottest.assert_almost_equal(covHodlr, covLapack, 1.0e-5, 1.0e-5)
+    print("test_conditional_covariance PASSED")
+
+
 if __name__ == "__main__":
     test_simple()
     test_two_dimensional()
+    test_conditional_covariance()
