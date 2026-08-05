@@ -237,8 +237,11 @@ UnsignedInteger HODLRNode::lowRankApproxPartialPivot(UnsignedInteger startRow, U
   const UnsignedInteger maxRankBound = std::min(nRows, nCols);
   const UnsignedInteger maxRank = (maxRank_ > 0) ? std::min(maxRankBound, maxRank_) : maxRankBound;
 
-  std::vector<Scalar> Udata(nRows * maxRank, 0.0);
-  std::vector<Scalar> Vdata(nCols * maxRank, 0.0);
+  // The factor buffers are fully written below before any read (each new U/V
+  // column fills every row), so the zero-initialization would only add a
+  // useless memset of the whole block.
+  std::vector<Scalar> Udata(nRows * maxRank);
+  std::vector<Scalar> Vdata(nCols * maxRank);
 
   // Partial-pivoting ACA, ported from the "ACA partial" scheme of hmat-oss
   // (src/compression.cpp, doCompressionAcaPartial). Unlike the full-pivoting
