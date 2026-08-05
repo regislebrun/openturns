@@ -143,7 +143,71 @@ def test_conditional_covariance():
     print("test_conditional_covariance PASSED")
 
 
+def test_save_load():
+    """A saved HODLR fitter result must be usable after reload.
+
+    Regression test: the HMAT/HODLR Cholesky factors are not serialized
+    (hmat-oss native structures), so load() used to leave them empty and any
+    downstream solve crashed with 'HODLRMatrix not assembled'. load() now
+    rebuilds the factor from the stored covariance model and input sample.
+    """
+    sampleSize = 6
+    dimension = 1
+
+    X = ot.Sample(sampleSize, dimension)
+    for i in range(sampleSize):
+        X[i, 0] = 3.0 + i
+    X[0, 0] = 1.0
+    f = ot.SymbolicFunction(["x0"], ["x0 * sin(x0)"])
+    Y = f(X)
+    X2 = ot.Sample([[1.5], [3.5], [5.5]])
+
+    basis = ot.ConstantBasisFactory(dimension).build()
+    covarianceModel = ot.SquaredExponential([1.0], [1.0])
+
+    ot.ResourceMap.SetAsString("GaussianProcessFitter-LinearAlgebra", "HODLR")
+    fit = ot.GaussianProcessFitter(X, Y, covarianceModel, basis)
+    fit.setOptimizeParameters(False)
+    fit.setKeepCholeskyFactor(True)
+    fit.run()
+    result = fit.getResult()
+
+    gpr = ot.GaussianProcessRegression(result)
+    gpr.run()
+    predOrig = gpr.getResult().getMetaModel()(X2)
+    gcccOrig = ot.GaussianProcessConditionalCovariance(gpr.getResult())
+    covOrig = gcccOrig.getConditionalCovariance(X2)
+
+    import os
+    import tempfile
+
+    studyPath = os.path.join(tempfile.mkdtemp(), "result.xml")
+    study = ot.Study(studyPath)
+    study.add("result", result)
+    study.save()
+
+    loaded = ot.GaussianProcessFitterResult()
+    study = ot.Study(studyPath)
+    study.load()
+    study.fillObject("result", loaded)
+
+    ottest.assert_almost_equal(
+        loaded.getHODLRCholeskyFactor().getNbRows(), sampleSize, 0.0, 0.0
+    )
+
+    gprReload = ot.GaussianProcessRegression(loaded)
+    gprReload.run()
+    predReload = gprReload.getResult().getMetaModel()(X2)
+    ottest.assert_almost_equal(predReload, predOrig, 1.0e-8, 1.0e-8)
+
+    gcccReload = ot.GaussianProcessConditionalCovariance(gprReload.getResult())
+    covReload = gcccReload.getConditionalCovariance(X2)
+    ottest.assert_almost_equal(covReload, covOrig, 1.0e-8, 1.0e-8)
+    print("test_save_load PASSED")
+
+
 if __name__ == "__main__":
     test_simple()
     test_two_dimensional()
     test_conditional_covariance()
+    test_save_load()
