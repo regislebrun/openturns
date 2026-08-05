@@ -239,9 +239,12 @@ UnsignedInteger HODLRNode::lowRankApproxPartialPivot(UnsignedInteger startRow, U
 
   // The factor buffers are fully written below before any read (each new U/V
   // column fills every row), so the zero-initialization would only add a
-  // useless memset of the whole block.
-  std::vector<Scalar> Udata(nRows * maxRank);
-  std::vector<Scalar> Vdata(nCols * maxRank);
+  // useless memset of the whole block. They are kept in transposed layout
+  // (factor row l contiguous in the block row/column index) so that the
+  // residual downdates are contiguous rank-1 loops that the compiler can
+  // vectorize, instead of dot products with a strided access.
+  std::vector<Scalar> Udata(maxRank * nRows);
+  std::vector<Scalar> Vdata(maxRank * nCols);
 
   // Partial-pivoting ACA, ported from the "ACA partial" scheme of hmat-oss
   // (src/compression.cpp, doCompressionAcaPartial). Unlike the full-pivoting
@@ -261,8 +264,8 @@ UnsignedInteger HODLRNode::lowRankApproxPartialPivot(UnsignedInteger startRow, U
   Scalar norm = 0.0;
   const Scalar tol2 = tol * tol;
 
-  std::vector<bool> rowFree(nRows, true);
-  std::vector<bool> colFree(nCols, true);
+  std::vector<unsigned char> rowFree(nRows, 1);
+  std::vector<unsigned char> colFree(nCols, 1);
   std::vector<Scalar> aCol(nRows, 0.0);
   std::vector<Scalar> bCol(nCols, 0.0);
   UnsignedInteger pivotRow = 0;
@@ -271,21 +274,28 @@ UnsignedInteger HODLRNode::lowRankApproxPartialPivot(UnsignedInteger startRow, U
   while (rank < maxRank)
   {
     // Residual row at the pivot row: A(pivotRow, :) - sum_l U[pivotRow, l] * V[:, l]
+    for (UnsignedInteger j = 0; j < nCols; ++j)
+      bCol[j] = (*p_eval_)(startRow + pivotRow, startCol + j);
+    for (UnsignedInteger l = 0; l < rank; ++l)
+    {
+      const Scalar uval = Udata[l * nRows + pivotRow];
+      Scalar* const b = bCol.data();
+      const Scalar* const vptr = Vdata.data() + l * nCols;
+#pragma omp simd
+      for (UnsignedInteger j = 0; j < nCols; ++j)
+        b[j] -= uval * vptr[j];
+    }
     Scalar maxVal = 0.0;
     for (UnsignedInteger j = 0; j < nCols; ++j)
     {
-      Scalar v = (*p_eval_)(startRow + pivotRow, startCol + j);
-      for (UnsignedInteger l = 0; l < rank; ++l)
-        v -= Udata[pivotRow + l * nRows] * Vdata[j + l * nCols];
-      bCol[j] = v;
-      const Scalar absVal = std::abs(v);
+      const Scalar absVal = std::abs(bCol[j]);
       if (colFree[j] && (absVal > maxVal))
       {
         maxVal = absVal;
         pivotCol = j;
       }
     }
-    rowFree[pivotRow] = false;
+    rowFree[pivotRow] = 0;
 
     if (maxVal < 1e-14)
     {
@@ -300,29 +310,41 @@ UnsignedInteger HODLRNode::lowRankApproxPartialPivot(UnsignedInteger startRow, U
 
     // Residual column at the pivot column: A(:, pivotCol) - sum_l U[:, l] * V[pivotCol, l]
     for (UnsignedInteger i = 0; i < nRows; ++i)
+      aCol[i] = (*p_eval_)(startRow + i, startCol + pivotCol);
+    for (UnsignedInteger l = 0; l < rank; ++l)
     {
-      Scalar v = (*p_eval_)(startRow + i, startCol + pivotCol);
-      for (UnsignedInteger l = 0; l < rank; ++l)
-        v -= Udata[i + l * nRows] * Vdata[pivotCol + l * nCols];
-      aCol[i] = v;
+      const Scalar vval = Vdata[l * nCols + pivotCol];
+      Scalar* const a = aCol.data();
+      const Scalar* const uptr = Udata.data() + l * nRows;
+#pragma omp simd
+      for (UnsignedInteger i = 0; i < nRows; ++i)
+        a[i] -= vval * uptr[i];
     }
-    colFree[pivotCol] = false;
+    colFree[pivotCol] = 0;
 
     // Same scaling convention as the full-pivoting variant: the pivot column
     // is stored unscaled in U, the pivot row divided by the pivot in V.
     const Scalar pivot = bCol[pivotCol];
     Scalar uNorm2 = 0.0;
-    for (UnsignedInteger i = 0; i < nRows; ++i)
     {
-      Udata[i + rank * nRows] = aCol[i];
-      uNorm2 += aCol[i] * aCol[i];
+      Scalar* const uptr = Udata.data() + rank * nRows;
+      for (UnsignedInteger i = 0; i < nRows; ++i)
+      {
+        const Scalar v = aCol[i];
+        uptr[i] = v;
+        uNorm2 += v * v;
+      }
     }
     Scalar vNorm2 = 0.0;
-    for (UnsignedInteger j = 0; j < nCols; ++j)
     {
-      const Scalar v = bCol[j] / pivot;
-      Vdata[j + rank * nCols] = v;
-      vNorm2 += v * v;
+      Scalar* const vptr = Vdata.data() + rank * nCols;
+      const Scalar invPivot = 1.0 / pivot;
+      for (UnsignedInteger j = 0; j < nCols; ++j)
+      {
+        const Scalar v = bCol[j] * invPivot;
+        vptr[j] = v;
+        vNorm2 += v * v;
+      }
     }
     const Scalar rowcolNorm = uNorm2 * vNorm2;
 
@@ -390,8 +412,17 @@ UnsignedInteger HODLRNode::lowRankApproxPartialPivot(UnsignedInteger startRow, U
   {
     MatrixImplementation& UoutImpl = *Uout.getImplementation();
     MatrixImplementation& VoutImpl = *Vout.getImplementation();
-    std::copy(Udata.begin(), Udata.begin() + nRows * rank, &UoutImpl[0]);
-    std::copy(Vdata.begin(), Vdata.begin() + nCols * rank, &VoutImpl[0]);
+    Scalar* const Uout_data = &UoutImpl[0];
+    Scalar* const Vout_data = &VoutImpl[0];
+    for (UnsignedInteger l = 0; l < rank; ++l)
+    {
+      const Scalar* const up = Udata.data() + l * nRows;
+      const Scalar* const vp = Vdata.data() + l * nCols;
+      for (UnsignedInteger i = 0; i < nRows; ++i)
+        Uout_data[i + l * nRows] = up[i];
+      for (UnsignedInteger j = 0; j < nCols; ++j)
+        Vout_data[j + l * nCols] = vp[j];
+    }
   }
 
   if ((maxRank_ > 0) && (rank >= maxRank_) && (rank < maxRankBound))
