@@ -115,7 +115,11 @@ void GaussianProcess::initialize() const
       CovarianceBlockAssemblyFunction block(covarianceModel_, mesh_.getVertices());
       covarianceHMatrix_.assemble(block, hmatrixParameters, 'L');
     }
-    covarianceHMatrix_.factorize(hmatrixParameters.getFactorizationMethod());
+    // The factorization must be the Cholesky one: after an LLt factorization
+    // hmat-oss stores the triangular factor, so gemv computes L.z which yields
+    // a N(0, C) realization. An LU factorization would store the original
+    // matrix, and gemv would compute C.z, i.e. a N(0, C^2) realization.
+    covarianceHMatrix_.factorize("LLt");
   }
   else if (samplingMethod_ == SamplingMethod::HODLR)
   {

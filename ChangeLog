@@ -23,6 +23,8 @@
  * HODLRMatrix: fixed gemv() after a Cholesky factorization, which applied the factor L instead of the full matrix A = L L^T
  * HODLRMatrix: new method applyFactor(y, x) applies the lower-triangular Cholesky factor once (y = L x); GaussianProcess HODLR sampling now uses it so that realizations have the covariance A of the process instead of A^2
  * HODLRMatrix: leaf blocks are now assembled from the lower-triangular kernel evaluations only, mirroring them into the upper triangle (the HODLR tree is symmetric), which halves the kernel evaluations in the leaf assembly
+ * GaussianProcess: HMAT sampling now forces the Cholesky factorization, so that realizations have the covariance A of the process whatever the ResourceMap key "HMatrix-FactorizationMethod" is (with an LU factorization the hmat-oss gemv reconstructed A z, i.e. a N(0, A^2) realization)
+ * GaussianProcessConditionalCovariance: conditional mean/covariance and marginal variance now support HODLR results, which previously crashed with an "Empty HMatrix" error
  * HODLRMatrix: the default assembly epsilon is now 1e-7 (with the recompression and regularization epsilons aligned), so that a Cholesky factorization of a Matern covariance with correlation length 0.1 of the domain size reaches a relative log-likelihood accuracy of 1e-5 with margin
  * KDTree: new method getOrdering() returns a deterministic space-filling ordering of the points
  * Removed deprecated DistributionFactory.setKnownParameter(Point, Indices)
