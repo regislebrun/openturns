@@ -596,4 +596,21 @@ hodlr26.gemv('N', 1.0, x26, 0.0, y26)
 ott.assert_almost_equal(y26, y26_dense, 1.0e-10, 1.0e-10)
 print("  PASS")
 
+# === Test 27: reject a covariance model whose input dimension does not match ===
+# === the vertices dimension ===
+print("\n=== Test 27: input dimension mismatch is rejected ===")
+# A 1D-scale MaternModel discretized on 2D vertices used to silently assemble
+# the kernel on the first coordinate only. The assembly must now fail loudly.
+vertices27 = ot.Sample([[0.0, 0.0], [0.1, 0.1], [0.2, 0.2]])
+cov27 = ot.MaternModel([0.1], [1.0], 2.5)
+params27 = make_params(leaf=2, factorization="LLT")
+with ott.assert_raises(TypeError):
+    cov27.discretizeHODLRMatrix(vertices27, params27)
+# A 2D model on the same 2D vertices must still work
+cov27b = ot.IsotropicCovarianceModel(ot.MaternModel([0.1], [1.0], 2.5), 2)
+hodlr27 = cov27b.discretizeHODLRMatrix(vertices27, params27)
+hodlr27.factorize("LLT")
+x27 = hodlr27.solve(ot.Point(3, 1.0))
+print("  PASS")
+
 print("\n=== ALL TESTS PASSED ===")

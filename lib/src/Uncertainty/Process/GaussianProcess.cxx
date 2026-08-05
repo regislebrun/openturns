@@ -311,7 +311,7 @@ Sample GaussianProcess::getRealizationHODLR() const
   const Point gaussianPoint(DistFunc::rNormal(fullSize));
 
   Point y(fullSize);
-  covarianceHODLRMatrix_.gemv('N', 1.0, gaussianPoint, 0.0, y);
+  covarianceHODLRMatrix_.applyFactor(y, gaussianPoint);
   Sample values(size, getOutputDimension());
   values.getImplementation()->setData(y);
   return values;

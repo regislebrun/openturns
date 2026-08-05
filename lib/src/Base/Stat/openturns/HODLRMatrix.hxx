@@ -50,6 +50,7 @@ public:
 
   void scale(Scalar alpha);
   void gemv(char trans, Scalar alpha, const Point& x, Scalar beta, Point& y) const;
+  void applyFactor(Point& y, const Point& x) const;
 
   void addIdentity(Scalar alpha);
   void applyNugget();

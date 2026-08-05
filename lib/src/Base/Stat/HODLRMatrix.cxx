@@ -96,6 +96,11 @@ void HODLRMatrix::gemv(char trans, Scalar alpha, const Point& x, Scalar beta, Po
   getImplementation()->gemv(trans, alpha, x, beta, y);
 }
 
+void HODLRMatrix::applyFactor(Point& y, const Point& x) const
+{
+  getImplementation()->applyFactor(y, x);
+}
+
 void HODLRMatrix::addIdentity(Scalar alpha)
 {
   copyOnWrite();

@@ -237,114 +237,149 @@ UnsignedInteger HODLRNode::lowRankApproxPartialPivot(UnsignedInteger startRow, U
   const UnsignedInteger maxRankBound = std::min(nRows, nCols);
   const UnsignedInteger maxRank = (maxRank_ > 0) ? std::min(maxRankBound, maxRank_) : maxRankBound;
 
-  // Residual matrix in column-major layout, filled from the evaluator
-  std::vector<Scalar> R(nRows * nCols);
-  for (UnsignedInteger j = 0; j < nCols; ++j)
-    for (UnsignedInteger i = 0; i < nRows; ++i)
-      R[i + j * nRows] = (*p_eval_)(startRow + i, startCol + j);
-
   std::vector<Scalar> Udata(nRows * maxRank, 0.0);
   std::vector<Scalar> Vdata(nCols * maxRank, 0.0);
 
+  // Partial-pivoting ACA, ported from the "ACA partial" scheme of hmat-oss
+  // (src/compression.cpp, doCompressionAcaPartial). Unlike the full-pivoting
+  // variant, the residual block is never materialized: only the residual row
+  // at the pivot row and the residual column at the pivot column are assembled
+  // from the evaluator on demand, so the cost is O(rank * (nRows + nCols))
+  // instead of O(rank * nRows * nCols). Two ingredients make the pivot choice
+  // as reliable as full pivoting:
+  //  - rows and columns already used as pivots are excluded (rowFree/colFree),
+  //    which prevents the stagnation of naive partial pivoting, and
+  //  - the pivot column is scanned over the residual of the pivot row only,
+  //    while the next pivot row is the row with the largest residual in the
+  //    pivot column.
+  // The stopping criterion accumulates the same Frobenius-norm estimate as
+  // the full-pivoting variant (without the cross terms between the factors).
   UnsignedInteger rank = 0;
   Scalar norm = 0.0;
   const Scalar tol2 = tol * tol;
 
+  std::vector<bool> rowFree(nRows, true);
+  std::vector<bool> colFree(nCols, true);
+  std::vector<Scalar> aCol(nRows, 0.0);
+  std::vector<Scalar> bCol(nCols, 0.0);
+  UnsignedInteger pivotRow = 0;
+  UnsignedInteger pivotCol = 0;
+
   while (rank < maxRank)
   {
-    // Partial (max-element) pivoting over the current residual
+    // Residual row at the pivot row: A(pivotRow, :) - sum_l U[pivotRow, l] * V[:, l]
     Scalar maxVal = 0.0;
-    UnsignedInteger pivotRow = 0;
-    UnsignedInteger pivotCol = 0;
     for (UnsignedInteger j = 0; j < nCols; ++j)
-      for (UnsignedInteger i = 0; i < nRows; ++i)
+    {
+      Scalar v = (*p_eval_)(startRow + pivotRow, startCol + j);
+      for (UnsignedInteger l = 0; l < rank; ++l)
+        v -= Udata[pivotRow + l * nRows] * Vdata[j + l * nCols];
+      bCol[j] = v;
+      const Scalar absVal = std::abs(v);
+      if (colFree[j] && (absVal > maxVal))
       {
-        const Scalar absVal = std::abs(R[i + j * nRows]);
-        if (absVal > maxVal)
-        {
-          maxVal = absVal;
-          pivotRow = i;
-          pivotCol = j;
-        }
+        maxVal = absVal;
+        pivotCol = j;
       }
+    }
+    rowFree[pivotRow] = false;
 
     if (maxVal < 1e-14)
     {
-      if (rank == 0)
-      {
-        // The block is numerically zero: no pivot survives the hard-coded
-        // threshold. Keep the deterministic rank-maxRank representation used
-        // by lowRankApprox (U = first columns of A, V = I) so downstream code
-        // never has to deal with an empty U/V pair.
-        if ((maxRank_ > 0) && (maxRank_ < maxRankBound))
-          LOGWARN(OSS() << "HODLRMatrix: rank-starved block (" << nRows << "x" << nCols
-                 << ") reached the max rank " << maxRank_ << " before the assembly tolerance; "
-                 << "accuracy may be degraded. Set HODLRMatrix-MaxRank to 0 for adaptive (tolerance-driven) rank");
-        Uout = Matrix(nRows, maxRank);
-        Vout = Matrix(nCols, maxRank);
-        MatrixImplementation& UoutImpl = *Uout.getImplementation();
-        MatrixImplementation& VoutImpl = *Vout.getImplementation();
-        if (nCols <= nRows)
-        {
-          const UnsignedInteger maxCols = std::min(nCols, maxRank);
-          for (UnsignedInteger m = 0; m < maxCols; ++m)
-            VoutImpl[m + m * nCols] = 1.0;
-          for (UnsignedInteger n = 0; n < nRows; ++n)
-            for (UnsignedInteger m = 0; m < maxCols; ++m)
-              UoutImpl[n + m * nRows] = (*p_eval_)(startRow + n, startCol + m);
-        }
-        else
-        {
-          const UnsignedInteger maxRows = std::min(nRows, maxRank);
-          for (UnsignedInteger m = 0; m < maxRows; ++m)
-            UoutImpl[m + m * nRows] = 1.0;
-          for (UnsignedInteger n = 0; n < maxRows; ++n)
-            for (UnsignedInteger m = 0; m < nCols; ++m)
-              VoutImpl[m + n * nCols] = (*p_eval_)(startRow + n, startCol + m);
-        }
-        return maxRank;
-      }
-      break;
+      // The residual row is (numerically) zero on all free columns: jump to
+      // the next row not yet used as a pivot.
+      while ((pivotRow < nRows) && !rowFree[pivotRow])
+        ++pivotRow;
+      if (pivotRow >= nRows)
+        break;
+      continue;
     }
 
-    const Scalar pivot = R[pivotRow + pivotCol * nRows];
-    const Scalar* ucol = &R[pivotCol * nRows];
-    const Scalar* vrow = &R[pivotRow];
+    // Residual column at the pivot column: A(:, pivotCol) - sum_l U[:, l] * V[pivotCol, l]
+    for (UnsignedInteger i = 0; i < nRows; ++i)
+    {
+      Scalar v = (*p_eval_)(startRow + i, startCol + pivotCol);
+      for (UnsignedInteger l = 0; l < rank; ++l)
+        v -= Udata[i + l * nRows] * Vdata[pivotCol + l * nCols];
+      aCol[i] = v;
+    }
+    colFree[pivotCol] = false;
 
+    // Same scaling convention as the full-pivoting variant: the pivot column
+    // is stored unscaled in U, the pivot row divided by the pivot in V.
+    const Scalar pivot = bCol[pivotCol];
     Scalar uNorm2 = 0.0;
     for (UnsignedInteger i = 0; i < nRows; ++i)
-      uNorm2 += ucol[i] * ucol[i];
+    {
+      Udata[i + rank * nRows] = aCol[i];
+      uNorm2 += aCol[i] * aCol[i];
+    }
     Scalar vNorm2 = 0.0;
     for (UnsignedInteger j = 0; j < nCols; ++j)
     {
-      const Scalar v = vrow[j * nRows] / pivot;
+      const Scalar v = bCol[j] / pivot;
+      Vdata[j + rank * nCols] = v;
       vNorm2 += v * v;
     }
     const Scalar rowcolNorm = uNorm2 * vNorm2;
 
+    norm += rowcolNorm;
+    ++rank;
+
     if (rowcolNorm < tol2 * norm) break;
 
-    norm += rowcolNorm;
+    if (rank == maxRank) break;
 
-    // Store the rank-one factor
+    // Next pivot row: the row with the largest residual in the pivot column,
+    // among the rows not yet used as pivots.
+    maxVal = 0.0;
+    pivotRow = 0;
     for (UnsignedInteger i = 0; i < nRows; ++i)
-      Udata[i + rank * nRows] = ucol[i];
-    for (UnsignedInteger j = 0; j < nCols; ++j)
-      Vdata[j + rank * nCols] = vrow[j * nRows] / pivot;
-
-    // Exact rank-one update R -= u * v^T (zeroes the pivot row and column).
-    // The source column is Udata, not R: R's pivot column is zeroed in place
-    // while this loop is running.
-    const Scalar* u = &Udata[rank * nRows];
-    for (UnsignedInteger j = 0; j < nCols; ++j)
     {
-      const Scalar vj = vrow[j * nRows] / pivot;
-      Scalar* rcol = &R[j * nRows];
-      for (UnsignedInteger i = 0; i < nRows; ++i)
-        rcol[i] -= u[i] * vj;
+      const Scalar absVal = std::abs(aCol[i]);
+      if (rowFree[i] && (absVal > maxVal))
+      {
+        maxVal = absVal;
+        pivotRow = i;
+      }
     }
+    if (maxVal < 1e-14)
+      break;
+  }
 
-    ++rank;
+  if (rank == 0)
+  {
+    // The block is numerically zero: no pivot survives the hard-coded
+    // threshold. Keep the deterministic rank-maxRank representation used
+    // by lowRankApprox (U = first columns of A, V = I) so downstream code
+    // never has to deal with an empty U/V pair.
+    if ((maxRank_ > 0) && (maxRank_ < maxRankBound))
+      LOGWARN(OSS() << "HODLRMatrix: rank-starved block (" << nRows << "x" << nCols
+             << ") reached the max rank " << maxRank_ << " before the assembly tolerance; "
+             << "accuracy may be degraded. Set HODLRMatrix-MaxRank to 0 for adaptive (tolerance-driven) rank");
+    Uout = Matrix(nRows, maxRank);
+    Vout = Matrix(nCols, maxRank);
+    MatrixImplementation& UoutImpl = *Uout.getImplementation();
+    MatrixImplementation& VoutImpl = *Vout.getImplementation();
+    if (nCols <= nRows)
+    {
+      const UnsignedInteger maxCols = std::min(nCols, maxRank);
+      for (UnsignedInteger m = 0; m < maxCols; ++m)
+        VoutImpl[m + m * nCols] = 1.0;
+      for (UnsignedInteger n = 0; n < nRows; ++n)
+        for (UnsignedInteger m = 0; m < maxCols; ++m)
+          UoutImpl[n + m * nRows] = (*p_eval_)(startRow + n, startCol + m);
+    }
+    else
+    {
+      const UnsignedInteger maxRows = std::min(nRows, maxRank);
+      for (UnsignedInteger m = 0; m < maxRows; ++m)
+        UoutImpl[m + m * nRows] = 1.0;
+      for (UnsignedInteger n = 0; n < maxRows; ++n)
+        for (UnsignedInteger m = 0; m < nCols; ++m)
+          VoutImpl[m + n * nCols] = (*p_eval_)(startRow + n, startCol + m);
+    }
+    return maxRank;
   }
 
   Uout = Matrix(nRows, rank);

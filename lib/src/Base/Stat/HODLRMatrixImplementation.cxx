@@ -380,6 +380,38 @@ void HODLRMatrixImplementation::gemv(char trans, Scalar alpha, const Point& x, S
   }
 }
 
+void HODLRMatrixImplementation::applyFactor(Point& y, const Point& x) const
+{
+  if (x.getDimension() != n_)
+    throw InvalidArgumentException(HERE) << "x dimension mismatch";
+  if (y.getDimension() != n_)
+    throw InvalidArgumentException(HERE) << "y dimension mismatch";
+
+  if (!p_node_)
+    throw InvalidArgumentException(HERE) << "HODLRMatrix not assembled";
+  if (!isFactorized_)
+    throw InvalidArgumentException(HERE) << "HODLRMatrix not factorized";
+  if (!isCholesky_)
+    throw InvalidArgumentException(HERE) << "HODLRMatrix not Cholesky factorized";
+
+  Matrix xmat(n_, 1);
+  Matrix ymat(n_, 1, 0.0);
+  for (UnsignedInteger i = 0; i < n_; ++i)
+  {
+    const UnsignedInteger iPerm = permutation_.getSize() > 0 ? permutation_[i] : i;
+    xmat(i, 0) = x[iPerm];
+  }
+
+  // y = L x where L is the lower-triangular Cholesky factor of A
+  p_node_->applyFactor(ymat, xmat);
+
+  for (UnsignedInteger i = 0; i < n_; ++i)
+  {
+    const UnsignedInteger iPerm = permutation_.getSize() > 0 ? inversePermutation_[i] : i;
+    y[i] = ymat(iPerm, 0);
+  }
+}
+
 void HODLRMatrixImplementation::addIdentity(Scalar alpha)
 {
   shiftAccumulated_ += alpha;
@@ -612,6 +644,15 @@ HODLRCovarianceAssemblyFunction::HODLRCovarianceAssemblyFunction(
   , covarianceDimension_(covarianceModel.getOutputDimension())
   , size_(vertices.getSize())
 {
+  // The scalar assembly path calls the iterator-based computeAsScalar(), which
+  // does not validate the point dimension, so a dimension mismatch used to
+  // silently assemble the kernel on the first coordinates only. Check it here
+  // to fail loudly instead of returning a wrong matrix.
+  const UnsignedInteger modelInputDimension = covarianceModel_.getInputDimension();
+  if (inputDimension_ != modelInputDimension)
+    throw InvalidArgumentException(HERE) << "In HODLRCovarianceAssemblyFunction: the vertices have dimension="
+                                         << inputDimension_ << " while the covariance model has input dimension="
+                                         << modelInputDimension;
 }
 
 Scalar HODLRCovarianceAssemblyFunction::operator()(UnsignedInteger i, UnsignedInteger j) const

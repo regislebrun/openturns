@@ -98,6 +98,27 @@ Parameters
 alpha : float
     Shift to add to the diagonal."
 
+%feature("docstring") OT::HODLRMatrixImplementation::applyFactor
+"Compute the product with the Cholesky factor.
+
+Computes y = L * x, where L is the lower-triangular Cholesky factor of
+the matrix A, with A = L * L^T. The matrix must have been factorized
+with the 'LLt' or 'LLT' method.
+
+The main use is sampling a centered Gaussian random vector of
+covariance A: if x is a vector of independent standard normal variates,
+then L * x follows the centered normal distribution of covariance A.
+Contrary to :meth:`gemv`, which computes the full product A * x (and
+would hence sample a random vector of covariance A^2 from unit noise),
+this method applies the factor only once.
+
+Parameters
+----------
+y : sequence of float
+    Output vector, updated in place.
+x : sequence of float
+    Input vector."
+
 %feature("docstring") OT::HODLRMatrixImplementation::applyNugget
 "Add a relative nugget to the diagonal.
 
