@@ -203,6 +203,12 @@ public:
   void applyFactor(Matrix& y, const Matrix& x) const;
   void applyFactorTranspose(Matrix& y, const Matrix& x) const;
 
+  static void recompressLowRank(Matrix& Uout, Matrix& Vout,
+      UnsignedInteger startRow, UnsignedInteger nRows,
+      UnsignedInteger startCol, UnsignedInteger nCols,
+      const std::vector<HODLRCorrectedEvaluator::Correction>& corrections,
+      Scalar tolerance);
+
   Scalar getLogDeterminant() const { return logDet_; }
   UnsignedInteger getTotalRank() const { return totalRank_; }
   UnsignedInteger getNumLeaves() const { return numLeaves_; }
@@ -215,7 +221,10 @@ private:
       Scalar tol, Matrix& Uout, Matrix& Vout);
   void factorize();
   void factorizeLeafCholesky();
-  void factorizeLeafCholeskyCorrected(const Matrix& K, const Matrix& U1, Scalar lambda);  // Bypass evaluator, use dgemm correction
+  void factorizeLeafCholesky(const std::vector<HODLRCorrectedEvaluator::Correction>& corrections);
+  void factorizeLeafCholeskyCorrected(const Matrix& K, const Matrix& U1, Scalar lambda,
+                                      const std::vector<HODLRCorrectedEvaluator::Correction>& corrections);  // Bypass evaluator, use dgemm correction
+  void computeCholesky(const std::vector<HODLRCorrectedEvaluator::Correction>& corrections);
   void applyInverse(Matrix& x, UnsignedInteger start) const;
   void applyInverseLeaf(Matrix& x, UnsignedInteger start) const;
   void applyInverseCholeskyLeaf(Matrix& x, UnsignedInteger start) const;
