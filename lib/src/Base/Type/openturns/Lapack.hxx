@@ -123,6 +123,9 @@ void dtrsm_(char *side, char *uplo, char *transa, char *diag, int *m, int *n, do
     The number of singular values is the min of the column dimension and the row dimension. */
 void dgesdd_(char *jobz, int *m, int *n, double *A, int *lda, double *S, double *U, int *ldu, double *VT, int *ldvt, double *work, int *lwork, int *iwork, int *info, int *ljobz);
 
+/** Function dsyevd computes the eigenvalues and eigenvectors of a symmetric matrix by a divide and conquer strategy */
+void dsyevd_(char *jobz, char *uplo, int *n, double *a, int *lda, double *w, double *work, int *lwork, int *iwork, int *liwork, int *info, int *ljobz, int *luplo);
+
 /** Function dtrmv is to be used to compute the product of a triangular
     (upper or lower) matrix with a vector (point) */
 void dtrmv_(char *uplo, char *trans, char *diag, int *n, double *A, int *lda, double *X, int *incx, int *luplo, int *ltrans, int *ldiag);

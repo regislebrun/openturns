@@ -480,40 +480,88 @@ void HODLRNode::recompressLowRank(Matrix& Uout, Matrix& Vout,
     HODLRDgemm("N", "T", &m, &n, &k, &one, &Vcat[0], &m, &Rcat[0], &n, &zero, &Mcat[0], &ldM);
   }
 
-  // SVD of M = Um * S * Vm^T
-  MatrixImplementation Um;
-  MatrixImplementation VmT;
-  Point singularValues = Mcat.computeSVDInPlace(Um, VmT, false);
-  const UnsignedInteger nSing = singularValues.getSize();
+  // SVD of the tall matrix M (nCols x k1). Computing it through the Gram
+  // matrix G = M^T * M (k1 x k1) and a tiny symmetric eigendecomposition
+  // avoids the blocked bidiagonalization of dgesdd, which dominates the cost
+  // for these very unbalanced sizes; the singular values are sqrt(eigenvalues)
+  // and the left singular vectors are recovered with one dgemm.
+  MatrixImplementation G(k1, k1);
+  {
+    int m = static_cast<int>(k1);
+    int n = static_cast<int>(k1);
+    int k = static_cast<int>(nCols);
+    double one = 1.0;
+    double zero = 0.0;
+    int ldM = static_cast<int>(nCols);
+    int ldG = static_cast<int>(k1);
+    HODLRDgemm("T", "N", &m, &n, &k, &one, &Mcat[0], &ldM, &Mcat[0], &ldM, &zero, &G[0], &ldG);
+  }
+  MatrixImplementation P;
+  Point eigenvalues(k1);
+  {
+    int n = static_cast<int>(k1);
+    char jobz = 'V';
+    char uplo = 'L';
+    int ljobz = 1;
+    int luplo = 1;
+    int lwork = -1;
+    int liwork = -1;
+    double lworkQuery = 0.0;
+    int liworkQuery = 0;
+    int info = 0;
+    dsyevd_(&jobz, &uplo, &n, &G[0], &n, &eigenvalues[0], &lworkQuery, &lwork, &liworkQuery, &liwork, &info, &ljobz, &luplo);
+    lwork = static_cast<int>(lworkQuery);
+    liwork = static_cast<int>(liworkQuery);
+    Point work(lwork);
+    std::vector<int> iwork(static_cast<std::size_t>(liwork));
+    dsyevd_(&jobz, &uplo, &n, &G[0], &n, &eigenvalues[0], &work[0], &lwork, &iwork[0], &liwork, &info, &ljobz, &luplo);
+    if (info != 0)
+      throw InternalException(HERE) << "dsyevd failed to converge (info=" << info << ")";
+    P = G;  // eigenvectors in columns, ascending eigenvalues
+  }
+  const UnsignedInteger nSing = std::min(k1, nCols);
   const UnsignedInteger maxRank = std::min(nRows, nCols);
   UnsignedInteger rankOut = std::min(nSing, maxRank);
-  if ((rankOut > 0) && (tolerance > 0.0))
+  Scalar totalNorm2 = 0.0;
+  for (UnsignedInteger i = 0; i < k1; ++i)
+    if (eigenvalues[i] > 0.0)
+      totalNorm2 += eigenvalues[i];
+  if ((rankOut > 0) && (tolerance > 0.0) && (totalNorm2 > 0.0))
   {
-    Scalar totalNorm2 = 0.0;
-    for (UnsignedInteger i = 0; i < nSing; ++i)
-      totalNorm2 += singularValues[i] * singularValues[i];
-    if (totalNorm2 > 0.0)
+    // Keep the largest r singular values such that the Frobenius norm of the
+    // truncated part is below tolerance relative to the block norm (same
+    // criterion as the ACA stopping rule).
+    const Scalar tol2 = tolerance * tolerance;
+    Scalar droppedNorm2 = 0.0;
+    rankOut = nSing;
+    for (UnsignedInteger i = k1 - nSing; i < k1; ++i)
     {
-      // Keep the largest r singular values such that the Frobenius norm of the
-      // truncated part is below tolerance relative to the block norm (same
-      // criterion as the ACA stopping rule).
-      const Scalar tol2 = tolerance * tolerance;
-      Scalar droppedNorm2 = 0.0;
-      rankOut = nSing;
-      for (UnsignedInteger i = nSing; i > 0; --i)
-      {
-        droppedNorm2 += singularValues[i - 1] * singularValues[i - 1];
-        if (droppedNorm2 <= tol2 * totalNorm2)
-          rankOut = i - 1;
-        else
-          break;
-      }
-      if (rankOut == 0) rankOut = 1;
+      const Scalar lambda = (eigenvalues[i] > 0.0) ? eigenvalues[i] : 0.0;
+      droppedNorm2 += lambda;
+      if (droppedNorm2 <= tol2 * totalNorm2)
+        rankOut = k1 - 1 - i;
+      else
+        break;
     }
+    if (rankOut == 0) rankOut = 1;
+    if (rankOut > maxRank) rankOut = maxRank;
   }
 
-  // U_new = Qcat * Vm[:, :rankOut] * diag(S[:rankOut])
-  // V_new = Um[:, :rankOut]
+  // P_large holds the eigenvectors of the rankOut largest eigenvalues, in
+  // descending order (P is ascending, so take columns k1-1 down to k1-rankOut).
+  // U_new = Qcat * P_large * diag(s), V_new = M * P_large * diag(1/s).
+  MatrixImplementation Pcat(k1, rankOut);
+  if (rankOut > 0)
+  {
+    const Scalar* P_data = &P[0];
+    Scalar* Pcat_data = &Pcat[0];
+    for (UnsignedInteger c = 0; c < rankOut; ++c)
+    {
+      const UnsignedInteger col = k1 - 1 - c;
+      for (UnsignedInteger r = 0; r < k1; ++r)
+        Pcat_data[r + c * k1] = P_data[r + col * k1];
+    }
+  }
   MatrixImplementation Unew(nRows, rankOut);
   MatrixImplementation Vnew(nCols, rankOut);
   if (rankOut > 0)
@@ -525,22 +573,33 @@ void HODLRNode::recompressLowRank(Matrix& Uout, Matrix& Vout,
       double one = 1.0;
       double zero = 0.0;
       int ldQ = static_cast<int>(nRows);
-      int ldVt = static_cast<int>(nSing);
+      int ldP = static_cast<int>(k1);
       int ldU = static_cast<int>(nRows);
-      HODLRDgemm("N", "T", &m, &n, &k, &one, &Qcat[0], &ldQ, &VmT[0], &ldVt, &zero, &Unew[0], &ldU);
+      HODLRDgemm("N", "N", &m, &n, &k, &one, &Qcat[0], &ldQ, &Pcat[0], &ldP, &zero, &Unew[0], &ldU);
+    }
+    {
+      int m = static_cast<int>(nCols);
+      int n = static_cast<int>(rankOut);
+      int k = static_cast<int>(k1);
+      double one = 1.0;
+      double zero = 0.0;
+      int ldM = static_cast<int>(nCols);
+      int ldP = static_cast<int>(k1);
+      int ldV = static_cast<int>(nCols);
+      HODLRDgemm("N", "N", &m, &n, &k, &one, &Mcat[0], &ldM, &Pcat[0], &ldP, &zero, &Vnew[0], &ldV);
     }
     Scalar* Unew_data = &Unew[0];
-    for (UnsignedInteger c = 0; c < rankOut; ++c)
-    {
-      const Scalar scale = singularValues[c];
-      for (UnsignedInteger r = 0; r < nRows; ++r)
-        Unew_data[r + c * nRows] *= scale;
-    }
-    const Scalar* Um_data = &Um[0];
     Scalar* Vnew_data = &Vnew[0];
     for (UnsignedInteger c = 0; c < rankOut; ++c)
+    {
+      const UnsignedInteger col = k1 - 1 - c;
+      const Scalar s = std::sqrt(eigenvalues[col] > 0.0 ? eigenvalues[col] : 0.0);
+      const Scalar invS = (s > 0.0) ? (1.0 / s) : 0.0;
+      for (UnsignedInteger r = 0; r < nRows; ++r)
+        Unew_data[r + c * nRows] *= s;
       for (UnsignedInteger r = 0; r < nCols; ++r)
-        Vnew_data[r + c * nCols] = Um_data[r + c * nCols];
+        Vnew_data[r + c * nCols] *= invS;
+    }
   }
 
   Uout = Matrix(nRows, rankOut);
