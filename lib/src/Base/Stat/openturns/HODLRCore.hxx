@@ -133,9 +133,15 @@ public:
           static_cast<UnsignedInteger>(local_i) < corr.size &&
           static_cast<UnsignedInteger>(local_j) < corr.size)
       {
+        const UnsignedInteger iu = static_cast<UnsignedInteger>(local_i);
+        const UnsignedInteger ju = static_cast<UnsignedInteger>(local_j);
+        const Scalar* uk_data = corr.UK.getImplementation()->data();
+        const Scalar* u1_data = corr.U1.getImplementation()->data();
+        const UnsignedInteger ukRows = corr.UK.getNbRows();
+        const UnsignedInteger u1Rows = corr.U1.getNbRows();
         Scalar term = 0.0;
         for (UnsignedInteger q = 0; q < corr.rank; ++q)
-          term += corr.UK(local_i, q) * corr.U1(local_j, q);
+          term += uk_data[iu + q * ukRows] * u1_data[ju + q * u1Rows];
         val -= term;
         if (i == j) val += corr.lambda;
       }

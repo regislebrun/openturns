@@ -354,11 +354,13 @@ void HODLRMatrixImplementation::gemv(char trans, Scalar alpha, const Point& x, S
 
   Matrix xmat(n_, 1);
   Matrix ymat(n_, 1);
+  Scalar* xmat_data = &(*xmat.getImplementation())[0];
+  Scalar* ymat_data = &(*ymat.getImplementation())[0];
   for (UnsignedInteger i = 0; i < n_; ++i)
   {
     const UnsignedInteger iPerm = permutation_.getSize() > 0 ? permutation_[i] : i;
-    xmat(i, 0) = x[iPerm];
-    ymat(i, 0) = 0.0;
+    xmat_data[i] = x[iPerm];
+    ymat_data[i] = 0.0;
   }
 
   if (isCholesky_)
@@ -376,7 +378,7 @@ void HODLRMatrixImplementation::gemv(char trans, Scalar alpha, const Point& x, S
   for (UnsignedInteger i = 0; i < n_; ++i)
   {
     const UnsignedInteger iPerm = permutation_.getSize() > 0 ? inversePermutation_[i] : i;
-    y[i] = alpha * ymat(iPerm, 0) + beta * y[i];
+    y[i] = alpha * ymat_data[iPerm] + beta * y[i];
   }
 }
 
@@ -396,10 +398,12 @@ void HODLRMatrixImplementation::applyFactor(Point& y, const Point& x) const
 
   Matrix xmat(n_, 1);
   Matrix ymat(n_, 1, 0.0);
+  Scalar* xmat_data = &(*xmat.getImplementation())[0];
+  Scalar* ymat_data = &(*ymat.getImplementation())[0];
   for (UnsignedInteger i = 0; i < n_; ++i)
   {
     const UnsignedInteger iPerm = permutation_.getSize() > 0 ? permutation_[i] : i;
-    xmat(i, 0) = x[iPerm];
+    xmat_data[i] = x[iPerm];
   }
 
   // y = L x where L is the lower-triangular Cholesky factor of A
@@ -408,7 +412,7 @@ void HODLRMatrixImplementation::applyFactor(Point& y, const Point& x) const
   for (UnsignedInteger i = 0; i < n_; ++i)
   {
     const UnsignedInteger iPerm = permutation_.getSize() > 0 ? inversePermutation_[i] : i;
-    y[i] = ymat(iPerm, 0);
+    y[i] = ymat_data[iPerm];
   }
 }
 
