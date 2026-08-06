@@ -1,0 +1,339 @@
+%----------------------------------------------------------------------
+% Benchmark of the three HODLR providers available through OpenTURNS
+%----------------------------------------------------------------------
+\documentclass[11pt]{article}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{siunitx}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{microtype}
+\hypersetup{colorlinks=true, linkcolor=blue!60!black, urlcolor=blue!60!black}
+
+\sisetup{round-mode=places}
+\graphicspath{{figures/}}
+\input{data.tex}
+
+\newcommand{\ot}{OpenTURNS}
+
+\title{Benchmark of the HODLR providers available through \ot{}\\[2mm]
+\large assembly, factorization, solve, sampling and log-determinant for a Matern~5/2 covariance}
+\author{}
+\date{\today}
+\begin{document}
+\sloppy
+
+\maketitle
+
+\begin{abstract}
+We benchmark the three providers of hierarchical (\textsc{hodlr}) linear algebra
+available from the \ot{} code base for the covariance matrix of a Matern~5/2
+process: the \emph{native} \ot{} \textsc{hodlr} implementation
+(\texttt{HODLRMatrix}), the \ot{} \textsc{hmat} wrapper around the external
+\emph{hmat-oss} library (\texttt{HMatrix}), and \emph{hmat-oss} driven directly
+through its C API.  For grids of $n \in \{2000, 5000\}$ points in 1D, 2D and 3D,
+target precision $\varepsilon = 10^{-6}$ and length scale $\ell = 0.01$, we
+measure the wall-clock time and the numerical accuracy (with respect to a dense
+reference) of the routines used by \texttt{GaussianProcess} (sampling),
+\texttt{KarhunenLoeveP1Algorithm} (eigenvalues via Lanczos),
+\texttt{GaussianProcessFitter} (log-likelihood) and
+\texttt{GaussianProcessRegression} (solve).  The direct \emph{hmat-oss} path is
+the fastest for factorization and solves; the native \ot{}
+\textsc{hodlr} is the most robust numerically, in particular for the
+log-determinant and for the severely ill-conditioned 1D configurations.  The
+\ot{} \textsc{hmat} path implicitly regularizes the matrix before
+factorization, which makes its post-factorization solve and log-determinant
+deviate from the exact values on ill-conditioned matrices.
+\end{abstract}
+
+\section{Objective}\label{sec:objective}
+
+OpenTURNS 0.29 exposes two hierarchical matrix backends for its Gaussian-process
+machinery, plus the option to use the \texttt{hmat-oss} library directly:
+
+\begin{enumerate}
+  \item \texttt{HODLRMatrix} (native, this \texttt{hodlr} branch), assembled by
+        \texttt{discretizeHODLRMatrix}, used by \texttt{GaussianProcess},
+        \texttt{GaussianProcessFitter}, \texttt{GaussianProcessRegression} and
+        \texttt{KarhunenLoeveP1Algorithm};
+  \item \texttt{HMatrix} (wrapper over \texttt{hmat-oss} v1.11.1, built with
+        \texttt{OPENTURNS\_HAVE\_HMAT}), used by the same modules through
+        \texttt{HMatrixFactory};
+  \item \texttt{hmat-oss} v1.11.1 driven directly through its C API (the
+        ``provider ceiling'' of the wrapper).
+\end{enumerate}
+
+This report compares the three providers on the covariance matrix of a Matern~5/2
+process with amplitude~1, length scale $\ell = 0.01$ and nugget $10^{-8}$, on
+structured grids of $n$ points in $[0,1]^d$ with $d \in \{1,2,3\}$, target
+assembly/recompression precision $\varepsilon = 10^{-6}$ and (minimum) leaf size
+250.  All runs are single threaded
+($\texttt{OPENBLAS\_NUM\_THREADS}=\texttt{OMP\_NUM\_THREADS}=1$) on the \ot{}
+\emph{build-perf} tree (\texttt{-O3}).  The accuracy is measured against a dense
+reference assembled entry-by-entry and factorized with LAPACK
+\texttt{dpotrf}.  Each timing is the best of three repetitions.
+
+\section{Configuration}\label{sec:config}
+
+The point sets are regular grids: $n$ uniformly spaced points in 1D, $k^2$ points
+with $k=\lceil\sqrt n\rceil$ in 2D and $k^3$ points with $k=\lceil\sqrt[3]{n}\rceil$
+in 3D (Table~\ref{tab:dense}).  The 1D covariance is extremely ill-conditioned
+(the length scale $\ell=0.01$ is much larger than the spacing $\approx 2\cdot
+10^{-4}$), the 2D one moderately so, while the 3D covariance is close to the
+identity (Table~\ref{tab:dense}).
+
+\begin{table}[h]
+  \centering
+  \caption{Grids and dense reference values (Matern~5/2, $\ell=0.01$, variance~1,
+           nugget $10^{-8}$).  $\log\det A$ and $\lambda_1$ are the dense values;
+           ``dense KL'' is the wall-clock time of the Lanczos reference on the
+           dense matrix.}
+  \label{tab:dense}
+  \tabdense
+\end{table}
+
+\section{Providers and routine mapping}\label{sec:providers}
+
+Each provider assembles the same symmetric matrix and performs the same
+operations, but with different entry points:
+
+\begin{itemize}
+  \item \textbf{native \ot{} \textsc{hodlr}}: assembly through
+        \texttt{discretizeHODLRMatrix} with \texttt{HODLRMatrixParameters}
+        (\texttt{AssemblyEpsilon}=\texttt{RecompressionEpsilon}=$10^{-6}$,
+        \texttt{MinLeafSize}=250), factorization \texttt{factorize("LLT")} or
+        \texttt{factorize("LU")}, then \texttt{gemv}/\texttt{applyFactor}/
+        \texttt{solve}/\texttt{solveLower}/\texttt{logDeterminant}.
+  \item \textbf{\ot{} \textsc{hmat} wrapper}: \texttt{HMatrixFactory::build},
+        \texttt{assemble(f, params, 'L')} with
+        \texttt{CompressionMethod=AcaRandom}, \texttt{addIdentity}(nugget),
+        \texttt{factorize("LLt")} or \texttt{factorize("LU")}, then
+        \texttt{gemv}/\texttt{solve}/\texttt{solveLower}/\texttt{getDiagonal}.
+  \item \textbf{hmat-oss direct}: same sequence through the C API
+        (\texttt{libbench\_hmat2.so} shim), with median/max-dof clustering,
+        \texttt{AcaRandom} compression, \texttt{hodlrsym}/\texttt{hodlr}
+        factorizations.
+\end{itemize}
+
+The routines measured map to the four \ot{} modules as follows
+(see \texttt{lib/src/Base/Stat/HMatrixImplementation.cxx},
+\texttt{HODLRMatrixImplementation.cxx} and
+\texttt{lib/src/Base/Algo/KarhunenLoeveP1Algorithm.cxx}):
+
+\begin{itemize}
+  \item \textbf{\texttt{GaussianProcess} sampling}: assemble, factorize, then
+        $L z$ (\texttt{applyFactor} for \textsc{hodlr}, \texttt{gemv} for
+        \textsc{hmat}).
+  \item \textbf{\texttt{KarhunenLoeveP1Algorithm}}: assemble; for
+        \textsc{hodlr} the matrix is \textsc{lu}-factorized and the Lanczos
+        iterations use the factorized \texttt{gemv}; for \textsc{hmat} and for
+        \texttt{hmat-oss} the Lanczos iterations use the assembled matrix.
+        The reported ``KL time'' is the full Lanczos run (300 iterations,
+        full re-orthogonalization, 10 eigenvalues).
+  \item \textbf{\texttt{GaussianProcessFitter}} (log-likelihood): assemble,
+        factorize, \texttt{solveLower}(data), \texttt{solveLower}(design) and
+        the log-determinant (native \textsc{hodlr}: \texttt{logDeterminant};
+        \textsc{hmat}: \texttt{getDiagonal} + $\sum\log d_{ii}$;
+        \texttt{hmat-oss}: \texttt{logdet}).
+  \item \textbf{\texttt{GaussianProcessRegression}}: assemble, factorize,
+        \texttt{solve}.
+\end{itemize}
+
+\section{Results}\label{sec:results}
+
+\subsection{Timings}\label{sec:timings}
+
+Table~\ref{tab:time} reports the per-routine wall-clock times; Figures
+\ref{fig:assemble}--\ref{fig:kl} show the assembly, Cholesky, LU and solve times
+and the end-to-end KL run.
+
+\begin{table}[h]
+  \centering
+  \caption{Wall-clock times (best of 3, single thread).  ``gemv'' is the
+           matrix--vector product $A v$ on the (re)assembled matrix, ``Chol.''
+           the LLT/LLt factorization, ``logdet'' the log-determinant extraction
+           (native \textsc{hodlr}: stored value; \textsc{hmat}:
+           \texttt{getDiagonal}; \texttt{hmat-oss}: \texttt{logdet}).  ``--''
+           means the operation is not available or the number is not finite.}
+  \label{tab:time}
+  \tabtime
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \caption{End-to-end timings of the four application-level workflows (sum of
+           the involved routines; sampling = assemble + factorize +
+           $L z$).  The ``dense'' row is the Lanczos reference on the dense
+           matrix.}
+  \label{tab:app}
+  \tabapp
+\end{table}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.95\linewidth]{assemble}
+  \caption{Assembly time (log scale).}
+  \label{fig:assemble}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.95\linewidth]{factorize_llt}
+  \caption{Cholesky (LLT/LLt) factorization time (log scale).}
+  \label{fig:llt}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.95\linewidth]{factorize_lu}
+  \caption{LU factorization time (log scale).}
+  \label{fig:lu}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.95\linewidth]{solve}
+  \caption{Single right-hand-side solve time (log scale).}
+  \label{fig:solve}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.95\linewidth]{kl}
+  \caption{End-to-end KL Lanczos run (300 matrix--vector products; log scale).}
+  \label{fig:kl}
+\end{figure}
+
+\subsection{Accuracy}\label{sec:accuracy}
+
+Table~\ref{tab:acc} reports the relative errors with respect to the dense
+reference: the matvec $A v$ (``gemv''), the solve (``solve''), the
+log-determinant (``logdet'') and the largest eigenvalue returned by the KL
+Lanczos (``KL $\lambda_1$''), together with the compression ratio
+$c_r = $ stored coefficients $/\, n^2$.
+
+\begin{table}[h]
+  \centering
+  \caption{Relative errors vs.\ the dense reference.  The ``gemv'' column is the
+           matvec accuracy of the assembled matrix, which is the meaningful
+           comparison for all providers.  ``--'' means not finite.}
+  \label{tab:acc}
+  \tabacc
+\end{table}
+
+\section{Findings}\label{sec:findings}
+
+\paragraph{Assembly.}
+The native \ot{} \textsc{hodlr} assembly is fastest in 2D/3D at $n=2000$
+($8$--$12$\,ms) but the slowest in 1D at $n=5000$ ($196$\,ms), while
+\texttt{hmat-oss} shows the opposite trend ($4.7$\,ms in 1D/$n=2000$,
+$181$\,ms in 3D/$n=5000$).  The \ot{} \textsc{hmat} assembly is the middle
+option everywhere.  The native \ot{} \textsc{hodlr} reaches the smallest
+compression ratios (up to $0.065$ vs.\ $0.066$--$0.437$), i.e.\ it is the most
+storage-efficient.
+
+\paragraph{Cholesky factorization.}
+\texttt{hmat-oss} is consistently the fastest ($1.8$--$75$\,ms), followed by the
+native \ot{} \textsc{hodlr} in 1D ($5.1$ and $17.8$\,ms) and by the \ot{}
+\textsc{hmat} wrapper in 2D/3D.  The two \ot{} entry points are within
+$\approx 1.6\times$ of each other everywhere except the 1D case where the
+native \textsc{hodlr} is $\approx 2\times$ faster than the wrapper.
+
+\paragraph{LU factorization.}
+The native \ot{} \textsc{hodlr} \textsc{lu} path is by far the slowest
+operation of the whole benchmark: $6\times$--$12\times$ slower than its own
+Cholesky ($223$\,ms at $n=5000$ in 1D, $704$\,ms in 3D).  \texttt{hmat-oss}
+\textsc{hodlr} (LU) and the \ot{} \textsc{hmat} \textsc{lu} stay close to their
+symmetric factorization cost.  Since \texttt{KarhunenLoeveP1Algorithm} uses the
+\textsc{lu} factorization on the \textsc{hodlr} path, this is where the native
+backend is penalized; nevertheless its end-to-end KL time remains $4\times$
+faster than the dense Lanczos at $n=5000$ in 1D.
+
+\paragraph{Solves.}
+All three providers solve in well under $3$\,ms at $n=5000$; the 
+\texttt{hmat-oss} direct path is the fastest.  The accuracy of the solve is
+limited by the conditioning: for the ill-conditioned 1D matrices the native
+\textsc{hodlr} and \texttt{hmat-oss} reach $3.5\times10^{-8}$ and
+$3.7\times10^{-5}$, respectively, at $n=5000$.
+
+\paragraph{Log-determinant.}
+The native \ot{} \textsc{hodlr} \texttt{logDeterminant} is both the cheapest
+(stored at factorization) and the most accurate ($10^{-10}$--$2.4\times10^{-6}$).
+The \texttt{hmat-oss} \texttt{logdet} follows the documented convention of
+returning $\log|\det L|=\frac12\log\det A$ for the symmetric (HODLRSYM)
+factorization and must be doubled by the caller; once doubled it is accurate to
+$10^{-9}$--$8\times10^{-5}$ in 2D/3D but returns $-\infty$ on the 1D
+configurations, where the leaf LLT produces a non-positive diagonal.  The \ot{}
+\textsc{hmat} wrapper extracts the log-determinant from
+\texttt{getDiagonal}, but on the \emph{regularized} factor (see below).
+
+\paragraph{Implicit regularization of the \ot{} \textsc{hmat} path.}
+\texttt{HMatrixImplementation::factorize} computes $\lambda_{\max}$ by power
+iteration and calls \texttt{addIdentity($\lambda$)} with
+$\lambda = 2\,\lambda_{\max}\,\cdot$\texttt{HMatrix-RegularizationEpsilon}
+(default $10^{-4}$), doubling $\lambda$ and retrying while the hmat-oss
+factorization fails.  The assembled matrix itself is exact ($A v$ error
+$\le 5\times10^{-8}$), but all post-factorization operations solve or
+factorize $A+\lambda I$ rather than $A$.  For the 1D matrices ($\lambda \approx
+9.5\times10^{-3}$ at $n=2000$) this shifts the solve relative error to
+$\approx 1$ and the log-determinant by up to $5.4\times10^{4}$; for the
+well-conditioned 2D/3D cases the deviation drops to $10^{-4}$--$1$.  The native
+\ot{} \textsc{hodlr} has the same mechanism
+(\texttt{HODLRMatrix-RegularizationEpsilon}) but only applies the shift if the
+unshifted factorization fails, which never happened here.
+
+\paragraph{Compression method.}
+\texttt{hmat-oss} compression with \texttt{AcaPlus} at $\varepsilon=10^{-6}$ is
+surprisingly inaccurate on 2D kernels (matvec error $\approx 2\times10^{-2}$ at
+$n=2000$, whereas SVD/AcaFull/AcaPartial/AcaRandom all give $\approx
+10^{-10}$).  All runs of this report therefore use \texttt{AcaRandom}, which is
+also the default \texttt{HMatrix-CompressionMethod} of \ot{}.
+
+\paragraph{Post-factorization gemv semantics.}
+After a Cholesky factorization the \texttt{gemv} of the native \ot{}
+\textsc{hodlr} returns $A v$ (it uses the factorized blocks to reconstruct the
+matvec), whereas \texttt{hmat-oss} returns $L v$.  Both are correct uses for
+their respective callers: \texttt{GaussianProcess} sampling relies on
+$L z$ (\texttt{applyFactor} for \textsc{hodlr}, \texttt{gemv} for
+\textsc{hmat}).
+
+\paragraph{Accuracy at the requested precision.}
+At $\varepsilon=10^{-6}$ the three providers meet the target on the matvec and
+on the KL eigenvalues for all configurations ($10^{-16}$--$4\times10^{-5}$).
+The solve and log-determinant accuracies are bounded by $\kappa\,\varepsilon$
+for the native and \texttt{hmat-oss} paths, which explains the larger errors on
+the 1D (near-singular) matrices; the \ot{} \textsc{hmat} solve/log-determinant
+are additionally shifted by the regularization described above.
+
+\section{Conclusion}\label{sec:conclusion}
+
+The \texttt{hmat-oss} direct path is the fastest provider for factorization and
+linear algebra, at the price of two documented caveats (halved HODLRSYM
+log-determinant and its failure on severely ill-conditioned matrices, and the
+unreliable \texttt{AcaPlus} compression in 2D).  The native \ot{}
+\textsc{hodlr} is the most robust numerically -- the only provider that keeps
+the log-determinant accurate on the 1D matrices -- and the most
+storage-efficient, but its \textsc{lu} factorization is an order of magnitude
+slower than its Cholesky, which penalizes the \texttt{KarhunenLoeveP1Algorithm}
+workflow.  The \ot{} \textsc{hmat} wrapper is a convenient middle ground whose
+main caveat is the implicit regularization shift applied before factorization.
+
+\appendix
+\section*{Reproduction}\label{sec:repro}
+
+\begin{itemize}
+  \item Harness: \texttt{/tmp/opencode/hodlrbench/hodlr\_compare.cxx}
+        (OpenTURNS side) and \texttt{bench\_hmat2.c} (hmat-oss C shim);
+        raw results in \texttt{/tmp/opencode/hodlrbench/results/run\_*.json}.
+  \item Report data/figures: \texttt{make\_report.py} (this directory).
+  \item Build: \texttt{cmake --preset=linux-debug} then
+        \texttt{cmake --build build-perf --target install} (the \texttt{-O3}
+        build used for benchmarking).
+\end{itemize}
+
+\end{document}
