@@ -1755,6 +1755,8 @@ void ResourceMap::loadDefaultConfiguration()
   addAsUnsignedInteger("HODLRMatrix-DenseThreshold", 256);
   addAsScalar("HODLRMatrix-RegularizationEpsilon", 1.0e-7);
   addAsScalar("HODLRMatrix-MaxRegularization", 1.0);
+  addAsBool("HODLRMatrix-RecompressCorrections", true);
+  addAsBool("HODLRMatrix-ProfileFactorization", false);
   addAsScalar("HODLRMatrix-RegularizationFactor", 2.0);
   addAsUnsignedInteger("HODLRMatrix-RegularizationAttempts", 60);
   addAsScalar("HODLRMatrix-Nugget", 1.0e-8);

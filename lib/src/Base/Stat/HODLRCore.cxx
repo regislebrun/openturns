@@ -28,6 +28,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <chrono>
+#include <cstdio>
 
 BEGIN_NAMESPACE_OPENTURNS
 
@@ -42,6 +44,50 @@ int goto_get_num_procs(void);
 void openblas_set_num_threads(int num_threads);
 #endif
 END_C_DECLS
+
+namespace {
+
+// Temporary factorization timing instrumentation (removed after tuning).
+struct FactorTiming
+{
+  double recomp = 0.0;
+  double recompCopy = 0.0;
+  double recompQR = 0.0;
+  double recompMcat = 0.0;
+  double recompGram = 0.0;
+  double recompSyevd = 0.0;
+  double recompFinal = 0.0;
+  double leaf = 0.0;
+  double leafCorr = 0.0;
+  double leafCorrected = 0.0;
+  double W = 0.0;
+  double Kgram = 0.0;
+  double UK = 0.0;
+  double dpotrf = 0.0;
+  int nRecomp = 0;
+  int nLeaf = 0;
+  int nLeafCorr = 0;
+  int nLeafCorrected = 0;
+  double k1sum = 0.0;
+  double nRowsSum = 0.0;
+  double totalRankSum = 0.0;
+  ~FactorTiming()
+  {
+    if (printProfile)
+      std::fprintf(stderr, "[FT] recomp: %.2f ms (%d) [copy %.2f QR %.2f Mcat %.2f Gram %.2f syevd %.2f final %.2f; k1 %.0f nRows %.0f totRank %.0f], leaf: %.2f ms (%d) of which corrections %.2f ms, leafCorrected: %.2f ms (%d), W: %.2f, Kgram: %.2f, UK: %.2f, dpotrf: %.2f\n",
+                   (recompCopy + recompQR + recompMcat + recompGram + recompSyevd + recompFinal) * 1e3, nRecomp,
+                   recompCopy * 1e3, recompQR * 1e3, recompMcat * 1e3,
+                   recompGram * 1e3, recompSyevd * 1e3, recompFinal * 1e3,
+                   k1sum, nRowsSum, totalRankSum,
+                   leaf * 1e3, nLeaf, leafCorr * 1e3, leafCorrected * 1e3, nLeafCorrected,
+                   W * 1e3, Kgram * 1e3, UK * 1e3, dpotrf * 1e3);
+  }
+  // Set once during factorization: only print the profile when explicitly
+  // requested, to avoid polluting stderr in normal use.
+  bool printProfile = false;
+} g_factorTiming;
+
+}  // namespace
 
 namespace {
 
@@ -477,9 +523,14 @@ void HODLRNode::recompressLowRank(Matrix& Uout, Matrix& Vout,
   const UnsignedInteger rankIn = Uout.getNbColumns();
   if (rankIn == 0) return;
 
+  const auto ft0 = std::chrono::steady_clock::now();
+  ++g_factorTiming.nRecomp;
+  g_factorTiming.nRowsSum += nRows;
+
   UnsignedInteger totalRank = rankIn;
   for (const auto& corr : corrections)
     totalRank += corr.rank;
+  g_factorTiming.totalRankSum += totalRank;
 
   // Ucat: nRows x totalRank, Vcat: nCols x totalRank
   MatrixImplementation Ucat(nRows, totalRank);
@@ -518,43 +569,128 @@ void HODLRNode::recompressLowRank(Matrix& Uout, Matrix& Vout,
     }
     totalRank = col;
   }
+  g_factorTiming.recompCopy += std::chrono::duration<double>(std::chrono::steady_clock::now() - ft0).count();
+  g_factorTiming.k1sum += std::min(nRows, totalRank);
 
-  // QR of Ucat: Ucat = Q * R (fullQR=false, so Q is nRows x k with k = min(nRows, totalRank))
-  MatrixImplementation Rcat;
-  MatrixImplementation Qcat = Ucat.computeQR(Rcat, false);
+  // QR of Ucat in place: Ucat = Q * R (thin QR, k1 = min(nRows, totalRank)).
+  // Qcat overwrites Ucat; R is extracted as the leading k1 x totalRank upper triangle.
   const UnsignedInteger k1 = std::min(nRows, totalRank);
-
-  // M = Vcat * R^T (nCols x k1); then A01' = Qcat * M^T
-  MatrixImplementation Mcat(nCols, k1);
+  MatrixImplementation Rcat(k1, totalRank);
   {
-    int m = static_cast<int>(nCols);
-    int n = static_cast<int>(k1);
-    int k = static_cast<int>(totalRank);
-    double one = 1.0;
-    double zero = 0.0;
-    int ldM = static_cast<int>(nCols);
-    HODLRDgemm("N", "T", &m, &n, &k, &one, &Vcat[0], &m, &Rcat[0], &n, &zero, &Mcat[0], &ldM);
+    const auto t0 = std::chrono::steady_clock::now();
+    int m = static_cast<int>(nRows);
+    int n = static_cast<int>(totalRank);
+    int lda = static_cast<int>(nRows);
+    int kq = static_cast<int>(k1);
+    Point tau(k1);
+    double lworkQuery = 0.0;
+    int lwork = -1;
+    int info = 0;
+    dgeqrf_(&m, &n, &Ucat[0], &lda, &tau[0], &lworkQuery, &lwork, &info);
+    lwork = static_cast<int>(lworkQuery);
+    Point work(lwork);
+    dgeqrf_(&m, &n, &Ucat[0], &lda, &tau[0], &work[0], &lwork, &info);
+    if (info != 0)
+      throw InternalException(HERE) << "dgeqrf failed (info=" << info << ")";
+    // Extract R (upper trapezoid) BEFORE dorgqr overwrites Ucat with Q.
+    {
+      const Scalar* Ud = &Ucat[0];
+      Scalar* Rd = &Rcat[0];
+      for (UnsignedInteger c = 0; c < totalRank; ++c)
+      {
+        const UnsignedInteger lim = std::min(c + 1, k1);
+        for (UnsignedInteger r = 0; r < lim; ++r)
+          Rd[r + c * k1] = Ud[r + c * nRows];
+      }
+    }
+    lwork = -1;
+    dorgqr_(&m, &kq, &kq, &Ucat[0], &lda, &tau[0], &lworkQuery, &lwork, &info);
+    lwork = static_cast<int>(lworkQuery);
+    work = Point(lwork);
+    dorgqr_(&m, &kq, &kq, &Ucat[0], &lda, &tau[0], &work[0], &lwork, &info);
+    if (info != 0)
+      throw InternalException(HERE) << "dorgqr failed (info=" << info << ")";
+    g_factorTiming.recompQR += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
   }
-
-  // SVD of the tall matrix M (nCols x k1). Computing it through the Gram
-  // matrix G = M^T * M (k1 x k1) and a tiny symmetric eigendecomposition
-  // avoids the blocked bidiagonalization of dgesdd, which dominates the cost
-  // for these very unbalanced sizes; the singular values are sqrt(eigenvalues)
-  // and the left singular vectors are recovered with one dgemm.
+  // SVD of M = Vcat * R^T (nCols x k1) through its Gram matrix G = M^T * M.
+  // Two algebraically equivalent routes:
+  //  - direct:  form M, then G = M^T M              (cost O(nCols*k1*totalRank))
+  //  - merged:  H = Vcat^T Vcat, G = R * H * R^T    (cost O(nCols*totalRank^2))
+  // The merged route avoids the large nCols x k1 intermediate and is cheaper
+  // when the block is much wider than the rank (nCols > 2*k1).
+  const bool useMergedGram = (nCols > 2 * k1);
   MatrixImplementation G(k1, k1);
+  MatrixImplementation Mcat;  // only allocated in the direct route
   {
-    int m = static_cast<int>(k1);
-    int n = static_cast<int>(k1);
-    int k = static_cast<int>(nCols);
-    double one = 1.0;
-    double zero = 0.0;
-    int ldM = static_cast<int>(nCols);
-    int ldG = static_cast<int>(k1);
-    HODLRDgemm("T", "N", &m, &n, &k, &one, &Mcat[0], &ldM, &Mcat[0], &ldM, &zero, &G[0], &ldG);
+    const auto t0 = std::chrono::steady_clock::now();
+    if (useMergedGram)
+    {
+      MatrixImplementation H(totalRank, totalRank);
+      {
+        int mm = static_cast<int>(totalRank);
+        int nn = static_cast<int>(totalRank);
+        int kk = static_cast<int>(nCols);
+        double one = 1.0;
+        double zero = 0.0;
+        int ldV = static_cast<int>(nCols);
+        int ldH = static_cast<int>(totalRank);
+        HODLRDgemm("T", "N", &mm, &nn, &kk, &one, &Vcat[0], &ldV, &Vcat[0], &ldV, &zero, &H[0], &ldH);
+      }
+      MatrixImplementation Tmp(totalRank, k1);
+      {
+        int mm = static_cast<int>(totalRank);
+        int nn = static_cast<int>(k1);
+        int kk = static_cast<int>(totalRank);
+        double one = 1.0;
+        double zero = 0.0;
+        int ldH = static_cast<int>(totalRank);
+        int ldR = static_cast<int>(k1);
+        int ldT = static_cast<int>(totalRank);
+        HODLRDgemm("N", "T", &mm, &nn, &kk, &one, &H[0], &ldH, &Rcat[0], &ldR, &zero, &Tmp[0], &ldT);
+      }
+      {
+        int mm = static_cast<int>(k1);
+        int nn = static_cast<int>(k1);
+        int kk = static_cast<int>(totalRank);
+        double one = 1.0;
+        double zero = 0.0;
+        int ldR = static_cast<int>(k1);
+        int ldT = static_cast<int>(totalRank);
+        int ldG = static_cast<int>(k1);
+        HODLRDgemm("N", "N", &mm, &nn, &kk, &one, &Rcat[0], &ldR, &Tmp[0], &ldT, &zero, &G[0], &ldG);
+      }
+    }
+    else
+    {
+      Mcat = MatrixImplementation(nCols, k1);
+      {
+        int mm = static_cast<int>(nCols);
+        int nn = static_cast<int>(k1);
+        int kk = static_cast<int>(totalRank);
+        double one = 1.0;
+        double zero = 0.0;
+        int ldV = static_cast<int>(nCols);
+        int ldR = static_cast<int>(k1);
+        int ldM = static_cast<int>(nCols);
+        HODLRDgemm("N", "T", &mm, &nn, &kk, &one, &Vcat[0], &ldV, &Rcat[0], &ldR, &zero, &Mcat[0], &ldM);
+      }
+      {
+        int mm = static_cast<int>(k1);
+        int nn = static_cast<int>(k1);
+        int kk = static_cast<int>(nCols);
+        double one = 1.0;
+        double zero = 0.0;
+        int ldM = static_cast<int>(nCols);
+        int ldG = static_cast<int>(k1);
+        HODLRDgemm("T", "N", &mm, &nn, &kk, &one, &Mcat[0], &ldM, &Mcat[0], &ldM, &zero, &G[0], &ldG);
+      }
+    }
+    g_factorTiming.recompGram += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
   }
-  MatrixImplementation P;
+
   Point eigenvalues(k1);
   {
+    const auto t0 = std::chrono::steady_clock::now();
     int n = static_cast<int>(k1);
     char jobz = 'V';
     char uplo = 'L';
@@ -573,7 +709,7 @@ void HODLRNode::recompressLowRank(Matrix& Uout, Matrix& Vout,
     dsyevd_(&jobz, &uplo, &n, &G[0], &n, &eigenvalues[0], &work[0], &lwork, &iwork[0], &liwork, &info, &ljobz, &luplo);
     if (info != 0)
       throw InternalException(HERE) << "dsyevd failed to converge (info=" << info << ")";
-    P = G;  // eigenvectors in columns, ascending eigenvalues
+    g_factorTiming.recompSyevd += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
   }
   const UnsignedInteger nSing = std::min(k1, nCols);
   const UnsignedInteger maxRank = std::min(nRows, nCols);
@@ -603,59 +739,82 @@ void HODLRNode::recompressLowRank(Matrix& Uout, Matrix& Vout,
     if (rankOut > maxRank) rankOut = maxRank;
   }
 
-  // P_large holds the eigenvectors of the rankOut largest eigenvalues, in
-  // descending order (P is ascending, so take columns k1-1 down to k1-rankOut).
-  // U_new = Qcat * P_large * diag(s), V_new = M * P_large * diag(1/s).
-  MatrixImplementation Pcat(k1, rankOut);
-  if (rankOut > 0)
-  {
-    const Scalar* P_data = &P[0];
-    Scalar* Pcat_data = &Pcat[0];
-    for (UnsignedInteger c = 0; c < rankOut; ++c)
-    {
-      const UnsignedInteger col = k1 - 1 - c;
-      for (UnsignedInteger r = 0; r < k1; ++r)
-        Pcat_data[r + c * k1] = P_data[r + col * k1];
-    }
-  }
+  // Eigenvectors live in the columns of G (ascending eigenvalues); take the
+  // rankOut largest, in descending order (columns k1-1 down to k1-rankOut),
+  // scaled by s and 1/s so that U_new = Qcat * Ps, V_new = Mcat * Pi (direct
+  // route) or V_new = Vcat * (Rcat^T * Pi) (merged route).
   MatrixImplementation Unew(nRows, rankOut);
   MatrixImplementation Vnew(nCols, rankOut);
   if (rankOut > 0)
   {
-    {
-      int m = static_cast<int>(nRows);
-      int n = static_cast<int>(rankOut);
-      int k = static_cast<int>(k1);
-      double one = 1.0;
-      double zero = 0.0;
-      int ldQ = static_cast<int>(nRows);
-      int ldP = static_cast<int>(k1);
-      int ldU = static_cast<int>(nRows);
-      HODLRDgemm("N", "N", &m, &n, &k, &one, &Qcat[0], &ldQ, &Pcat[0], &ldP, &zero, &Unew[0], &ldU);
-    }
-    {
-      int m = static_cast<int>(nCols);
-      int n = static_cast<int>(rankOut);
-      int k = static_cast<int>(k1);
-      double one = 1.0;
-      double zero = 0.0;
-      int ldM = static_cast<int>(nCols);
-      int ldP = static_cast<int>(k1);
-      int ldV = static_cast<int>(nCols);
-      HODLRDgemm("N", "N", &m, &n, &k, &one, &Mcat[0], &ldM, &Pcat[0], &ldP, &zero, &Vnew[0], &ldV);
-    }
-    Scalar* Unew_data = &Unew[0];
-    Scalar* Vnew_data = &Vnew[0];
+    const auto t0 = std::chrono::steady_clock::now();
+    const Scalar* G_data = &G[0];
+    MatrixImplementation Ps(k1, rankOut);
+    MatrixImplementation Pi(k1, rankOut);
+    Scalar* Ps_data = &Ps[0];
+    Scalar* Pi_data = &Pi[0];
     for (UnsignedInteger c = 0; c < rankOut; ++c)
     {
       const UnsignedInteger col = k1 - 1 - c;
       const Scalar s = std::sqrt(eigenvalues[col] > 0.0 ? eigenvalues[col] : 0.0);
       const Scalar invS = (s > 0.0) ? (1.0 / s) : 0.0;
-      for (UnsignedInteger r = 0; r < nRows; ++r)
-        Unew_data[r + c * nRows] *= s;
-      for (UnsignedInteger r = 0; r < nCols; ++r)
-        Vnew_data[r + c * nCols] *= invS;
+      for (UnsignedInteger r = 0; r < k1; ++r)
+      {
+        const Scalar p = G_data[r + col * k1];
+        Ps_data[r + c * k1] = p * s;
+        Pi_data[r + c * k1] = p * invS;
+      }
     }
+    {
+      int mm = static_cast<int>(nRows);
+      int nn = static_cast<int>(rankOut);
+      int kk = static_cast<int>(k1);
+      double one = 1.0;
+      double zero = 0.0;
+      int ldQ = static_cast<int>(nRows);
+      int ldP = static_cast<int>(k1);
+      int ldU = static_cast<int>(nRows);
+      HODLRDgemm("N", "N", &mm, &nn, &kk, &one, &Ucat[0], &ldQ, &Ps[0], &ldP, &zero, &Unew[0], &ldU);
+    }
+    if (useMergedGram)
+    {
+      MatrixImplementation RPi(totalRank, rankOut);
+      {
+        int mm = static_cast<int>(totalRank);
+        int nn = static_cast<int>(rankOut);
+        int kk = static_cast<int>(k1);
+        double one = 1.0;
+        double zero = 0.0;
+        int ldR = static_cast<int>(k1);
+        int ldP = static_cast<int>(k1);
+        int ldT = static_cast<int>(totalRank);
+        HODLRDgemm("T", "N", &mm, &nn, &kk, &one, &Rcat[0], &ldR, &Pi[0], &ldP, &zero, &RPi[0], &ldT);
+      }
+      {
+        int mm = static_cast<int>(nCols);
+        int nn = static_cast<int>(rankOut);
+        int kk = static_cast<int>(totalRank);
+        double one = 1.0;
+        double zero = 0.0;
+        int ldV = static_cast<int>(nCols);
+        int ldT = static_cast<int>(totalRank);
+        int ldVn = static_cast<int>(nCols);
+        HODLRDgemm("N", "N", &mm, &nn, &kk, &one, &Vcat[0], &ldV, &RPi[0], &ldT, &zero, &Vnew[0], &ldVn);
+      }
+    }
+    else
+    {
+      int mm = static_cast<int>(nCols);
+      int nn = static_cast<int>(rankOut);
+      int kk = static_cast<int>(k1);
+      double one = 1.0;
+      double zero = 0.0;
+      int ldM = static_cast<int>(nCols);
+      int ldP = static_cast<int>(k1);
+      int ldV = static_cast<int>(nCols);
+      HODLRDgemm("N", "N", &mm, &nn, &kk, &one, &Mcat[0], &ldM, &Pi[0], &ldP, &zero, &Vnew[0], &ldV);
+    }
+    g_factorTiming.recompFinal += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
   }
 
   Uout = Matrix(nRows, rankOut);
@@ -802,6 +961,7 @@ Pointer<HODLRCorrectedEvaluator> HODLRCorrectedEvaluator::flatten(
 
 void HODLRNode::computeCholesky()
 {
+  g_factorTiming.printProfile = ResourceMap::GetAsBool("HODLRMatrix-ProfileFactorization");
   computeCholesky(std::vector<HODLRCorrectedEvaluator::Correction>());
 }
 
@@ -812,7 +972,10 @@ void HODLRNode::computeCholesky(const std::vector<HODLRCorrectedEvaluator::Corre
 
   if (isLeaf_)
   {
+    const auto t0 = std::chrono::steady_clock::now();
     factorizeLeafCholesky(corrections);
+    g_factorTiming.leaf += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+    ++g_factorTiming.nLeaf;
     logDet_ = 0.0;
     {
       const MatrixImplementation& Sfact = *Sfactor_.getImplementation();
@@ -831,9 +994,11 @@ void HODLRNode::computeCholesky(const std::vector<HODLRCorrectedEvaluator::Corre
   // Correct this node's off-diagonal block A01' = A01 - sum corrections.
   // The kernel approximation factors computed at assembly time are reused and
   // recompressed by SVD, avoiding a full re-assembly with a corrected evaluator.
-  if (!corrections.empty())
+  if (!corrections.empty() && ResourceMap::GetAsBool("HODLRMatrix-RecompressCorrections"))
   {
+    const auto t0 = std::chrono::steady_clock::now();
     recompressLowRank(U_[1], V_[0], start_ + s0, s1, start_, s0, corrections, tolerance_);
+    g_factorTiming.recomp += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
     rank_ = U_[1].getNbColumns();
     U_[0] = V_[0];
     V_[1] = U_[1];
@@ -849,7 +1014,11 @@ void HODLRNode::computeCholesky(const std::vector<HODLRCorrectedEvaluator::Corre
   {
     // 2. Compute W = L00^{-1} * V_[0]
     W_ = V_[0];
-    p_child0_->applyInverseFactor(W_);
+    {
+      const auto t0 = std::chrono::steady_clock::now();
+      p_child0_->applyInverseFactor(W_);
+      g_factorTiming.W += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+    }
 
     // 3. Build K = W^T * W  (rank_ x rank_) via dgemm
     Matrix K(rank_, rank_);
@@ -860,7 +1029,9 @@ void HODLRNode::computeCholesky(const std::vector<HODLRCorrectedEvaluator::Corre
       double one = 1.0, zero = 0.0;
       int ldW = static_cast<int>(s0);
       int ldK = static_cast<int>(rank_);
+      const auto t0 = std::chrono::steady_clock::now();
       HODLRDgemm("T", "N", &mK, &nK, &kK, &one, &W_(0, 0), &ldW, &W_(0, 0), &ldW, &zero, &K(0, 0), &ldK);
+      g_factorTiming.Kgram += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
     }
 
     // 4. Schur complement: factorize A11' = A11 - U1 * K * U1^T
@@ -917,10 +1088,12 @@ void HODLRNode::computeCholesky(const std::vector<HODLRCorrectedEvaluator::Corre
           int k = static_cast<int>(rank_);
           int l = static_cast<int>(rank_);
           double one = 1.0, zero = 0.0;
+          const auto t0 = std::chrono::steady_clock::now();
           HODLRDgemm("N", "N", &m, &k, &l, &one,
                  const_cast<double*>(&U_[1](0, 0)), &m,
                  const_cast<double*>(&K(0, 0)), &l,
                  &zero, &UK(0, 0), &m);
+          g_factorTiming.UK += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
           newCorr.UK = UK;
         }
         newCorr.lambda = lambda;
@@ -1008,6 +1181,7 @@ void HODLRNode::computeCholesky(const std::vector<HODLRCorrectedEvaluator::Corre
 
 void HODLRNode::factorize()
 {
+  g_factorTiming.printProfile = ResourceMap::GetAsBool("HODLRMatrix-ProfileFactorization");
   if (isLeaf_)
   {
     // Use the kernel block cached at construction; only the shift changes.
@@ -1159,6 +1333,7 @@ void HODLRNode::factorizeLeafCholesky(const std::vector<HODLRCorrectedEvaluator:
     // Apply each correction via batch dgemm
     const UnsignedInteger n = size_;
     const UnsignedInteger leafStart = start_;
+    const auto t0 = std::chrono::steady_clock::now();
     for (const auto& corr : corrections)
     {
       const SignedInteger localOffset =
@@ -1196,13 +1371,17 @@ void HODLRNode::factorizeLeafCholesky(const std::vector<HODLRCorrectedEvaluator:
           Sfact[ii + ii * n] += corr.lambda;
       }
     }
+    g_factorTiming.leafCorr += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+    ++g_factorTiming.nLeafCorr;
   }
 
   int info = 0;
   int n = static_cast<int>(size_);
   {
     MatrixImplementation& Sfact2 = *Sfactor_.getImplementation();
+    const auto t0 = std::chrono::steady_clock::now();
     HODLRDpotrf("L", &n, &Sfact2[0], &n, &info);
+    g_factorTiming.dpotrf += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
   }
   if (info != 0)
     throw InternalException(HERE) << "Cholesky factorization failed, info=" << info;
@@ -1216,6 +1395,8 @@ void HODLRNode::factorizeLeafCholeskyCorrected(const Matrix& K, const Matrix& U1
   // the low-rank corrections via dgemm for numerical stability.
   const UnsignedInteger n = size_;
   const UnsignedInteger rank = K.getNbRows();
+  const auto ft0 = std::chrono::steady_clock::now();
+  ++g_factorTiming.nLeafCorrected;
 
   Sfactor_ = Matrix(*leafKernel_.getImplementation());
   MatrixImplementation& Sfact = *Sfactor_.getImplementation();
@@ -1308,6 +1489,7 @@ void HODLRNode::factorizeLeafCholeskyCorrected(const Matrix& K, const Matrix& U1
   logDet_ = 0.0;
   for (UnsignedInteger i = 0; i < n; ++i)
     logDet_ += std::log(Sfact[i + i * n]);
+  g_factorTiming.leafCorrected += std::chrono::duration<double>(std::chrono::steady_clock::now() - ft0).count();
 }
 
 void HODLRNode::applyInverse(Matrix& x, UnsignedInteger start) const
