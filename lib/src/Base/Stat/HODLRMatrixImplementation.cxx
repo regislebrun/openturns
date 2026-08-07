@@ -642,6 +642,7 @@ HODLRCovarianceAssemblyFunction::HODLRCovarianceAssemblyFunction(
     const Sample& vertices)
   : HODLRRealAssemblyFunction()
   , covarianceModel_(covarianceModel)
+  , implementation_(covarianceModel.getImplementation())
   , vertices_(vertices)
   , verticesBegin_(vertices.getImplementation()->data_begin())
   , inputDimension_(vertices.getDimension())
@@ -662,7 +663,7 @@ HODLRCovarianceAssemblyFunction::HODLRCovarianceAssemblyFunction(
 Scalar HODLRCovarianceAssemblyFunction::operator()(UnsignedInteger i, UnsignedInteger j) const
 {
   if (covarianceDimension_ == 1)
-    return covarianceModel_.getImplementation()->computeAsScalar(
+    return implementation_->computeAsScalar(
         verticesBegin_ + i * inputDimension_, verticesBegin_ + j * inputDimension_);
 
   const UnsignedInteger rowIndex = i / covarianceDimension_;

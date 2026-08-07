@@ -257,6 +257,7 @@ private:
 
   Matrix Sfactor_;
   Matrix leafMatrix_;
+  Matrix leafKernel_;   // raw kernel block of a leaf, cached at construction
   Collection<Matrix> Uorig_;
   Matrix W_;   // L00^{-1} * V_[0] for internal nodes (Cholesky mode)
   // std::vector for LAPACK ABI compatibility (mutable int* required)

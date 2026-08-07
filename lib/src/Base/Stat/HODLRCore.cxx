@@ -199,6 +199,11 @@ HODLRNode::HODLRNode(Pointer<const HODLREntryEvaluator> eval,
   else
   {
     isLeaf_ = true;
+    // Cache the raw kernel leaf block at construction time so that the
+    // factorization (LU or Cholesky) never re-evaluates the kernel entries.
+    leafKernel_ = Matrix(size_, size_);
+    MatrixImplementation& leafData = *leafKernel_.getImplementation();
+    HODLRSymmetricLeafFill(leafData, size_, start_, *p_eval_);
   }
 }
 
@@ -243,8 +248,25 @@ UnsignedInteger HODLRNode::lowRankApproxPartialPivot(UnsignedInteger startRow, U
   // (factor row l contiguous in the block row/column index) so that the
   // residual downdates are contiguous rank-1 loops that the compiler can
   // vectorize, instead of dot products with a strided access.
-  std::vector<Scalar> Udata(maxRank * nRows);
-  std::vector<Scalar> Vdata(maxRank * nCols);
+  //
+  // The buffers grow geometrically with the rank revealed by the ACA. The
+  // worst-case allocation min(nRows, nCols) * (nRows + nCols) would otherwise
+  // be paid on every block even when the rank stays small (e.g. ~100 MB for a
+  // 2500 x 2500 block of an exactly low-rank 1D kernel), and the value
+  // initialization of std::vector would zero it all.
+  UnsignedInteger bufferCols = 0;
+  std::vector<Scalar> Udata;
+  std::vector<Scalar> Vdata;
+  const auto ensureBuffer = [&](const UnsignedInteger needed)
+  {
+    if (needed <= bufferCols)
+      return;
+    const UnsignedInteger grown =
+        std::max(needed, std::max(UnsignedInteger(1), 2 * bufferCols));
+    Udata.resize(grown * nRows);
+    Vdata.resize(grown * nCols);
+    bufferCols = grown;
+  };
 
   // Partial-pivoting ACA, ported from the "ACA partial" scheme of hmat-oss
   // (src/compression.cpp, doCompressionAcaPartial). Unlike the full-pivoting
@@ -299,13 +321,15 @@ UnsignedInteger HODLRNode::lowRankApproxPartialPivot(UnsignedInteger startRow, U
 
     if (maxVal < 1e-14)
     {
-      // The residual row is (numerically) zero on all free columns: jump to
-      // the next row not yet used as a pivot.
-      while ((pivotRow < nRows) && !rowFree[pivotRow])
-        ++pivotRow;
-      if (pivotRow >= nRows)
-        break;
-      continue;
+      // The residual row is (numerically) zero on all free columns. Because
+      // pivotRow is the free row with the largest residual in the previous
+      // pivot column (see below), a zero residual there means the block is
+      // exhausted: for a low-rank block the remaining rows are near-proportional
+      // to it and would also be below the threshold. Terminate immediately
+      // instead of re-evaluating every remaining row (which is O(nRows*nCols)
+      // kernel evaluations on an already-captured block, e.g. an exactly
+      // low-rank 1D block such as a degree-2 exponential-polynomial kernel).
+      break;
     }
 
     // Residual column at the pivot column: A(:, pivotCol) - sum_l U[:, l] * V[pivotCol, l]
@@ -325,6 +349,7 @@ UnsignedInteger HODLRNode::lowRankApproxPartialPivot(UnsignedInteger startRow, U
     // Same scaling convention as the full-pivoting variant: the pivot column
     // is stored unscaled in U, the pivot row divided by the pivot in V.
     const Scalar pivot = bCol[pivotCol];
+    ensureBuffer(rank + 1);
     Scalar uNorm2 = 0.0;
     {
       Scalar* const uptr = Udata.data() + rank * nRows;
@@ -985,22 +1010,17 @@ void HODLRNode::factorize()
 {
   if (isLeaf_)
   {
-    // Build dense block: K(i,j) = kernel(start+i, start+j)
-    Sfactor_ = Matrix(size_, size_);
+    // Use the kernel block cached at construction; only the shift changes.
+    // Deep-copy: Matrix assignment would alias leafKernel_ through the
+    // shared implementation, and the in-place LU below must not destroy it.
+    Sfactor_ = Matrix(*leafKernel_.getImplementation());
     {
       MatrixImplementation& Sfact = *Sfactor_.getImplementation();
-      HODLRSymmetricLeafFill(Sfact, size_, start_, *p_eval_);
       if (shift_ != 0.0)
         for (UnsignedInteger i = 0; i < size_; ++i)
           Sfact[i + i * size_] += shift_;
     }
-    leafMatrix_ = Matrix(size_, size_);
-    {
-      const Scalar* Sfact = &(*Sfactor_.getImplementation())[0];
-      MatrixImplementation& leafData = *leafMatrix_.getImplementation();
-      const UnsignedInteger leafSize = size_ * size_;
-      std::copy(Sfact, Sfact + leafSize, &leafData[0]);
-    }
+    leafMatrix_ = Matrix(*Sfactor_.getImplementation());
     // LU factorize (in-place, leafMatrix_ preserves original for apply())
     ipiv_.resize(size_);
     int info = 0;
@@ -1123,14 +1143,13 @@ void HODLRNode::factorizeLeafCholesky(const std::vector<HODLRCorrectedEvaluator:
     return;
   }
 
-  // Leaf: assemble dense matrix
-  Sfactor_ = Matrix(size_, size_);
+  // Leaf: assemble the corrected dense matrix from the kernel block cached
+  // at construction (deep-copied so the in-place dgemm corrections and dpotrf
+  // below do not destroy leafKernel_), then apply every accumulated Schur
+  // complement correction via batch dgemm.
+  Sfactor_ = Matrix(*leafKernel_.getImplementation());
   {
     MatrixImplementation& Sfact = *Sfactor_.getImplementation();
-
-    // Fill with the (plain kernel) evaluator entries, then apply every
-    // accumulated Schur complement correction via batch dgemm.
-    HODLRSymmetricLeafFill(Sfact, size_, start_, *p_eval_);
 
     // Apply global shift to all diagonals (from addIdentity)
     if (shift_ != 0.0)
@@ -1178,13 +1197,6 @@ void HODLRNode::factorizeLeafCholesky(const std::vector<HODLRCorrectedEvaluator:
       }
     }
   }
-  leafMatrix_ = Matrix(size_, size_);
-  {
-    const Scalar* Sfact = &(*Sfactor_.getImplementation())[0];
-    MatrixImplementation& leafData = *leafMatrix_.getImplementation();
-    const UnsignedInteger leafSize = size_ * size_;
-    std::copy(Sfact, Sfact + leafSize, &leafData[0]);
-  }
 
   int info = 0;
   int n = static_cast<int>(size_);
@@ -1205,11 +1217,8 @@ void HODLRNode::factorizeLeafCholeskyCorrected(const Matrix& K, const Matrix& U1
   const UnsignedInteger n = size_;
   const UnsignedInteger rank = K.getNbRows();
 
-  Sfactor_ = Matrix(n, n);
+  Sfactor_ = Matrix(*leafKernel_.getImplementation());
   MatrixImplementation& Sfact = *Sfactor_.getImplementation();
-
-  // 1. Fill with original evaluator entries
-  HODLRSymmetricLeafFill(Sfact, n, start_, *p_eval_);
 
   // 1b. Apply the accumulated Schur complement corrections
   const UnsignedInteger leafStart = start_;
@@ -1286,13 +1295,6 @@ void HODLRNode::factorizeLeafCholeskyCorrected(const Matrix& K, const Matrix& U1
   {
     for (UnsignedInteger i = 0; i < n; ++i)
       Sfact[i + i * n] += shift_;
-  }
-
-  leafMatrix_ = Matrix(n, n);
-  {
-    MatrixImplementation& leafData = *leafMatrix_.getImplementation();
-    const UnsignedInteger leafSize = n * n;
-    std::copy(&Sfact[0], &Sfact[0] + leafSize, &leafData[0]);
   }
 
   // 4. Cholesky factorization
