@@ -88,6 +88,10 @@ blockAssembly = TestHMatrixTensorRealAssemblyFunction(covarianceModel, vertices)
 hmat.assembleTensor(blockAssembly, covarianceModel.getOutputDimension(), "L")
 hmatRef = ot.HMatrix(hmat)
 hmat.factorize("LLt")
+if hmat.getRegularizationShift() == 0.0:
+    print("no regularization applied")
+else:
+    print("regularization applied")
 normL = hmat.norm()
 hmatRef.gemm("N", "T", -1.0, hmat, hmat, 1.0)
 if hmatRef.norm() < 1e-3:

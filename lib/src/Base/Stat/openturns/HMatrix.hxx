@@ -82,6 +82,9 @@ class OT_API HMatrix :
   /** Get the diagonal */
   Point getDiagonal() const;
 
+  /** Get the regularization shift applied during the last factorization */
+  Scalar getRegularizationShift() const;
+
   /** Bump the diagonal by an additive factor alpha */
   void addIdentity(Scalar alpha);
 

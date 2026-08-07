@@ -189,6 +189,7 @@ HMatrixImplementation::HMatrixImplementation()
   : hmatInterface_(NULL)
   , hmatClusterTree_(NULL)
   , hmat_(NULL)
+  , regularizationShift_(0.0)
 {
   // Nothing to do
 }
@@ -198,6 +199,7 @@ HMatrixImplementation::HMatrixImplementation(void* ptr_hmat_interface, void* ptr
   , hmatInterface_(ptr_hmat_interface, CDeleter())
   , hmatClusterTree_(new HMatrixClusterTree(ptr_hmat_cluster_tree, cluster_size))
   , hmat_(ptr_hmatrix)
+  , regularizationShift_(0.0)
 {
   // Nothing to do
 }
@@ -207,6 +209,7 @@ HMatrixImplementation::HMatrixImplementation(const HMatrixImplementation& other)
   , hmatInterface_(other.hmatInterface_)
   , hmatClusterTree_(NULL)
   , hmat_(NULL)
+  , regularizationShift_(other.regularizationShift_)
 {
 #ifdef OPENTURNS_HAVE_HMAT
   if (other.hmatClusterTree_.get())
@@ -251,6 +254,7 @@ HMatrixImplementation & HMatrixImplementation::operator=(const HMatrixImplementa
 
       hmatInterface_ = other.hmatInterface_;
     }
+    regularizationShift_ = other.regularizationShift_;
 #endif
   }
   return *this;
@@ -488,8 +492,11 @@ void HMatrixImplementation::factorize(const String& method)
 
   // Compute an approximation of the max eigen value
   const Scalar maxEV = computeApproximateLargestEigenValue();
-  // Compute a reasonable regularization factor
-  Scalar lambda = 2.0 * maxEV * ResourceMap::GetAsScalar("HMatrix-RegularizationEpsilon");
+  // Compute a reasonable regularization factor, only applied when the
+  // unregularized factorization fails (e.g. an indefinite or near-singular matrix)
+  const Scalar regularizationEpsilon = ResourceMap::GetAsScalar("HMatrix-RegularizationEpsilon");
+  const Scalar lambdaBase = (maxEV > 0.0) ? 2.0 * maxEV * regularizationEpsilon : regularizationEpsilon;
+  Scalar lambda = 0.0;
 
   // create a backup copy as the factorization can leave the matrix in a broken state and should not be reused
   hmat_matrix_t* hmatBackup = static_cast<hmat_matrix_t*>(hmat_);
@@ -498,12 +505,12 @@ void HMatrixImplementation::factorize(const String& method)
   Bool done = false;
   const UnsignedInteger maximumIteration = ResourceMap::GetAsUnsignedInteger("HMatrix-FactorizationIterations");
   UnsignedInteger iteration = 0;
-  // At least one regularization
+  // Try unregularized first, then increase the regularization on failure
   Bool cont = true;
   while (cont)
   {
-    // Double the current regularization factor by adding it another time
-    addIdentity(lambda);
+    if (lambda != 0.0)
+      addIdentity(lambda);
     LOGDEBUG(OSS() << "Factorization, regularization loop " << iteration << ", regularization factor=" << lambda);
 
     hmat_factorization_context_t context;
@@ -519,7 +526,10 @@ void HMatrixImplementation::factorize(const String& method)
       hmat_ = static_cast<hmat_interface_t *>(hmatInterface_.get())->copy(static_cast<hmat_matrix_t *>(hmatBackup));
 
       // And double its value for next loop
-      lambda += lambda;
+      if (lambda == 0.0)
+        lambda = lambdaBase;
+      else
+        lambda += lambda;
       LOGDEBUG(OSS() << "Must increase the regularization to " << lambda );
     }
     else
@@ -534,6 +544,8 @@ void HMatrixImplementation::factorize(const String& method)
   static_cast<hmat_interface_t *>(hmatInterface_.get())->finalize();
   if (!done)
     throw InternalException(HERE) << "HMatrix::factorize : factorization failed, probably needs more regularization" ;
+  // record the shift actually applied, so callers can detect the regularized factorization
+  regularizationShift_ = lambda;
 #else
   (void)method;
   throw NotYetImplementedException(HERE) << "OpenTURNS has been compiled without HMat support";
@@ -620,6 +632,11 @@ Point HMatrixImplementation::getDiagonal() const
 #else
   throw NotYetImplementedException(HERE) << "OpenTURNS has been compiled without HMat support";
 #endif
+}
+
+Scalar HMatrixImplementation::getRegularizationShift() const
+{
+  return regularizationShift_;
 }
 
 Point HMatrixImplementation::solve(const Point& b, Bool trans) const

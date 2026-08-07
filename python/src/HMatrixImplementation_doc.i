@@ -225,6 +225,20 @@ OT_HMatrix_getDiagonal_doc
 
 // ---------------------------------------------------------------------
 
+%define OT_HMatrix_getRegularizationShift_doc
+"Regularization shift accessor.
+
+Returns
+-------
+shift : float
+    Shift which was added to the diagonal before the last factorization,
+    or 0 if the last factorization succeeded without regularization."
+%enddef
+%feature("docstring") OT::HMatrixImplementation::getRegularizationShift
+OT_HMatrix_getRegularizationShift_doc
+
+// ---------------------------------------------------------------------
+
 %define OT_HMatrix_addIdentity_doc
 "Add alpha*Identity to the Matrix.
 

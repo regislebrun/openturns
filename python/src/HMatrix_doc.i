@@ -2,6 +2,8 @@
 OT_HMatrix_doc
 %feature("docstring") OT::HMatrix::getDiagonal
 OT_HMatrix_getDiagonal_doc
+%feature("docstring") OT::HMatrix::getRegularizationShift
+OT_HMatrix_getRegularizationShift_doc
 %feature("docstring") OT::HMatrix::addIdentity
 OT_HMatrix_addIdentity_doc
 %feature("docstring") OT::HMatrix::dump

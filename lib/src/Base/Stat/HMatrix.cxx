@@ -125,6 +125,12 @@ Point HMatrix::getDiagonal() const
   return getImplementation()->getDiagonal();
 }
 
+/** Get the regularization shift applied during the last factorization */
+Scalar HMatrix::getRegularizationShift() const
+{
+  return getImplementation()->getRegularizationShift();
+}
+
 void HMatrix::addIdentity(OT::Scalar alpha)
 {
   copyOnWrite();
