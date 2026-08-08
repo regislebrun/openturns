@@ -701,11 +701,11 @@ HODLRCovarianceAssemblyFunction::HODLRCovarianceAssemblyFunction(
     {
       const Point scale = matern->getScale();
       const Scalar sqrt2nu = std::sqrt(2.0 * nu);
-      const UnsignedInteger dim = std::min(inputDimension_, UnsignedInteger(3));
       // An IsotropicCovarianceModel wraps a 1D kernel: the norm is applied
       // before the kernel, so the single scale applies to every coordinate.
       const Scalar scaledSqrt2nuOverTheta = sqrt2nu / scale[0];
-      for (UnsignedInteger d = 0; d < dim; ++d)
+      fastSqrt2nuOverTheta_.resize(inputDimension_);
+      for (UnsignedInteger d = 0; d < inputDimension_; ++d)
         fastSqrt2nuOverTheta_[d] = isotropicWrapper ? scaledSqrt2nuOverTheta : sqrt2nu / scale[d];
       const Scalar amplitude = matern->getAmplitude()[0];
       fastAmplitudeSquare_ = amplitude * amplitude;
@@ -725,8 +725,7 @@ Scalar HODLRCovarianceAssemblyFunction::operator()(UnsignedInteger i, UnsignedIn
       const Scalar* s = &verticesBegin_[i * inputDimension_];
       const Scalar* t = &verticesBegin_[j * inputDimension_];
       Scalar scaledPointSquare = 0.0;
-      const UnsignedInteger dim = std::min(inputDimension_, UnsignedInteger(3));
-      for (UnsignedInteger d = 0; d < dim; ++d)
+      for (UnsignedInteger d = 0; d < inputDimension_; ++d)
       {
         const Scalar dx = (s[d] - t[d]) * fastSqrt2nuOverTheta_[d];
         scaledPointSquare += dx * dx;

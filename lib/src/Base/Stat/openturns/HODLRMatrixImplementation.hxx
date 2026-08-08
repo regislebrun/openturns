@@ -106,7 +106,7 @@ private:
   // directly from the raw coordinates to avoid the virtual dispatch and
   // bounds-checked accesses of the generic computeAsScalar path. These
   // members are set once in the constructor and read-only afterwards.
-  Scalar fastSqrt2nuOverTheta_[3];
+  Point fastSqrt2nuOverTheta_;
   Scalar fastAmplitudeSquare_;
   Scalar fastNuggetFactor_;
   Scalar fastNu_;
