@@ -427,11 +427,11 @@ void KDTree::setSample(const Sample & points)
 #endif
 
   // Build a deterministic space-filling ordering of the points
-  const UnsignedInteger size = points_.getSize();
-  ordering_ = Indices(size);
-  Indices buffer(size);
-  buffer.fill();
-  computeOrdering(buffer, 0, size);
+  const UnsignedInteger orderSize = points_.getSize();
+  ordering_ = Indices(orderSize);
+  Indices orderBuffer(orderSize);
+  orderBuffer.fill();
+  computeOrdering(orderBuffer, 0, orderSize);
 }
 
 /* Virtual constructor */

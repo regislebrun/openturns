@@ -444,37 +444,39 @@ print("\n=== Test 23: dense fallback for full-rank blocks ===")
 # Use a random SPD kernel: its off-diagonal blocks have no low-rank structure,
 # so the ACA cannot converge below the tolerance and reaches min(rows, cols),
 # and each block is stored densely (U = A01, V = I) instead of being truncated.
-ot.ResourceMap.SetAsScalar("HODLRMatrix-Nugget", 0.0)
-n23 = 40
-random.seed(1234)
-B = [[random.random() - 0.5 for _ in range(n23)] for __ in range(n23)]
-K23 = ot.Matrix(n23, n23)
-b23 = ot.Point(n23, 1.0)
-for i in range(n23):
-    for j in range(n23):
-        s = sum(B[i][k] * B[j][k] for k in range(n23))
-        K23[i, j] = s + (1.0 if i == j else 0.0)
-x_dense23 = K23.solveLinearSystem(b23)
+previous_nugget23 = ot.ResourceMap.GetAsScalar("HODLRMatrix-Nugget")
+try:
+    ot.ResourceMap.SetAsScalar("HODLRMatrix-Nugget", 0.0)
+    n23 = 40
+    random.seed(1234)
+    B = [[random.random() - 0.5 for _ in range(n23)] for __ in range(n23)]
+    K23 = ot.Matrix(n23, n23)
+    b23 = ot.Point(n23, 1.0)
+    for i in range(n23):
+        for j in range(n23):
+            s = sum(B[i][k] * B[j][k] for k in range(n23))
+            K23[i, j] = s + (1.0 if i == j else 0.0)
+    x_dense23 = K23.solveLinearSystem(b23)
 
+    def af23(i, j):
+        return K23[i, j]
 
-def af23(i, j):
-    return K23[i, j]
-
-
-vertices23 = ot.Sample([[float(i)] for i in range(n23)])
-params23 = make_params(leaf=5, factorization="LLT")
-params23.setMaxRank(20)
-hodlr23 = build_hodlr(vertices23, af23, params=params23)
-x_h23 = hodlr23.solve(b23)
-err23 = (x_h23 - x_dense23).norm() / x_dense23.norm()
-assert err23 < 1.0e-8, f"dense fallback solve error {err23:.2e} should be small"
-cr23 = hodlr23.compressionRatio()
-# every block reached its full rank: the tree is stored densely
-assert cr23[0] == cr23[1], (
-    f"full-rank tree should be stored densely ({cr23[0]}/{cr23[1]})"
-)
-print(f"  stored/total= {cr23[0]}/{cr23[1]}, solve err= {err23:.2e}")
-print("  PASS")
+    vertices23 = ot.Sample([[float(i)] for i in range(n23)])
+    params23 = make_params(leaf=5, factorization="LLT")
+    params23.setMaxRank(20)
+    hodlr23 = build_hodlr(vertices23, af23, params=params23)
+    x_h23 = hodlr23.solve(b23)
+    err23 = (x_h23 - x_dense23).norm() / x_dense23.norm()
+    assert err23 < 1.0e-8, f"dense fallback solve error {err23:.2e} should be small"
+    cr23 = hodlr23.compressionRatio()
+    # every block reached its full rank: the tree is stored densely
+    assert cr23[0] == cr23[1], (
+        f"full-rank tree should be stored densely ({cr23[0]}/{cr23[1]})"
+    )
+    print(f"  stored/total= {cr23[0]}/{cr23[1]}, solve err= {err23:.2e}")
+    print("  PASS")
+finally:
+    ot.ResourceMap.SetAsScalar("HODLRMatrix-Nugget", previous_nugget23)
 
 # === Test 24: spatial ordering (KDTree permutation) ===
 print("\n=== Test 24: spatial ordering ===")
@@ -500,11 +502,13 @@ assert hodlr_sc24.getPermutation() != list(range(40)), (
 )
 # invalid permutations are rejected
 with ott.assert_raises(TypeError):
-    hodlr24.setPermutation([0, 0, 1])
-with ott.assert_raises(TypeError):
     hodlr24.setPermutation([0, 1, 2])
+with ott.assert_raises(TypeError):
+    hodlr24.setPermutation([0] * 40)
+with ott.assert_raises(TypeError):
+    hodlr24.setPermutation(list(range(40))[:-1] + [40])
 # disabling the flag removes the permutation
-params_off24 = ot.HODLRMatrixParameters()
+params_off24 = make_params(leaf=4, factorization="LLT")
 params_off24.setUseSpatialOrdering(False)
 hodlr_off24 = factory24.build(scrambled24, 1, True, params_off24)
 assert hodlr_off24.getPermutation().getSize() == 0, (
@@ -513,65 +517,79 @@ assert hodlr_off24.getPermutation().getSize() == 0, (
 # scrambled 2D grid with a short correlation length: the spatial ordering
 # preserves the accuracy and compresses the tree, while the blind split of
 # the unordered vertices falls back to dense storage
-im24 = ot.IntervalMesher([15, 15])
-mesh24 = im24.build(ot.Interval([0.0, 0.0], [1.0, 1.0]))
-vertices24 = mesh24.getVertices()
-n24 = vertices24.getSize()
-order2d24 = list(range(n24))
-random.Random(1).shuffle(order2d24)
-scrambled2d24 = ot.Sample([vertices24[i] for i in order2d24])
-cov24 = ot.MaternModel([0.2, 0.2], [1.0], 2.5)
-K24 = ot.CovarianceMatrix(cov24.discretize(scrambled2d24))
-b24 = ot.Point(n24, 1.0)
-x_dense24 = K24.solveLinearSystem(b24)
-hodlr_on24 = cov24.discretizeHODLRMatrix(scrambled2d24, make_params(leaf=4, factorization="LLT"))
-hodlr_on24.factorize("LLT")
-x_on24 = hodlr_on24.solve(b24)
-err_on24 = (x_on24 - x_dense24).norm() / x_dense24.norm()
-hodlr_off24 = cov24.discretizeHODLRMatrix(scrambled2d24, params_off24)
-hodlr_off24.factorize("LLT")
-x_off24 = hodlr_off24.solve(b24)
-err_off24 = (x_off24 - x_dense24).norm() / x_dense24.norm()
-assert err_on24 < 1.0e-2, (
-    f"spatial ordering solve error {err_on24:.2e} should be small"
-)
-cr_on24 = hodlr_on24.compressionRatio()
-cr_off24 = hodlr_off24.compressionRatio()
-assert cr_on24[0] < cr_off24[0], (
-    "spatial ordering should compress the tree better than the blind split "
-    f"({cr_on24[0]}/{cr_on24[1]} vs {cr_off24[0]}/{cr_off24[1]})"
-)
-# the permutation preserves the diagonal
-ott.assert_almost_equal(hodlr_on24.getDiagonal(), ot.Point(n24, 1.0), 1.0e-9, 1.0e-9)
-print(f"  on err= {err_on24:.2e}, on storage= {cr_on24[0]}/{cr_on24[1]}, off storage= {cr_off24[0]}/{cr_off24[1]}")
-print("  PASS")
+previous_nugget24 = ot.ResourceMap.GetAsScalar("HODLRMatrix-Nugget")
+try:
+    # the diagonal is compared to the exact 1.0 entries, so no nugget may be
+    # added during the HODLR assembly
+    ot.ResourceMap.SetAsScalar("HODLRMatrix-Nugget", 0.0)
+    im24 = ot.IntervalMesher([15, 15])
+    mesh24 = im24.build(ot.Interval([0.0, 0.0], [1.0, 1.0]))
+    vertices24 = mesh24.getVertices()
+    n24 = vertices24.getSize()
+    order2d24 = list(range(n24))
+    random.Random(1).shuffle(order2d24)
+    scrambled2d24 = ot.Sample([vertices24[i] for i in order2d24])
+    cov24 = ot.MaternModel([0.2, 0.2], [1.0], 2.5)
+    K24 = ot.CovarianceMatrix(cov24.discretize(scrambled2d24))
+    b24 = ot.Point(n24, 1.0)
+    x_dense24 = K24.solveLinearSystem(b24)
+    hodlr_on24 = cov24.discretizeHODLRMatrix(scrambled2d24, make_params(leaf=4, factorization="LLT"))
+    hodlr_on24.factorize("LLT")
+    x_on24 = hodlr_on24.solve(b24)
+    err_on24 = (x_on24 - x_dense24).norm() / x_dense24.norm()
+    hodlr_off24 = cov24.discretizeHODLRMatrix(scrambled2d24, params_off24)
+    hodlr_off24.factorize("LLT")
+    x_off24 = hodlr_off24.solve(b24)
+    err_off24 = (x_off24 - x_dense24).norm() / x_dense24.norm()
+    assert err_on24 < 1.0e-2, (
+        f"spatial ordering solve error {err_on24:.2e} should be small"
+    )
+    cr_on24 = hodlr_on24.compressionRatio()
+    cr_off24 = hodlr_off24.compressionRatio()
+    assert cr_on24[0] < cr_off24[0], (
+        "spatial ordering should compress the tree better than the blind split "
+        f"({cr_on24[0]}/{cr_on24[1]} vs {cr_off24[0]}/{cr_off24[1]})"
+    )
+    # the permutation preserves the diagonal
+    ott.assert_almost_equal(hodlr_on24.getDiagonal(), ot.Point(n24, 1.0), 1.0e-9, 1.0e-9)
+    print(f"  on err= {err_on24:.2e}, on storage= {cr_on24[0]}/{cr_on24[1]}, off storage= {cr_off24[0]}/{cr_off24[1]}")
+    print("  PASS")
+finally:
+    ot.ResourceMap.SetAsScalar("HODLRMatrix-Nugget", previous_nugget24)
 
 # === Test 25: ACA with max-element (partial) pivoting ===
 print("\n=== Test 25: ACA with max-element pivoting ===")
 # The ACA is the only low-rank assembly method and uses max-element
 # (partial-pivoting) pivots: on a smooth 1D kernel it reaches the assembly
 # tolerance with a small rank per block and stays accurate.
-n25 = 2000
-vertices25 = ot.Sample([[i / (n25 - 1.0)] for i in range(n25)])
-cov25 = ot.MaternModel([0.1], [1.0], 2.5)
-b25 = ot.Point(n25, 1.0)
-K25 = ot.CovarianceMatrix(cov25.discretize(vertices25))
-x_dense25 = K25.solveLinearSystem(b25)
+previous_nugget25 = ot.ResourceMap.GetAsScalar("HODLRMatrix-Nugget")
+try:
+    # the solve is compared against the nugget-free dense reference K25, so
+    # the HODLR assembly must not add any nugget
+    ot.ResourceMap.SetAsScalar("HODLRMatrix-Nugget", 0.0)
+    n25 = 2000
+    vertices25 = ot.Sample([[i / (n25 - 1.0)] for i in range(n25)])
+    cov25 = ot.MaternModel([0.1], [1.0], 2.5)
+    b25 = ot.Point(n25, 1.0)
+    K25 = ot.CovarianceMatrix(cov25.discretize(vertices25))
+    x_dense25 = K25.solveLinearSystem(b25)
 
-params25 = make_params(leaf=16, factorization="LLT")
-hodlr25 = cov25.discretizeHODLRMatrix(vertices25, params25)
-hodlr25.factorize("LLT")
-x25 = hodlr25.solve(b25)
-err25 = (x25 - x_dense25).norm() / x_dense25.norm()
-assert err25 < 1.0e-2, f"max-element ACA solve error {err25:.2e} should be small"
-cr25 = hodlr25.compressionRatio()
-# the smooth 1D kernel is strongly compressible: less than half the entries
-# of the dense matrix are stored by the factorized tree
-assert cr25[0] < 0.5 * cr25[1], (
-    f"max-element ACA should compress the tree ({cr25[0]}/{cr25[1]})"
-)
-print(f"  stored= {cr25[0]}/{cr25[1]}, solve err= {err25:.2e}")
-print("  PASS")
+    params25 = make_params(leaf=16, factorization="LLT")
+    hodlr25 = cov25.discretizeHODLRMatrix(vertices25, params25)
+    hodlr25.factorize("LLT")
+    x25 = hodlr25.solve(b25)
+    err25 = (x25 - x_dense25).norm() / x_dense25.norm()
+    assert err25 < 1.0e-2, f"max-element ACA solve error {err25:.2e} should be small"
+    cr25 = hodlr25.compressionRatio()
+    # the smooth 1D kernel is strongly compressible: less than half the entries
+    # of the dense matrix are stored by the factorized tree
+    assert cr25[0] < 0.5 * cr25[1], (
+        f"max-element ACA should compress the tree ({cr25[0]}/{cr25[1]})"
+    )
+    print(f"  stored= {cr25[0]}/{cr25[1]}, solve err= {err25:.2e}")
+    print("  PASS")
+finally:
+    ot.ResourceMap.SetAsScalar("HODLRMatrix-Nugget", previous_nugget25)
 
 # === Test 26: gemv after a Cholesky factorization ===
 print("\n=== Test 26: gemv after Cholesky factorization ===")

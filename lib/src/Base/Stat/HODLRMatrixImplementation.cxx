@@ -448,9 +448,11 @@ Scalar HODLRMatrixImplementation::norm() const
 
 Point HODLRMatrixImplementation::getDiagonal() const
 {
-  Point result(n_);
+  if (!p_node_)
+    throw InvalidArgumentException(HERE) << "HODLRMatrix not assembled";
   if (permutation_.getSize() == 0)
     return diagonal_;
+  Point result(n_);
   for (UnsignedInteger i = 0; i < n_; ++i)
     result[i] = diagonal_[inversePermutation_[i]];
   return result;
@@ -460,6 +462,9 @@ Point HODLRMatrixImplementation::solve(const Point& b, Bool trans) const
 {
   if (trans)
     throw NotYetImplementedException(HERE) << "transposed not yet supported in HODLRMatrixImplementation::solve";
+
+  if (b.getDimension() != n_)
+    throw InvalidArgumentException(HERE) << "x dimension mismatch";
 
   if (!p_node_)
     throw InvalidArgumentException(HERE) << "HODLRMatrix not assembled";
@@ -490,6 +495,9 @@ Matrix HODLRMatrixImplementation::solve(const Matrix& m, Bool trans) const
 {
   if (trans)
     throw NotYetImplementedException(HERE) << "transposed not yet supported in HODLRMatrixImplementation::solve";
+
+  if (m.getNbRows() != n_)
+    throw InvalidArgumentException(HERE) << "x dimension mismatch";
 
   if (!p_node_)
     throw InvalidArgumentException(HERE) << "HODLRMatrix not assembled";
@@ -525,6 +533,9 @@ Matrix HODLRMatrixImplementation::solve(const Matrix& m, Bool trans) const
 
 Point HODLRMatrixImplementation::solveLower(const Point& b, Bool trans) const
 {
+  if (b.getDimension() != n_)
+    throw InvalidArgumentException(HERE) << "x dimension mismatch";
+
   if (!p_node_)
     throw InvalidArgumentException(HERE) << "HODLRMatrix not assembled";
 
@@ -555,6 +566,9 @@ Point HODLRMatrixImplementation::solveLower(const Point& b, Bool trans) const
 
 Matrix HODLRMatrixImplementation::solveLower(const Matrix& m, Bool trans) const
 {
+  if (m.getNbRows() != n_)
+    throw InvalidArgumentException(HERE) << "x dimension mismatch";
+
   if (!p_node_)
     throw InvalidArgumentException(HERE) << "HODLRMatrix not assembled";
 

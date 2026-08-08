@@ -60,8 +60,11 @@ method : str
 %feature("docstring") OT::HODLRMatrixImplementation::scale
 "Scale the matrix by a scalar.
 
-The matrix is multiplied by the scalar alpha, and the scaling is applied
-to the internal representation without reassembling the matrix.
+The matrix is multiplied by the scalar alpha. The scaling factor is folded
+into the evaluator and the compressed representation is rebuilt, which
+invalidates any previous factorization. A call to :meth:`factorize` is
+required before factor-dependent operations such as :meth:`solve` or
+:meth:`logDeterminant`.
 
 Parameters
 ----------
