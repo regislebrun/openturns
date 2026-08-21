@@ -9,6 +9,11 @@ formulas : sequence of str, or str
     List of analytical formulas between the inputs and the outputs.
     The function is defined by *outputs = formulas(inputs)*.
 
+Evaluation is thread-safe: the symbolic parsers (ExprTk and muParser)
+serialize point evaluations with a mutex and maintain per-thread copies for
+batch evaluations, so a `SymbolicFunction` can be called concurrently from
+several threads.
+
 Available functions:
 
     - sin

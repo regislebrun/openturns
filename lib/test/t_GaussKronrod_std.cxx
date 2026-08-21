@@ -132,6 +132,45 @@ int main(int, char *[])
         //         g.draw(String(OSS() << "Nonsmooth_function_adaptation_" << i));
       }
     }
+    // Third, the low-level interfaces, including the one reusing the scratch
+    // containers across calls. The scratch containers are grown on the first
+    // call and keep their capacity afterwards, so that the local integrals of
+    // an iterated quadrature do not allocate.
+    {
+      SymbolicFunction f("x", "sin(x)");
+      Scalar a = -2.5;
+      Scalar b = 4.5;
+      Scalar ref = cos(a) - cos(b);
+      GaussKronrod algo;
+      algo.setRule(GaussKronrodRule::G3K7);
+      Scalar error = -1.0;
+      Point ai;
+      Point bi;
+      Sample fi;
+      Point ei;
+      Scalar value = algo.integrate(f, a, b, error, ai, bi, fi, ei)[0];
+      fullprint << "low-level value=" << value << ", ref=" << ref << ", true error below bound? " << (std::abs(ref - value) < algo.getMaximumError() ? "true" : "false") << ", estimated error below bound? " << (error < algo.getMaximumError() ? "true" : "false") << std::endl;
+      // Same result when reusing scratch containers, here the last two samples
+      // hold the rule points and the integrand values of the last local rule
+      Sample x;
+      Sample y;
+      value = algo.integrate(f, a, b, error, ai, bi, fi, ei, x, y)[0];
+      fullprint << "scratch value=" << value << ", ref=" << ref << ", true error below bound? " << (std::abs(ref - value) < algo.getMaximumError() ? "true" : "false") << ", estimated error below bound? " << (error < algo.getMaximumError() ? "true" : "false") << std::endl;
+      // Reusing the same containers on a second interval must not corrupt them
+      value = algo.integrate(f, 0.0, 1.0, error, ai, bi, fi, ei, x, y)[0];
+      ref = 1.0 - cos(1.0);
+      fullprint << "scratch reuse value=" << value << ", ref=" << ref << ", true error below bound? " << (std::abs(ref - value) < algo.getMaximumError() ? "true" : "false") << ", estimated error below bound? " << (error < algo.getMaximumError() ? "true" : "false") << std::endl;
+      // The scratch containers are kept between the calls
+      fullprint << "scratch sizes: ai=" << ai.getDimension() << ", bi=" << bi.getDimension() << ", fi=" << fi.getSize() << ", ei=" << ei.getDimension() << std::endl;
+      // Multi-output integrand through the scratch interface
+      SymbolicFunction g(Description(1, "x"), Description({"sin(x)", "cos(x)"}));
+      Point value2(algo.integrate(g, a, b, error, ai, bi, fi, ei, x, y));
+      Point ref2(2);
+      ref2[0] = cos(a) - cos(b);
+      ref2[1] = sin(b) - sin(a);
+      fullprint << "scratch multi-output value=" << value2 << ", ref=" << ref2 << ", true error below bound? " << ((value2 - ref2).normInf() < algo.getMaximumError() ? "true" : "false") << ", estimated error below bound? " << (error < algo.getMaximumError() ? "true" : "false") << std::endl;
+      assert_almost_equal(value2, ref2, 1e-8, 1e-12);
+    }
   }
   catch (TestFailed & ex)
   {

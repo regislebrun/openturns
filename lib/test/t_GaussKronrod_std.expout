@@ -23,3 +23,8 @@ Algo=class=GaussKronrod, maximum sub intervals=100, maximum error=1e-12, rule=cl
 value=4.59035, ref=4.59035, true error below bound? true, estimated error below bound? true
 Algo=class=GaussKronrod, maximum sub intervals=100, maximum error=1e-12, rule=class=GaussKronrodRule, pair=G25K51)
 value=4.59035, ref=4.59035, true error below bound? false, estimated error below bound? false
+low-level value=-0.590348, ref=-0.590348, true error below bound? true, estimated error below bound? true
+scratch value=-0.590348, ref=-0.590348, true error below bound? true, estimated error below bound? true
+scratch reuse value=0.459698, ref=0.459698, true error below bound? true, estimated error below bound? true
+scratch sizes: ai=100, bi=100, fi=100, ei=100
+scratch multi-output value=class=Point name=Unnamed dimension=2 values=[-0.590348,-0.379058], ref=class=Point name=Unnamed dimension=2 values=[-0.590348,-0.379058], true error below bound? true, estimated error below bound? true

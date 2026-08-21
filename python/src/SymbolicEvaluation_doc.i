@@ -4,6 +4,11 @@ R"RAW(Evaluation of an analytical function defined by symbolic formulas.
 This class implements an :class:`~openturns.EvaluationImplementation` based on a
 symbolic parser. It evaluates one or several analytical formulas given as strings.
 
+Evaluation is thread-safe: the symbolic parsers (ExprTk and muParser)
+serialize point evaluations with a mutex and maintain per-thread copies for
+batch evaluations, so a `SymbolicEvaluation` can be called concurrently from
+several threads.
+
 Parameters
 ----------
 inputVariablesNames : sequence of `str` or str
