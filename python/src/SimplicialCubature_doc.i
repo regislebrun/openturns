@@ -1,10 +1,19 @@
 %feature("docstring") OT::SimplicialCubature
-"Integration over a mesh.
+"Integration over a mesh or an interval.
 
 Notes
 -----
 This is a reimplementation of the method described in [genz2003]_.
 The original matlab file can be found at https://www.math.wsu.edu/faculty/genz/software/software.html.
+
+The keys of :class:`~openturns.ResourceMap` related to the class are:
+
+- the key `SimplicialCubature-DefaultMaximumAbsoluteError` that defines the default maximum absolute error,
+- the key `SimplicialCubature-DefaultMaximumRelativeError` that defines the default maximum relative error,
+- the key `SimplicialCubature-DefaultMaximumCallsNumber` that defines the default maximum calls number,
+- the key `SimplicialCubature-DefaultRule` that defines the default integration rule,
+- the key `SimplicialCubature-EvaluationBlockSize` that defines the number of simplices over which the integrand is evaluated in a single batch, keeping the memory usage bounded,
+- the key `SimplicialCubature-MarginalDiscretizationIntervalsNumber` that defines the number of discretization intervals used along each marginal of the integration interval.
 
 Examples
 --------
@@ -19,7 +28,12 @@ Examples
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::SimplicialCubature::integrate
-R"RAW(Evaluation of the integral of :math:`f` on a mesh.
+R"RAW(Evaluation of the integral of :math:`f` on a mesh or an interval.
+
+Available usages:
+    integrate(*f, mesh*)
+
+    integrate(*f, interval*)
 
 Parameters
 ----------
@@ -27,6 +41,10 @@ f : :class:`~openturns.Function`, :math:`f: \Rset^d \mapsto \Rset^p`
     The integrand function.
 mesh : :class:`~openturns.Mesh`
     The mesh on which to integrate.
+interval : :class:`~openturns.Interval`, :math:`interval \in \Rset^d`
+    The integration domain. The interval is internally discretized
+    into a mesh using the `SimplicialCubature-MarginalDiscretizationIntervalsNumber`
+    key from :class:`~openturns.ResourceMap`.
 
 Returns
 -------
