@@ -191,17 +191,13 @@ atoms = [
 ]
 weights = [1.0, 2.0, 3.0, 4.0, 5.0]
 d = ot.LinearCombinationDistribution(atoms, weights, 2.0)
-coll = d.getDistributionCollection()
-classNames = ["Poisson", "FiniteDiscreteDistribution", "Binomial", "Binomial"]
-assert len(coll) == len(classNames), "wrong number of atoms"
-for i in range(len(coll)):
-    assert (
-        coll[i].getImplementation().getClassName() == classNames[i]
-    ), "wrong atom class at position %d" % i
-# FIXME: the weights of the pending aggregated discrete atoms are wrong (4
-# and 2 instead of 2 and 5), so the moments of the resulting distribution do
-# not match those of the requested combination: the full moment check is
-# postponed until this aggregation bug is fixed
+checkMixture(
+    d,
+    atoms,
+    weights,
+    2.0,
+    ["Poisson", "FiniteDiscreteDistribution", "Binomial", "Binomial"],
+)
 
 # All the atoms can be merged
 ot.ResourceMap.SetAsUnsignedInteger("LinearCombinationDistribution-MaximumSupportSize", 100)

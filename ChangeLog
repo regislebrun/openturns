@@ -40,6 +40,10 @@
  * Add Process sample slicing operator
  * Re-raise native Python exceptions through PythonFunction instead of RuntimeException
 
+=== Bug fixes ===
+
+ * LinearCombinationDistribution: wrong atom weights when fusing discrete atoms with a pending aggregated discrete
+
 === Miscellaneous ===
 
 

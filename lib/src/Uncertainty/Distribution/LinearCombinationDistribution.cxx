@@ -860,7 +860,12 @@ void LinearCombinationDistribution::setDistributionCollectionAndWeights(const Di
               reducedWeights[indexAggregated] = Point(1, 1.0);
             }
             else
+            {
               distributionCollection_[indexAggregated] = firstDiscrete;
+              // The atom may be stored at a place distinct from its initial one, in which case its weight has to be moved as well
+              if (indexAggregated != firstDiscreteIndex)
+                reducedWeights[indexAggregated] = reducedWeights[firstDiscreteIndex];
+            }
             ++indexAggregated;
             firstDiscreteIndex = secondDiscreteIndex;
             firstDiscrete = secondDiscrete;
@@ -914,7 +919,12 @@ void LinearCombinationDistribution::setDistributionCollectionAndWeights(const Di
         // + an aggregated atom with small support (detected because firstDiscreteIndex < firstOtherAtom - 1
         // + a single atom (the second one, but now equals to the first one) (detected because firstDiscreteIndex == firstOtherAtom - 1)
         if (firstDiscreteIndex == firstOtherAtom - 1)
+        {
           distributionCollection_[indexAggregated] = firstDiscrete;
+          // The atom may be stored at a place distinct from its initial one, in which case its weight has to be moved as well
+          if (indexAggregated != firstDiscreteIndex)
+            reducedWeights[indexAggregated] = reducedWeights[firstDiscreteIndex];
+        }
         else
         {
           distributionCollection_[indexAggregated] = FiniteDiscreteDistribution(aggregatedSupport, aggregatedProbabilities);
