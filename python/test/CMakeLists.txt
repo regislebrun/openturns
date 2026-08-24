@@ -241,6 +241,10 @@ if (HMAT_FOUND)
 ot_pyinstallcheck_test (HMatrix_std)
 endif ()
 
+ot_pyinstallcheck_test (HODLRMatrix_std IGNOREOUT)
+ot_pyinstallcheck_test (HODLRMatrix_leafsize IGNOREOUT)
+ot_pyinstallcheck_test (HODLRMatrix_fallback IGNOREOUT)
+
 # Geom
 ot_pyinstallcheck_test (Domain_std)
 ot_pyinstallcheck_test (Interval_std)
