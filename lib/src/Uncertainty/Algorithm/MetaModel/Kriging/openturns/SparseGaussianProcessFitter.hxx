@@ -136,14 +136,16 @@ protected:
 
 private:
 
-  // Helper class to compute the ELBO of the model
+  // Helper class to compute the ELBO of the model.
+  // Owns a clone of the algorithm so that the returned Function can outlive the
+  // original algorithm without creating a dangling reference.
   class ELOBEEvaluation: public EvaluationImplementation
   {
   public:
     // Constructor from a SparseGaussianProcessFitter algorithm
     ELOBEEvaluation(SparseGaussianProcessFitter & algorithm)
       : EvaluationImplementation()
-      , algorithm_(algorithm)
+      , algorithm_(algorithm.clone())
     {
       // Nothing to do
     }
@@ -156,13 +158,13 @@ private:
     // It is a simple call to the computeELBO() of the algo
     Point operator() (const Point & point) const override
     {
-      const Point value(algorithm_.computeELBO(point));
+      const Point value(algorithm_->computeELBO(point));
       return value;
     }
 
     UnsignedInteger getInputDimension() const override
     {
-      return algorithm_.getOptimizationParameterSize();
+      return algorithm_->getOptimizationParameterSize();
     }
 
     UnsignedInteger getOutputDimension() const override
@@ -172,7 +174,7 @@ private:
 
     Description getInputDescription() const override
     {
-      return algorithm_.buildOptimizationParameterDescription();
+      return algorithm_->buildOptimizationParameterDescription();
     }
 
     Description getOutputDescription() const override
@@ -202,17 +204,18 @@ private:
     }
 
   private:
-    SparseGaussianProcessFitter & algorithm_;
+    mutable Pointer<SparseGaussianProcessFitter> algorithm_;
   }; // ELOBEEvaluation
 
-  // Helper class to compute the gradient of the ELBO of the model
+  // Helper class to compute the gradient of the ELBO of the model.
+  // Owns a clone, same as the evaluation class above.
   class ELBOGradient: public GradientImplementation
   {
   public:
     // Constructor from a SparseGaussianProcessFitter algorithm
     ELBOGradient(SparseGaussianProcessFitter & algorithm)
       : GradientImplementation()
-      , algorithm_(algorithm)
+      , algorithm_(algorithm.clone())
     {
       // Nothing to do
     }
@@ -225,8 +228,8 @@ private:
     // It is a simple call to the computeELBOGradient() of the algo
     Matrix gradient(const Point & point) const override
     {
-      const Point value(algorithm_.computeELBOGradient(point));
-      const UnsignedInteger parameterSize = algorithm_.getOptimizationParameterSize();
+      const Point value(algorithm_->computeELBOGradient(point));
+      const UnsignedInteger parameterSize = algorithm_->getOptimizationParameterSize();
       Matrix result(parameterSize, 1);
       for (UnsignedInteger i = 0; i < parameterSize; ++i)
         result(i, 0) = value[i];
@@ -235,7 +238,7 @@ private:
 
     UnsignedInteger getInputDimension() const override
     {
-      return algorithm_.getOptimizationParameterSize();
+      return algorithm_->getOptimizationParameterSize();
     }
 
     UnsignedInteger getOutputDimension() const override
@@ -258,7 +261,7 @@ private:
     }
 
   private:
-    SparseGaussianProcessFitter & algorithm_;
+    mutable Pointer<SparseGaussianProcessFitter> algorithm_;
   }; // ELBOGradient
 
   // Build the vector of optimization parameters

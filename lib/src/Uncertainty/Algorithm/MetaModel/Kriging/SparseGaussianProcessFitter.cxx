@@ -155,8 +155,10 @@ SparseGaussianProcessFitterResult SparseGaussianProcessFitter::getResult()
 Function SparseGaussianProcessFitter::getObjectiveFunction()
 {
   MemoizeFunction objective(ELOBEEvaluation(*this));
-  // Here we replace the finite difference gradient with an analytic one
-  objective.setGradient(ELBOGradient(*this).clone());
+  // The analytic gradient is only implemented for the LAPACK backend.
+  // With HMAT, rely on the default finite-difference gradient.
+  if (method_ == SparseGaussianProcessFitterResult::LAPACK)
+    objective.setGradient(ELBOGradient(*this).clone());
   objective.enableCache();
   return objective;
 }
@@ -330,8 +332,11 @@ Scalar SparseGaussianProcessFitter::maximizeELBO()
   // Early exit if the parameters are known
   if (noNumericalOptimization)
   {
-    // We only need to compute the ELBO function at the initial parameters in order to get the by-products
-    const Scalar initialELBO = objectiveFunction(initialParameters)[0];
+    // Call computeELBO() directly on *this to get the by-products (whitening
+    // factor, posterior mean/covariance).  The function wrapper is bypassed
+    // because the cache provides no benefit for a single evaluation, and the
+    // direct call makes the side-effect intent explicit (defense in depth).
+    const Scalar initialELBO = computeELBO(initialParameters)[0];
     LOGDEBUG("No parameter to optimize");
     LOGDEBUG(OSS() << "initial parameters=" << initialParameters << ", ELBO=" << initialELBO);
     return initialELBO;

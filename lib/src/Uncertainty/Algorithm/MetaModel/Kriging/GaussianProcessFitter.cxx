@@ -76,87 +76,7 @@ void GaussianProcessFitter::setCovarianceModel(const CovarianceModel & covarianc
     throw InvalidArgumentException(HERE) << "Covariance model output dimension is " << covarianceModel.getOutputDimension() << ", expected " << outputDimension;
   covarianceModel_ = covarianceModel;
   // All the computation will be done on the reduced covariance model. We keep the initial covariance model (ie the one we just built) in order to reinitialize the reduced covariance model if some flags are changed after the creation of the algorithm.
-  reducedCovarianceModel_ = covarianceModel_;
-  // Now, adapt the model parameters.
-  // First, check if the parameters have to be optimized. If not, remove all the active parameters.
-  analyticalAmplitude_ = false;
-  Description activeParametersDescription(reducedCovarianceModel_.getParameterDescription());
-  if (!optimizeParameters_) reducedCovarianceModel_.setActiveParameter(Indices());
-  // Second, check if the amplitude parameter is unique and active
-  else if (ResourceMap::GetAsBool("GaussianProcessFitter-UseAnalyticalAmplitudeEstimate") && !noise_.getSize())
-  {
-    // The model has to be of dimension 1
-    if (reducedCovarianceModel_.getOutputDimension() == 1)
-    {
-      // And one of the active parameters must be called amplitude_0
-      for (UnsignedInteger i = 0; i < activeParametersDescription.getSize(); ++i)
-        if (activeParametersDescription[i] == "amplitude_0")
-        {
-          analyticalAmplitude_ = true;
-          Indices newActiveParameters(reducedCovarianceModel_.getActiveParameter());
-          newActiveParameters.erase(newActiveParameters.begin() + i);
-          reducedCovarianceModel_.setActiveParameter(newActiveParameters);
-          // Here we have to change the current value of the amplitude as it has
-          // to be equal to 1 during the potential optimization step in order for
-          // the analytical formula to be correct.
-          // Now, the amplitude has disappear form the active parameters so it must
-          // be updated using the amplitude accessor.
-          reducedCovarianceModel_.setAmplitude(Point(1, 1.0));
-          break;
-        }
-    } // reducedCovarianceModel_.getDimension() == 1
-    // Refresh description after amplitude_0 removal so indices stay consistent
-    activeParametersDescription = reducedCovarianceModel_.getParameterDescription();
-  } // optimizeParameters_
-  LOGDEBUG(OSS() << "final active parameters=" << reducedCovarianceModel_.getActiveParameter());
-  // Define the bounds of the optimization problem
-  const UnsignedInteger optimizationDimension = reducedCovarianceModel_.getParameter().getSize();
-  if (optimizationDimension > 0)
-  {
-    const Scalar lowerBoundScaleFactor = ResourceMap::GetAsScalar("GaussianProcessFitter-OptimizationLowerBoundScaleFactor");
-    if (!(lowerBoundScaleFactor > 0.0))
-      throw InvalidArgumentException(HERE) << "GPR lower bound scale factor set in ResourceMap should be positive, got " << lowerBoundScaleFactor;
-    const Scalar upperBoundScaleFactor = ResourceMap::GetAsScalar("GaussianProcessFitter-OptimizationUpperBoundScaleFactor");
-    if (!(upperBoundScaleFactor > 0.0))
-      throw InvalidArgumentException(HERE) << "GPR upper bound scale factor set in ResourceMap should be positive, got " << upperBoundScaleFactor;
-    Point lowerBound(optimizationDimension, ResourceMap::GetAsScalar("GaussianProcessFitter-DefaultOptimizationLowerBound"));
-    Point upperBound(optimizationDimension, ResourceMap::GetAsScalar("GaussianProcessFitter-DefaultOptimizationUpperBound"));
-    // We could set scale parameter if these parameters are enabled.
-    // check if some scales are active
-    // check if nugget factor is active
-    Indices activeScalesPositions(0);
-    Indices activeScalesIndices(0);
-    Indices activeNugget(0);
-    for (UnsignedInteger k = 0; k < optimizationDimension; ++k)
-    {
-      const String parameterName(activeParametersDescription[k]);
-      if (parameterName.find("scale_") != String::npos)
-      {
-        activeScalesPositions.add(k);
-        // Extract the scale index from its description
-        activeScalesIndices.add(std::stoi(parameterName.substr(parameterName.find("_") + 1, parameterName.size())));
-      }
-      if (activeParametersDescription[k].find("nuggetFactor") != String::npos) activeNugget.add(k);
-    }
-
-    if (activeScalesPositions.getSize() > 0)
-    {
-      const Point inputSampleRange(inputSample_.computeRange());
-      for (UnsignedInteger k = 0; k < activeScalesPositions.getSize(); ++k)
-      {
-        const Scalar rangeK = inputSampleRange[activeScalesIndices[k]];
-        lowerBound[activeScalesPositions[k]] = rangeK * lowerBoundScaleFactor;
-        upperBound[activeScalesPositions[k]] = rangeK * upperBoundScaleFactor;
-      } // k (upper bounds setting)
-    } // if active scale
-    if (activeNugget.getSize() > 0)
-      // Set the lower bound to 0 for nuggetFactor
-      lowerBound[activeNugget[0]] = ResourceMap::GetAsScalar("GaussianProcessFitter-DefaultOptimizationNuggetLowerBound");
-    LOGINFO(OSS() <<  "For coherency we set scale upper bounds = " << upperBound.__str__());
-
-    optimizationBounds_ = Interval(lowerBound, upperBound);
-  }
-  else optimizationBounds_ = Interval();
+  initializeReducedCovarianceModel();
 }
 
 CovarianceModel GaussianProcessFitter::getCovarianceModel() const
@@ -187,6 +107,8 @@ void GaussianProcessFitter::setBasis(const Basis & basis)
   }
   // Everything is ok, we set the basis
   basis_ = basis;
+  // Clear the cached design matrix so it is recomputed with the new basis
+  F_ = Matrix();
 }
 
 void GaussianProcessFitter::initializeDefaultOptimizationAlgorithm()
@@ -312,6 +234,12 @@ void GaussianProcessFitter::run()
   }
 
   // return optimized covmodel with the original active parameters (see analyticalAmplitude_)
+  // Here reducedCovarianceModel_ holds the optimized parameters, including the
+  // analytical amplitude when analyticalAmplitude_ is true.  The covariance
+  // model stored in the result must keep this amplitude so that it remains
+  // consistent with the Cholesky factor scaled below (both encode sigma^2 R)
+  // and with the standardized output consumed by GaussianProcessRegression,
+  // GaussianProcessConditionalCovariance & friends.
   CovarianceModel reducedCovarianceModelCopy(reducedCovarianceModel_);
   reducedCovarianceModelCopy.setActiveParameter(covarianceModel_.getActiveParameter());
 
@@ -355,8 +283,11 @@ Scalar GaussianProcessFitter::maximizeReducedLogLikelihood()
   // Early exit if the parameters are known
   if (noNumericalOptimization)
   {
-    // We only need to compute the log-likelihood function at the initial parameters in order to get the Cholesky factor and the trend coefficients
-    const Scalar initialReducedLogLikelihood = reducedLogLikelihoodFunction(initialParameters)[0];
+    // Call computeReducedLogLikelihood() directly on *this to get the Cholesky
+    // factor and the trend coefficients.  The function wrapper is bypassed
+    // because the cache provides no benefit for a single evaluation, and the
+    // direct call makes the side-effect intent explicit (defense in depth).
+    const Scalar initialReducedLogLikelihood = computeReducedLogLikelihood(initialParameters)[0];
     LOGDEBUG("No covariance parameter to optimize");
     LOGDEBUG(OSS() << "initial parameters=" << initialParameters << ", log-likelihood=" << initialReducedLogLikelihood);
     return initialReducedLogLikelihood;
@@ -436,13 +367,11 @@ Scalar GaussianProcessFitter::maximizeReducedLogLikelihood()
   const UnsignedInteger evaluationNumber = result.getCallsNumber();
   // Check if the optimal value corresponds to the last computed value, in order to
   // see if the by-products (Cholesky factor etc) are correct
-  if (lastReducedLogLikelihood_ != optimalLogLikelihood)
-  {
-    LOGDEBUG(OSS(false) << "Need to evaluate the objective function one more time because the last computed reduced log-likelihood value=" << lastReducedLogLikelihood_ << " is different from the optimal one=" << optimalLogLikelihood);
-    (void) computeReducedLogLikelihood(optimalParameters);
-  }
-  // Final call to reducedLogLikelihoodFunction() in order to update the amplitude
-  // No additional cost since the cache mechanism is activated
+  // Always refresh the by-products on *this: the optimizer evaluates the
+  // objective through a clone-based wrapper, so beta_, rho_ and the Cholesky
+  // factor of *this* are only correct if computeReducedLogLikelihood() is
+  // called here at least once with the optimal parameters.
+  (void) computeReducedLogLikelihood(optimalParameters);
   LOGDEBUG(OSS() << evaluationNumber << " evaluations, optimized parameters=" << optimalParameters << ", log-likelihood=" << optimalLogLikelihood);
 
   return optimalLogLikelihood;
@@ -834,6 +763,81 @@ GaussianProcessFitter::LinearAlgebra GaussianProcessFitter::getMethod() const
   return method_;
 }
 
+void GaussianProcessFitter::initializeReducedCovarianceModel()
+{
+  reducedCovarianceModel_ = covarianceModel_;
+  // Now, adapt the model parameters.
+  // First, check if the parameters have to be optimized. If not, remove all the active parameters.
+  analyticalAmplitude_ = false;
+  Description activeParametersDescription(reducedCovarianceModel_.getParameterDescription());
+  if (!optimizeParameters_) reducedCovarianceModel_.setActiveParameter(Indices());
+  // Second, check if the amplitude parameter is unique and active
+  else if (ResourceMap::GetAsBool("GaussianProcessFitter-UseAnalyticalAmplitudeEstimate") && !noise_.getSize())
+  {
+    // The model has to be of dimension 1
+    if (reducedCovarianceModel_.getOutputDimension() == 1)
+    {
+      // And one of the active parameters must be called amplitude_0
+      for (UnsignedInteger i = 0; i < activeParametersDescription.getSize(); ++i)
+        if (activeParametersDescription[i] == "amplitude_0")
+        {
+          analyticalAmplitude_ = true;
+          Indices newActiveParameters(reducedCovarianceModel_.getActiveParameter());
+          newActiveParameters.erase(newActiveParameters.begin() + i);
+          reducedCovarianceModel_.setActiveParameter(newActiveParameters);
+          reducedCovarianceModel_.setAmplitude(Point(1, 1.0));
+          break;
+        }
+    } // reducedCovarianceModel_.getDimension() == 1
+    // Refresh description after amplitude_0 removal so indices stay consistent
+    activeParametersDescription = reducedCovarianceModel_.getParameterDescription();
+  } // optimizeParameters_
+  LOGDEBUG(OSS() << "final active parameters=" << reducedCovarianceModel_.getActiveParameter());
+  // Define the bounds of the optimization problem
+  const UnsignedInteger optimizationDimension = reducedCovarianceModel_.getParameter().getSize();
+  if (optimizationDimension > 0)
+  {
+    const Scalar lowerBoundScaleFactor = ResourceMap::GetAsScalar("GaussianProcessFitter-OptimizationLowerBoundScaleFactor");
+    if (!(lowerBoundScaleFactor > 0.0))
+      throw InvalidArgumentException(HERE) << "GPR lower bound scale factor set in ResourceMap should be positive, got " << lowerBoundScaleFactor;
+    const Scalar upperBoundScaleFactor = ResourceMap::GetAsScalar("GaussianProcessFitter-OptimizationUpperBoundScaleFactor");
+    if (!(upperBoundScaleFactor > 0.0))
+      throw InvalidArgumentException(HERE) << "GPR upper bound scale factor set in ResourceMap should be positive, got " << upperBoundScaleFactor;
+    Point lowerBound(optimizationDimension, ResourceMap::GetAsScalar("GaussianProcessFitter-DefaultOptimizationLowerBound"));
+    Point upperBound(optimizationDimension, ResourceMap::GetAsScalar("GaussianProcessFitter-DefaultOptimizationUpperBound"));
+    Indices activeScalesPositions(0);
+    Indices activeScalesIndices(0);
+    Indices activeNugget(0);
+    for (UnsignedInteger k = 0; k < optimizationDimension; ++k)
+    {
+      const String parameterName(activeParametersDescription[k]);
+      if (parameterName.find("scale_") != String::npos)
+      {
+        activeScalesPositions.add(k);
+        activeScalesIndices.add(std::stoi(parameterName.substr(parameterName.find("_") + 1, parameterName.size())));
+      }
+      if (activeParametersDescription[k].find("nuggetFactor") != String::npos) activeNugget.add(k);
+    }
+
+    if (activeScalesPositions.getSize() > 0)
+    {
+      const Point inputSampleRange(inputSample_.computeRange());
+      for (UnsignedInteger k = 0; k < activeScalesPositions.getSize(); ++k)
+      {
+        const Scalar rangeK = inputSampleRange[activeScalesIndices[k]];
+        lowerBound[activeScalesPositions[k]] = rangeK * lowerBoundScaleFactor;
+        upperBound[activeScalesPositions[k]] = rangeK * upperBoundScaleFactor;
+      }
+    }
+    if (activeNugget.getSize() > 0)
+      lowerBound[activeNugget[0]] = ResourceMap::GetAsScalar("GaussianProcessFitter-DefaultOptimizationNuggetLowerBound");
+    LOGINFO(OSS() <<  "For coherency we set scale upper bounds = " << upperBound.__str__());
+
+    optimizationBounds_ = Interval(lowerBound, upperBound);
+  }
+  else optimizationBounds_ = Interval();
+}
+
 void GaussianProcessFitter::reset()
 {
   // Reset elements for new computation
@@ -878,7 +882,10 @@ void GaussianProcessFitter::setNoise(const CovarianceMatrixCollection & noise)
   }
   noise_ = noise;
 
-  // If we update noise, we need to reset
+  // If we update noise, we need to re-evaluate the analytical amplitude
+  // flag and reinitialize the reduced covariance model, then reset
+  // computation state.
+  initializeReducedCovarianceModel();
   reset();
 }
 
@@ -899,7 +906,10 @@ void GaussianProcessFitter::setNoise(const Point & noise)
     noise_[i] = noiseMatrix;
   }
 
-  // If we update noise, we need to reset
+  // If we update noise, we need to re-evaluate the analytical amplitude
+  // flag and reinitialize the reduced covariance model, then reset
+  // computation state.
+  initializeReducedCovarianceModel();
   reset();
 }
 

@@ -123,12 +123,20 @@ protected:
   /** reset method - If one change method */
   void reset();
 
+  // Initialize reducedCovarianceModel_ and analyticalAmplitude_ from
+  // covarianceModel_ and the current noise_.  Called from the constructor
+  // and from setNoise() so that adding/removing noise correctly toggles
+  // the analytical-amplitude path.
+  void initializeReducedCovarianceModel();
+
   // Initialize default optimization solver
   void initializeDefaultOptimizationAlgorithm();
 
 private:
 
-  // Helper class to compute the reduced log-likelihood function of the model
+  // Helper class to compute the reduced log-likelihood function of the model.
+  // Owns a clone of the algorithm so that the returned Function can outlive the
+  // original algorithm without creating a dangling reference.
   class ReducedLogLikelihoodEvaluation: public EvaluationImplementation
   {
   public:
@@ -190,7 +198,8 @@ private:
     String __str__(const String & offset = "") const override
     {
       // Don't print algorithm_ here as it will result in an infinite loop!
-      return OSS() << offset << __repr__();
+      OSS oss;
+      return oss << offset << __repr__();
     }
 
   private:
