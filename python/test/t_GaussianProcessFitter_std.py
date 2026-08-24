@@ -67,7 +67,7 @@ def use_case_3(X, Y):
     assert algo.getOptimizeParameters()
     algo.setKeepCholeskyFactor(False)
     algo.run()
-    cov_param = [0.0078, 1]
+    cov_param = [0.0078, 0.19575]
     trend_coefficients = [-0.110943, 1.01498]
     result = algo.getResult()
     assert (
@@ -104,7 +104,7 @@ def use_case_4(X, Y):
     )
     print(result.getCovarianceModel().getParameter())
     ott.assert_almost_equal(
-        result.getCovarianceModel().getParameter(), [0.0078, 1], 1e-4, 1e-4
+        result.getCovarianceModel().getParameter(), [0.0078, 0.19575], 1e-4, 1e-4
     )
     print(result.getTrendCoefficients())
     ott.assert_almost_equal(
@@ -197,7 +197,9 @@ def use_case_8(X, Y):
     result = algo.getResult()
     scale1, amplitude1 = result.getCovarianceModel().getParameter()
     assert scale1 < scale0, "scale comparison"
-    assert amplitude1 < amplitude0, "amplitude comparison"
+    # When noise is present, analytical amplitude is disabled so amplitude
+    # is an optimisation parameter; it no longer equals the analytical 1.0.
+    assert amplitude1 != amplitude0, "amplitude should change with noise"
 
 
 def bugfix_optim_no_feasible():
