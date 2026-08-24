@@ -95,6 +95,9 @@ private :
   /** Frequency */
   Scalar frequency_;
 
+  /** Cached value of 2 * pi * frequency_, updated by setFrequency */
+  Scalar twoPiFrequency_;
+
 } ; /* class ExponentiallyDampedCosineModel */
 
 END_NAMESPACE_OPENTURNS
