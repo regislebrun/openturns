@@ -56,3 +56,28 @@ print(graph)
 # range
 graph = myModel.draw(0, 0, -2.0, 2.0, 21, True, True)
 print(graph)
+
+# Constructor from a single covariance matrix, see issue #1243
+covariance = ot.SquareMatrix(2)
+covariance[0, 0] = 1.0
+covariance[1, 1] = 2.0
+covariance[0, 1] = 0.3
+covariance[1, 0] = 0.3
+modelSingle = ot.UserDefinedStationaryCovarianceModel(timeGrid, covariance)
+assert modelSingle.getOutputDimension() == 2, "output dimension"
+
+for tau in (0.5, 1.5, 3.0):
+    value = modelSingle(tau)[0, 0]
+    assert abs(value - covariance[0, 0]) < 1e-12, "single matrix value"
+# consistency with the collection constructor filled with a constant
+constantCollection = ot.SquareMatrixCollection(timeGrid.getN())
+for i in range(timeGrid.getN()):
+    constantCollection[i] = covariance
+modelCollection = ot.UserDefinedStationaryCovarianceModel(
+    timeGrid, constantCollection
+)
+for i in range(0, timeGrid.getN(), 7):
+    tau = timeGrid.getValue(i)
+    diff = modelSingle(tau) - modelCollection(tau)
+    assert abs(diff[0, 0]) < 1e-12, "single vs collection (0, 0)"
+    assert abs(diff[1, 1]) < 1e-12, "single vs collection (1, 1)"
