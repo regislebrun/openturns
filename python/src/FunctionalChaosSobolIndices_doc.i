@@ -289,3 +289,21 @@ partOfVariance : :class:`~openturns.Point`
     The sum of part of variances is equal to 1.
     If the corresponding multi-index has total degree equal to 0,
     then the corresponding part of variance is equal to zero."
+
+// ---------------------------------------------------------------------
+
+%feature("docstring") OT::FunctionalChaosSobolIndices::draw
+"Draw the Sobol indices.
+
+The first and total order indices are drawn as bars, one per input.
+
+Parameters
+----------
+marginalIndex : int, :math:`0 \\leq i < d`, optional
+    Index of the model's marginal used to estimate the indices.
+    By default, marginalIndex is equal to 0.
+
+Returns
+-------
+graph : :class:`~openturns.Graph`
+    The graph of the Sobol' indices."
