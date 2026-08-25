@@ -196,3 +196,46 @@ condPDF = mixture.computeConditionalPDF(1.0, [2.0])
 print("conditional PDF (bivariate mixture)=%.6f" % condPDF)
 seqCondPDF = mixture.computeSequentialConditionalPDF([2.0, 1.0])
 print("sequential conditional PDF=", seqCondPDF)
+
+# Mixed continuous/discrete drawing, see issue #1489
+mixed = ot.Mixture([ot.Dirac(-3.0), ot.Normal()], [0.5, 0.5])
+graph = mixed.drawPDF(-6.0, 6.0)
+drawables = graph.getDrawables()
+# one curve, one shaft and one arrow head
+assert drawables.getSize() == 3, "expected curve plus shaft plus head"
+shaft = drawables[1].getData()
+ott.assert_almost_equal(shaft[0], [-3.0, 0.0])
+assert shaft[1][0] == -3.0, "atom abscissa"
+assert shaft[1][1] > 0.0, "atom shaft height"
+head = drawables[2]
+head_class = head.getImplementation().getClassName()
+assert head_class == "Polygon", "arrow head expected"
+headData = head.getData()
+assert headData.getSize() == 3, "triangle head"
+assert headData[0][0] == -3.0, "apex abscissa"
+assert headData[0][1] > shaft[1][1], "head points up"
+# the arrow height is proportional to the weight of the atom
+half = ot.Mixture([ot.Dirac(-3.0), ot.Normal()], [0.25, 0.75])
+h1 = mixed.drawPDF(-6.0, 6.0).getDrawable(1).getData()[1, 1]
+h2 = half.drawPDF(-6.0, 6.0).getDrawable(1).getData()[1, 1]
+ott.assert_almost_equal(h2, 0.5 * h1)
+# several atoms
+mixed3 = ot.Mixture(
+    [ot.Dirac(-3.0), ot.Dirac(3.0), ot.Normal()], [0.25, 0.25, 0.5]
+)
+n_drawables = mixed3.drawPDF(-6.0, 6.0).getDrawables().getSize()
+assert n_drawables == 5, "two arrows expected"
+# purely continuous mixtures keep the generic drawing
+continuous = ot.Mixture(
+    [ot.Normal(-1.0, 1.0), ot.Normal(1.0, 1.0)], [0.5, 0.5]
+)
+n_drawables = continuous.drawPDF(-6.0, 6.0).getDrawables().getSize()
+assert n_drawables == 1, "no atom expected"
+
+# generic discrete components also get arrows, see issue #1596
+geometric = ot.Geometric(0.1)
+mixedGeo = ot.Mixture([geometric, ot.Normal(3.0, 1.0)], [0.7, 0.3])
+ggeo = mixedGeo.drawPDF(-2.0, 10.0)
+supportInRange = geometric.getSupport(ot.Interval([-2.0], [10.0]))
+expected = 1 + 2 * supportInRange.getSize()
+assert ggeo.getDrawables().getSize() == expected, "one arrow per support point"
