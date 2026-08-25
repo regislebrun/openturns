@@ -113,6 +113,12 @@ UnsignedInteger FieldImplementation::getOutputDimension() const
   return values_.getDimension();
 }
 
+/* Dimension accessor of the values */
+UnsignedInteger FieldImplementation::getDimension() const
+{
+  return values_.getDimension();
+}
+
 /* Mesh accessor */
 Mesh FieldImplementation::getMesh() const
 {
@@ -176,7 +182,7 @@ Scalar & FieldImplementation::at (const UnsignedInteger i,
                                   const UnsignedInteger j)
 {
   if (!(i < getSize())) throw OutOfBoundException(HERE) << "i (" << i << ") is not less than size (" << getSize() << ")";
-  if (!(j < getOutputDimension())) throw OutOfBoundException(HERE) << "j (" << j << ") is not less than dimension (" << getOutputDimension() << ")";
+  if (!(j < getDimension())) throw OutOfBoundException(HERE) << "j (" << j << ") is not less than dimension (" << getDimension() << ")";
   isAlreadyComputedInputMean_ = false;
   return values_(i, j);
 }
@@ -185,7 +191,7 @@ const Scalar & FieldImplementation::at (const UnsignedInteger i,
                                         const UnsignedInteger j) const
 {
   if (!(i < getSize())) throw OutOfBoundException(HERE) << "i (" << i << ") is not less than size (" << getSize() << ")";
-  if (!(j < getOutputDimension())) throw OutOfBoundException(HERE) << "j (" << j << ") is not less than dimension (" << getOutputDimension() << ")";
+  if (!(j < getDimension())) throw OutOfBoundException(HERE) << "j (" << j << ") is not less than dimension (" << getDimension() << ")";
   return values_(i, j);
 }
 
