@@ -147,7 +147,7 @@ The keys of :class:`~openturns.ResourceMap` related to the class are:
   which the PDF is negligible (default is 8.5),
 - the key ``LinearCombinationDistribution-DefaultMaxSize`` that defines the
   initial value of the maximum size of the cache of characteristic function
-  values (default is 65536),
+  values (default is 16777216, i.e. 256MiB),
 - the key ``LinearCombinationDistribution-MaximumPDFLevel`` that defines the
   maximal number of levels summed when evaluating the PDF point by point in
   dimension greater than 1 (default is 100),
@@ -383,7 +383,7 @@ Examples
 >>> # default cache size
 >>> size = distribution.getMaxSize()
 >>> print(size)
-65536"
+16777216"
 
 // ---------------------------------------------------------------------
 %feature("docstring") OT::LinearCombinationDistribution::setMaxSize
