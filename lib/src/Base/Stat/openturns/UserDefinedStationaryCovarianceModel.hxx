@@ -51,6 +51,10 @@ public:
   UserDefinedStationaryCovarianceModel(const RegularGrid & mesh,
                                        const SquareMatrixCollection & covarianceCollection);
 
+  /** Constructor from a unique covariance matrix */
+  UserDefinedStationaryCovarianceModel(const RegularGrid & mesh,
+                                       const SquareMatrix & covariance);
+
   /** Virtual copy constructor */
   UserDefinedStationaryCovarianceModel * clone() const override;
 
