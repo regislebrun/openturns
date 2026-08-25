@@ -40,6 +40,8 @@ OT_Distribution_computeLogGeneratingFunction_doc
 OT_Distribution_computeMinimumVolumeLevelSet_doc
 %feature("docstring") OT::Distribution::computeMinimumVolumeLevelSetWithThreshold
 OT_Distribution_computeMinimumVolumeLevelSetWithThreshold_doc
+%feature("docstring") OT::Distribution::computeMinimumVolumeLevelSetCollectionWithThreshold
+OT_Distribution_computeMinimumVolumeLevelSetCollectionWithThreshold_doc
 %feature("docstring") OT::Distribution::computeMinimumVolumeInterval
 OT_Distribution_computeMinimumVolumeInterval_doc
 %feature("docstring") OT::Distribution::computeMinimumVolumeIntervalWithMarginalProbability
