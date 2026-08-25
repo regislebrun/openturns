@@ -58,24 +58,26 @@ for testIndex in range(len(testCases)):
     point = ot.Point(distribution.getDimension(), 0.5)
 
     # Check the PDF, CDF and DDF against the reference distribution
+    # Tolerance accounts for the truncation of the Fourier sum far from the
+    # center once the confidence band has been adapted
     ott.assert_almost_equal(
         distribution.computeDDF(point),
         distributionReference.computeDDF(point),
-        1e-3,
+        5e-3,
         1e-8,
         "ddf",
     )
     ott.assert_almost_equal(
         distribution.computePDF(point),
         distributionReference.computePDF(point),
-        1e-4,
+        5e-3,
         1e-8,
         "pdf",
     )
     ott.assert_almost_equal(
         distribution.computeCDF(point),
         distributionReference.computeCDF(point),
-        1e-3,
+        5e-3,
         1e-7,
         "cdf",
     )

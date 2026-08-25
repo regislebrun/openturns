@@ -65,8 +65,19 @@ it is important to ensure that this number has some reasonable value.
 Note finally that the characteristic function evaluations are independent
 from :math:`\vect{y}=(y_1,\hdots,y_d)`: these values are stored in a cache.
 
-When the density is evaluated point by point in dimension greater than 1,
-the number of computed blocks is bounded by the value of the
+The confidence band is adapted automatically: starting from
+:math:`\beta_0` (``LinearCombinationDistribution-DefaultBeta``), it is
+doubled until a conservative estimate of the mass outside the band drops
+below ``LinearCombinationDistribution-BetaAdaptationEpsilon``, or until it
+reaches ``LinearCombinationDistribution-MaximumBeta``. The estimate relies
+on the union of the per-atom tail probabilities, each atom being granted an
+equal share of the distance to the band edges. Each doubling halves the
+reference bandwidth, doubling the number of levels needed for a given
+accuracy: the block budget of the pointwise evaluations shrinks
+accordingly, which bounds their cost.
+
+When the density is evaluated point by point once the band has been
+adapted, the number of computed blocks is bounded by the value of the
 ``LinearCombinationDistribution-MaximumPDFLevel`` ResourceMap key in order
 to avoid prohibitive costs when the characteristic function decays slowly,
 e.g. when some atoms are bounded variables.
@@ -149,8 +160,17 @@ The keys of :class:`~openturns.ResourceMap` related to the class are:
   initial value of the maximum size of the cache of characteristic function
   values (default is 16777216, i.e. 256MiB),
 - the key ``LinearCombinationDistribution-MaximumPDFLevel`` that defines the
-  maximal number of levels summed when evaluating the PDF point by point in
-  dimension greater than 1 (default is 100),
+  maximal number of levels summed when evaluating the PDF or the CDF point by
+  point once the confidence band has been adapted (default is 100),
+- the key ``LinearCombinationDistribution-BetaAdaptation`` that tells whether
+  the confidence band is widened automatically until the estimated mass
+  outside it drops below ``BetaAdaptationEpsilon`` (default is True),
+- the key ``LinearCombinationDistribution-BetaAdaptationEpsilon`` that defines
+  the target for the estimated mass outside the confidence band (default is
+  :math:`10^{-6}`),
+- the key ``LinearCombinationDistribution-MaximumBeta`` that defines an upper
+  bound on the confidence band parameter reached by the adaptation (default
+  is 64.0),
 - the key ``LinearCombinationDistribution-ProjectionDefaultSize`` that
   defines the default size of the sample used by the :meth:`project` method
   (default is 25).
