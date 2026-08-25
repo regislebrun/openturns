@@ -254,9 +254,42 @@ Point KernelSmoothing::computeMixedBandwidth(const Sample & sample) const
   }
 }
 
-/* Build a Normal kernel mixture based on the given sample. If no bandwidth has already been set, Silverman's rule is used */
-Distribution KernelSmoothing::build(const Sample & sample) const
+/* Build a weighted kernel mixture based on the given sample and weights.
+   The weights are normalized internally. If no bandwidth has already been
+   set, it is computed from the unweighted sample, see #1554. */
+Distribution KernelSmoothing::buildWeighted(const Sample & sample,
+    const Point & weights) const
 {
+  const UnsignedInteger size = sample.getSize();
+  if (weights.getDimension() != size)
+    throw InvalidArgumentException(HERE) << "Error: the number of weights=" << weights.getDimension() << " does not match the sample size=" << size;
+  Scalar totalWeight = 0.0;
+  for (UnsignedInteger i = 0; i < size; ++i)
+  {
+    if (!(weights[i] >= 0.0))
+      throw InvalidArgumentException(HERE) << "Error: the weights must be non negative, here weight[" << i << "]=" << weights[i];
+    totalWeight += weights[i];
+  }
+  if (!(totalWeight > 0.0))
+    throw InvalidArgumentException(HERE) << "Error: the sum of the weights must be positive, here sum=" << totalWeight;
+  Point normalizedWeights(size);
+  for (UnsignedInteger i = 0; i < size; ++i) normalizedWeights[i] = weights[i] / totalWeight;
+  // The automatic bandwidth selection ignores the weights
+  const UnsignedInteger dimension = sample.getDimension();
+  Point bandwidth(bandwidth_);
+  if (bandwidth.getDimension() != dimension)
+    bandwidth = (dimension == 1 ? computeMixedBandwidth(sample) : computeSilvermanBandwidth(sample));
+  setBandwidth(bandwidth);
+  Collection< Distribution > atoms(size);
+  for (UnsignedInteger i = 0; i < size; ++i)
+    atoms[i] = KernelMixture(kernel_, bandwidth, Sample(1, sample[i]));
+  Mixture result(atoms, normalizedWeights);
+  result.setDescription(sample.getDescription());
+  return result;
+}
+
+/* Build a Normal kernel mixture based on the given sample. If no bandwidth has already been set, Silverman's rule is used */
+Distribution KernelSmoothing::build(const Sample & sample) const{
   // For 1D sample, use the rule that give the best tradeoff between speed and precision
   if (sample.getDimension() == 1)
   {
