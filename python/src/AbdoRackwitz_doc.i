@@ -19,6 +19,22 @@ omega : float
 smooth : float
     Growing factor in penalization term.
 
+Notes
+-----
+The algorithm stops when one of the two following pairs of criteria is
+met, in which case it has converged:
+
+- the absolute error and the relative error are both below their maximum,
+  set through :meth:`setMaximumAbsoluteError` and
+  :meth:`setMaximumRelativeError`;
+- the residual error and the constraint error are both below their
+  maximum, set through :meth:`setMaximumResidualError` and
+  :meth:`setMaximumConstraintError`.
+
+Because the rule is a disjunction, setting some of these thresholds to
+zero only disables the corresponding pair: the other pair still applies
+with its own default thresholds.
+
 See also
 --------
 Cobyla, SQP, TNC, NLopt
