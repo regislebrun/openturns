@@ -68,6 +68,23 @@ xMin = mean - 2.9 * sigma
 xMax = mean + 2.9 * sigma
 result, grid = dist_3D.computePDF(xMin, xMax, points)
 for i in range(grid.getSize()):
-    # Only basic checks are possible here: the pointwise evaluation of the
-    # PDF based on Poisson's summation formula is way too costly in 3D
+    # The pointwise evaluation of the PDF based on Poisson's summation formula
+    # is way too costly in 3D: only the positivity of the gridded values and a
+    # comparison with its bounded pointwise counterpart near the center of the
+    # distribution are checked
     assert result[i, 0] >= 0.0, "negative pdf value"
+# Rank the grid points by their distance to the mean
+distances = []
+for i in range(grid.getSize()):
+    distance = sum((grid[i, j] - mean[j]) ** 2 for j in range(3))
+    distances.append((distance, i))
+distances.sort()
+for distance, i in distances[:4]:
+    pdf = dist_3D.computePDF(grid[i])
+    ott.assert_almost_equal(
+        result[i, 0],
+        pdf,
+        0.2,
+        0.0,
+        "fft grid vs pointwise pdf at point %d" % i,
+    )

@@ -809,6 +809,7 @@
   <LinearCombinationDistribution-DefaultBlockMin                value_int="3"     />
   <LinearCombinationDistribution-DefaultMaxSize                 value_int="65536" />
   <LinearCombinationDistribution-MaximumSupportSize             value_int="2048"  />
+  <LinearCombinationDistribution-MaximumPDFLevel                value_int="100"   />
   <LinearCombinationDistribution-ProjectionDefaultSize          value_int="25"    />
   <LinearCombinationDistribution-SmallSize                      value_int="100"   />
 

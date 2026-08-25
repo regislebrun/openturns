@@ -246,42 +246,42 @@ range = class=Interval name=Unnamed dimension=2 lower bound=class=Point name=Unn
 mean = class=Point name=Unnamed dimension=2 values=[0,-0.5]
 cov = class=CovarianceMatrix dimension=2 implementation=class=MatrixImplementation name=Unnamed rows=2 columns=2 values=[0.5,-0.333333,-0.333333,0.916667]
 sigma = class=Point name=Unnamed dimension=2 values=[0.707107,0.957427]
-pdf      =0.200008
+pdf      =0.199971
+pdf      =0.200141
+pdf      =0.182552
+pdf      =0.161374
+pdf      =0.140153
+pdf      =0.118925
+pdf      =0.199949
+pdf      =0.194154
+pdf      =0.172975
+pdf      =0.151801
+pdf      =0.130586
+pdf      =0.109359
 pdf      =0.199953
-pdf      =0.18257
-pdf      =0.161365
-pdf      =0.140147
-pdf      =0.11893
-pdf      =0.200012
-pdf      =0.194237
-pdf      =0.172999
-pdf      =0.151788
-pdf      =0.130572
-pdf      =0.109357
-pdf      =0.200032
-pdf      =0.184647
-pdf      =0.163427
-pdf      =0.142211
-pdf      =0.120996
-pdf      =0.099784
-pdf      =0.190057
-pdf      =0.175051
-pdf      =0.153858
-pdf      =0.132633
-pdf      =0.111423
-pdf      =0.0902108
-pdf      =0.164538
-pdf      =0.155122
-pdf      =0.144316
-pdf      =0.123061
-pdf      =0.101846
-pdf      =0.0806394
-pdf      =0.13901
-pdf      =0.129584
-pdf      =0.120154
-pdf      =0.110695
-pdf      =0.0922665
-pdf      =0.0710676
+pdf      =0.184632
+pdf      =0.163424
+pdf      =0.142216
+pdf      =0.120994
+pdf      =0.0997737
+pdf      =0.189994
+pdf      =0.175005
+pdf      =0.153837
+pdf      =0.132644
+pdf      =0.111439
+pdf      =0.0902228
+pdf      =0.164561
+pdf      =0.155103
+pdf      =0.144363
+pdf      =0.123059
+pdf      =0.101831
+pdf      =0.080623
+pdf      =0.138984
+pdf      =0.12958
+pdf      =0.120179
+pdf      =0.110814
+pdf      =0.0923179
+pdf      =0.0710868
 3D distribution = class=LinearCombinationDistribution name=LinearCombinationDistribution distribution collection=[class=Normal name=Normal dimension=1 mean=class=Point name=Unnamed dimension=1 values=[0] sigma=class=Point name=Unnamed dimension=1 values=[1] correlationMatrix=class=CorrelationMatrix dimension=1 implementation=class=MatrixImplementation name=Unnamed rows=1 columns=1 values=[1],class=Mixture name=Mixture dimension=1 distributionCollection=[class=Normal name=Normal dimension=1 mean=class=Point name=Unnamed dimension=1 values=[2] sigma=class=Point name=Unnamed dimension=1 values=[1] correlationMatrix=class=CorrelationMatrix dimension=1 implementation=class=MatrixImplementation name=Unnamed rows=1 columns=1 values=[1],class=Normal name=Normal dimension=1 mean=class=Point name=Unnamed dimension=1 values=[-2] sigma=class=Point name=Unnamed dimension=1 values=[1] correlationMatrix=class=CorrelationMatrix dimension=1 implementation=class=MatrixImplementation name=Unnamed rows=1 columns=1 values=[1]] base=class=Point name=Unnamed dimension=0 values=[] alias=[],class=Uniform name=Uniform dimension=1 a=0 b=1,class=Uniform name=Uniform dimension=1 a=0 b=1] weights =class=Matrix implementation=class=MatrixImplementation name=Unnamed rows=3 columns=4 values=[1,0.5,-0.5,-0.05,1,-0.1,1,-0.05,1.2,-0.5,0.3,-0.8] constant=class=Point name=Unnamed dimension=3 values=[0,0,0]
 range = class=Interval name=Unnamed dimension=3 lower bound=class=Point name=Unnamed dimension=3 values=[-8.63316,-13.5259,-5.59038] upper bound=class=Point name=Unnamed dimension=3 values=[9.13316,13.7759,5.99038] finite lower bound=[0,0,0] finite upper bound=[0,0,0]
 mean = class=Point name=Unnamed dimension=3 values=[0.25,0.125,0.2]

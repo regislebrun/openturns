@@ -19,10 +19,6 @@ coll.add(ot.Uniform(0, 1))
 weights = ot.Matrix([[1.0, -2.0, 1.0], [1.0, 1.0, -3.0]])
 # Build the LinearCombinationDistribution
 dist_2D = ot.LinearCombinationDistribution(coll, weights)
-# Bound the number of blocks of the pointwise Poisson summation so that the
-# cross-check below remains cheap
-dist_2D.setBlockMin(3)
-dist_2D.setBlockMax(8)
 # Check the moments against the exact values
 ott.assert_almost_equal(dist_2D.getMean(), [0.0, -0.5], 1e-12, 1e-12, "mean")
 covarianceRef = ot.CovarianceMatrix(2)

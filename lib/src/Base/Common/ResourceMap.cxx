@@ -1461,6 +1461,7 @@ void ResourceMap::loadDefaultConfiguration()
   addAsUnsignedInteger("LinearCombinationDistribution-DefaultBlockMin", 3);
   addAsUnsignedInteger("LinearCombinationDistribution-DefaultMaxSize", 65536);
   addAsUnsignedInteger("LinearCombinationDistribution-MaximumSupportSize", 2048);
+  addAsUnsignedInteger("LinearCombinationDistribution-MaximumPDFLevel", 100);
   addAsUnsignedInteger("LinearCombinationDistribution-ProjectionDefaultSize", 25);
   addAsUnsignedInteger("LinearCombinationDistribution-SmallSize", 100);
 
