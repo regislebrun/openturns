@@ -110,6 +110,8 @@ public:
 
   /** Dimension accessor */
   UnsignedInteger getInputDimension() const;
+
+  /** Dimension accessor */
   UnsignedInteger getOutputDimension() const;
 
   /** Dimension accessor of the values */
@@ -150,12 +152,16 @@ public:
   Field & operator -= (const Sample & translation);
   Field & operator += (const Point & translation);
   Field & operator -= (const Point & translation);
+  Field & operator += (const Field & translation);
+  Field & operator -= (const Field & translation);
 
   /** Translate realizations */
   Field operator + (const Sample & translation) const;
   Field operator - (const Sample & translation) const;
   Field operator + (const Point & translation) const;
   Field operator - (const Point & translation) const;
+  Field operator + (const Field & translation) const;
+  Field operator - (const Field & translation) const;
 
 }; /* class Field */
 
