@@ -39,6 +39,77 @@ OTTypedInterfaceObjectHelper(Function)
 %template(FunctionCollection) OT::Collection<OT::Function>;
 %template(_FunctionPersistentCollection) OT::PersistentCollection<OT::Function>;
 
+// Slicing and sequence indexing support, see issue #1996
+%extend OT::Collection<OT::Function> {
+
+Function __getitem__(SignedInteger index) const
+{
+  const OT::UnsignedInteger size = self->getSize();
+  if (index < 0) {
+    index += size;
+  }
+  if ((index < 0) || (index >= (OT::SignedInteger)size)) {
+    throw OT::InvalidArgumentException(HERE) << "index should be in [0, " << size - 1 << "]";
+  }
+  return self->operator[](index);
+}
+
+PyObject * __getitem__(PyObject * args) const
+{
+  const OT::UnsignedInteger size = self->getSize();
+  if (PySlice_Check(args))
+  {
+    Py_ssize_t start = 0;
+    Py_ssize_t stop = 0;
+    Py_ssize_t step = 0;
+    if (PySlice_Unpack(args, &start, &stop, &step) < 0)
+    {
+      PyErr_Clear();
+      throw OT::InvalidArgumentException(HERE) << "FunctionCollection.__getitem__: invalid slice";
+    }
+    const Py_ssize_t count = PySlice_AdjustIndices(size, &start, &stop, step);
+    OT::Collection< OT::Function > result(count);
+    for (Py_ssize_t i = 0; i < count; ++i)
+      result[i] = (*self)[start + i * step];
+    return SWIG_NewPointerObj(new OT::Collection< OT::Function >(result), SWIG_TypeQuery("OT::Collection< OT::Function > *"), SWIG_POINTER_OWN);
+  }
+  else if (PySequence_Check(args))
+  {
+    PyObject * seq = PySequence_Fast(args, "expected a sequence of indices");
+    if (!seq)
+    {
+      PyErr_Clear();
+      throw OT::InvalidArgumentException(HERE) << "FunctionCollection.__getitem__: expected a sequence of indices";
+    }
+    const Py_ssize_t count = PySequence_Fast_GET_SIZE(seq);
+    OT::Collection< OT::Function > result(count);
+    for (Py_ssize_t i = 0; i < count; ++i)
+    {
+      PyObject * elt = PySequence_Fast_GET_ITEM(seq, i);
+      long index = PyLong_AsLong(elt);
+      if ((index == -1) && PyErr_Occurred())
+      {
+        Py_DECREF(seq);
+        PyErr_Clear();
+        throw OT::InvalidArgumentException(HERE) << "FunctionCollection.__getitem__: indices must be integers";
+      }
+      if (index < 0)
+        index += size;
+      if ((index < 0) || (index >= (long)size))
+      {
+        Py_DECREF(seq);
+        throw OT::OutOfBoundException(HERE) << "index should be in [0, " << size - 1 << "]";
+      }
+      result[i] = (*self)[index];
+    }
+    Py_DECREF(seq);
+    return SWIG_NewPointerObj(new OT::Collection< OT::Function >(result), SWIG_TypeQuery("OT::Collection< OT::Function > *"), SWIG_POINTER_OWN);
+  }
+  throw OT::InvalidArgumentException(HERE) << "FunctionCollection.__getitem__ expects an integer, a slice or a sequence of integers";
+}
+}
+
+
 
 %include Function_doc.i
 
