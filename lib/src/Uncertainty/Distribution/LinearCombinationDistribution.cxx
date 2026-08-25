@@ -614,7 +614,11 @@ void LinearCombinationDistribution::setDistributionCollectionAndWeights(const Di
     //
     // Mixed optimizations:
     //
-    // + A continuous atom can be merged with a discrete atom to form a Mixture. This simplification can be done for each pair (continuous,discrete). It is not clear if some pairings are to prefer to others.
+    // + A continuous atom could be merged with a discrete atom to form a
+    //   Mixture. This used to be done for each (continuous, discrete) pair
+    //   but the pointwise evaluation of such mixtures turned out to be more
+    //   costly than the generic Poisson summation applied to the raw atoms,
+    //   so it is no longer performed.
     distributionCollection_ = DistributionCollection(0);
     Sample reducedWeights(0, dimension);
     if (dimension == 1)
@@ -962,34 +966,13 @@ void LinearCombinationDistribution::setDistributionCollectionAndWeights(const Di
         firstOtherAtom = distributionCollection_.getSize();
       } // If there are discrete atoms to merge
 
-      // Then perform the continuous/discrete simplification using mixtures
-      // There must be continuous atoms and discrete ones
-      if (firstNonContinuousAtom > 0 && firstNonContinuousAtom != firstOtherAtom)
-      {
-        const SignedInteger firstContinuous = 0;
-        const SignedInteger firstDiscrete = firstNonContinuousAtom;
-        SignedInteger currentContinuous = firstNonContinuousAtom - 1;
-        SignedInteger currentDiscrete = firstOtherAtom - 1;
-        while (currentContinuous >= firstContinuous && currentDiscrete >= firstDiscrete)
-        {
-          const Distribution continuousAtom(distributionCollection_[currentContinuous]);
-          const Scalar continuousWeight = reducedWeights(currentContinuous, 0);
-          Distribution discreteAtom(distributionCollection_[currentDiscrete]);
-          Scalar discreteWeight = reducedWeights(currentDiscrete, 0);
-          const Sample support(discreteAtom.getSupport());
-          DistributionCollection mixtureAtoms;
-          for (UnsignedInteger i = 0; i < support.getSize(); ++i)
-            mixtureAtoms.add(LinearCombinationDistribution(DistributionCollection(1, continuousAtom), Point(1, continuousWeight), support(i, 0) * discreteWeight));
-          const Point probabilities(discreteAtom.getProbabilities());
-          // Replace the current continuous atom by the Mixture
-          distributionCollection_[currentContinuous] = Mixture(mixtureAtoms, probabilities);
-          // Remove the current discrete atom
-          distributionCollection_.erase(distributionCollection_.begin() + currentDiscrete);
-          reducedWeights.erase(currentDiscrete);
-          --currentContinuous;
-          --currentDiscrete;
-        } // loop over (continuous, discrete) pairs
-      } // continuous and discrete atoms to merge?
+      // No continuous/discrete simplification: the pairing of each
+      // (continuous, discrete) pair into a Mixture of translated copies of
+      // the continuous atom used to be performed here, but the pointwise
+      // evaluation of such mixtures is more costly than the generic Poisson
+      // summation applied to the raw atoms, while providing the same
+      // accuracy. Continuous and discrete atoms are kept as they are.
+
       // No simplification for other atoms
       distributionCollection_.add(otherAtoms);
       reducedWeights.add(otherWeights);

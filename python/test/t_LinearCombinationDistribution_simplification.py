@@ -157,21 +157,60 @@ ott.assert_almost_equal(
     d.getDistributionCollection()[0].getParameter(), [2.0, 3.0], 0.0, 0.0
 )
 
-# Test merge of discrete and continuous atoms
-# Deactivate the fusion of discrete atoms
-ot.ResourceMap.SetAsUnsignedInteger("LinearCombinationDistribution-MaximumSupportSize", 0)
+# Test that discrete and continuous atoms are kept as they are: the
+# continuous/discrete pairing into a Mixture has been removed, and the
+# generic evaluation on the raw atoms gives the same values.
+# Note that a leftover Uniform atom absorbs its weight into its bounds,
+# hence the unit weights below.
+ot.ResourceMap.SetAsUnsignedInteger("LinearCombinationDistribution-MaximumSupportSize", 10000)
 # more continuous atoms
 atoms = [ot.Logistic(), ot.Binomial(2, 0.5), ot.Uniform()]
 d = ot.LinearCombinationDistribution(atoms, [1.0, 2.0, 3.0], 2.0)
-checkMixture(d, atoms, [1.0, 2.0, 3.0], 2.0, ["Logistic", "Mixture"])
+checkMixture(d, atoms, [1.0, 2.0, 3.0], 2.0, ["Logistic", "Uniform", "Binomial"])
+checkWeights(d, [1.0, 1.0, 2.0])
+# the leftover uniform absorbs its weight and the constant into its bounds:
+# U(a, b) * w + c -> U(c + w * a, c + w * b)
+uni = atoms[2]
+lo = uni.getRange().getLowerBound()[0]
+hi = uni.getRange().getUpperBound()[0]
+rng = d.getDistributionCollection()[1].getRange()
+ott.assert_almost_equal(
+    rng.getLowerBound()[0],
+    2.0 + 3.0 * lo,
+    0.0,
+    0.0,
+    "uniform lower bound",
+)
+ott.assert_almost_equal(
+    rng.getUpperBound()[0],
+    2.0 + 3.0 * hi,
+    0.0,
+    0.0,
+    "uniform upper bound",
+)
 # more discrete atoms
 atoms = [ot.Bernoulli(0.1), ot.Binomial(2, 0.5), ot.Uniform()]
 d = ot.LinearCombinationDistribution(atoms, [1.0, 2.0, 3.0], 2.0)
-checkMixture(d, atoms, [1.0, 2.0, 3.0], 2.0, ["Mixture", "Bernoulli"])
+checkMixture(d, atoms, [1.0, 2.0, 3.0], 2.0, ["Uniform", "FiniteDiscreteDistribution"])
+checkWeights(d, [1.0, 1.0])
 # same number of continuous and discrete atoms
 atoms = [ot.Logistic(), ot.Bernoulli(0.1), ot.Binomial(2, 0.5), ot.Uniform()]
 d = ot.LinearCombinationDistribution(atoms, [1.0, 2.0, 3.0, 4.0], 2.0)
-checkMixture(d, atoms, [1.0, 2.0, 3.0, 4.0], 2.0, ["Mixture", "Mixture"])
+checkMixture(
+    d, atoms, [1.0, 2.0, 3.0, 4.0], 2.0,
+    ["Logistic", "Uniform", "FiniteDiscreteDistribution"],
+)
+checkWeights(d, [1.0, 1.0, 1.0])
+# The simplification does not change the distribution: check the agreement
+# of the evaluations with the unfused collection
+ot.ResourceMap.SetAsBool("LinearCombinationDistribution-SimplifyAtoms", False)
+raw = ot.LinearCombinationDistribution(atoms, [1.0, 2.0, 3.0, 4.0], 2.0)
+ot.ResourceMap.SetAsBool("LinearCombinationDistribution-SimplifyAtoms", True)
+x = d.getMean()[0]
+for offset in [-1.5, -0.5, 0.0, 0.5, 1.5]:
+    xx = x + offset * d.getStandardDeviation()[0]
+    ott.assert_almost_equal(d.computePDF(xx), raw.computePDF(xx), 1e-8, 1e-12, "pdf")
+    ott.assert_almost_equal(d.computeCDF(xx), raw.computeCDF(xx), 1e-10, 1e-12, "cdf")
 
 # Test the fusion of discrete atoms
 # All the atoms have a too large support
