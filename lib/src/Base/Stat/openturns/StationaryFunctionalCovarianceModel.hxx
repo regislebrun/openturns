@@ -60,6 +60,13 @@ public:
   /** Gradient */
   Matrix partialGradient(const Point & s, const Point & t) const override;
 
+  /** Hessian */
+  SymmetricMatrix partialHessian(const Point & s,
+                                 const Point & t) const override;
+
+  /** Gradient wrt parameters */
+  Matrix parameterGradient(const Point & s, const Point & t) const override;
+
   /** Correlation function accessor */
   Function getRho() const;
   void setRho(const Function & rho);
