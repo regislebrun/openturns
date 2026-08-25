@@ -52,6 +52,13 @@ The pre-merge/truncation interplay is benign (it can only shrink the
 fused support, which in turn favours further fusion) but its semantics
 should be kept in mind if ``MaximumSupportSize`` is tuned tightly.
 
+*Post-scriptum.* The remaining gap between the 180 raw convolution sums and
+the 130 stored points comes from
+:meth:`FiniteDiscreteDistribution.compactSupport`, called automatically by
+the constructor in dimension 1: near-duplicate points within
+``Distribution-SupportEpsilon`` are merged with their probabilities.
+A tolerance based merging already exists one level below the fusion.
+
 
 2. Range truncation versus heavy-tailed atoms
 ---------------------------------------------
@@ -170,6 +177,10 @@ truncation dropped). Since
 Benefits: analytical status of the resulting distribution (fast paths),
 no support truncation, fewer atoms. Restriction: invalid as soon as a
 weight differs from +/-1 (scaling a Poisson leaves the family).
+
+*Post-scriptum.* This substitution is now implemented: opposite-weight
+Poisson groups fuse into a single Skellam atom weighted by the absolute
+value of their weights.
 
 5b. Cost of the discrete/continuous pairing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

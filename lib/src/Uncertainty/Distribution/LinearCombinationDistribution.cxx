@@ -41,6 +41,7 @@
 #include "openturns/Bernoulli.hxx"
 #include "openturns/Binomial.hxx"
 #include "openturns/Poisson.hxx"
+#include "openturns/Skellam.hxx"
 #include "openturns/ComplexTensor.hxx"
 #include "openturns/FFT.hxx"
 #include "openturns/TBBImplementation.hxx"
@@ -608,7 +609,7 @@ void LinearCombinationDistribution::setDistributionCollectionAndWeights(const Di
     // Discrete optimizations:
     // + The Bernoulli and Binomial atoms can be merged into a unique Binomial as soon as they share the same value for p and the same weight
     // + The Poisson atoms can be merged into a unique Poisson as soon as they share the same weight
-    // + Poisson atoms with opposite weights could be merged into a Skellam atom but it is not clear if it is worth the effort...
+    // + Poisson atoms with opposite weights are merged into a Skellam atom weighted by the absolute value of their weights
     // + The Discrete atoms can be grouped into Discrete atoms of larger support, if these merged atoms have a support of reasonable size.
     //
     // Mixed optimizations:
@@ -808,6 +809,29 @@ void LinearCombinationDistribution::setDistributionCollectionAndWeights(const Di
         }
       } // discreteAtoms
       // Add the aggregated Poisson if any
+      // First, fuse the opposite-weight Poisson atoms into a Skellam atom
+      // weighted by the absolute value of their weights:
+      // w * (sum_i Poi(l_i) - sum_j Poi(m_j)) = w * Skellam(sum l, sum m)
+      {
+        std::map<Scalar, Scalar>::const_iterator it = poissonMap.begin();
+        while (it != poissonMap.end())
+        {
+          const Scalar w = it->first;
+          if (w > 0.0)
+          {
+            std::map<Scalar, Scalar>::const_iterator opposite = poissonMap.find(-w);
+            if (opposite != poissonMap.end())
+            {
+              distributionCollection_.add(Skellam(it->second, opposite->second));
+              reducedWeights.add(Point(1, w));
+              poissonMap.erase(it++);
+              poissonMap.erase(opposite);
+              continue;
+            }
+          }
+          ++it;
+        } // while opposite-weight Poisson atoms to fuse
+      }
       while (!poissonMap.empty())
       {
         const Scalar w = poissonMap.begin()->first;

@@ -137,6 +137,26 @@ checkMixture(
     d, atoms, weights, 2.0, ["Poisson", "Poisson", "Poisson"]
 )
 
+# Test fusion of opposite-weight Poisson atoms into a Skellam atom weighted
+# by the absolute value of their weights
+ot.ResourceMap.SetAsUnsignedInteger("LinearCombinationDistribution-MaximumSupportSize", 10000)
+# identical parameters
+atoms = [ot.Poisson(2.0), ot.Poisson(2.0)]
+d = ot.LinearCombinationDistribution(atoms, [2.5, -2.5], 2.0)
+checkMixture(d, atoms, [2.5, -2.5], 2.0, ["Skellam"])
+checkWeights(d, [2.5])
+ott.assert_almost_equal(
+    d.getDistributionCollection()[0].getParameter(), [2.0, 2.0], 0.0, 0.0
+)
+# different parameters
+atoms = [ot.Poisson(2.0), ot.Poisson(3.0)]
+d = ot.LinearCombinationDistribution(atoms, [1.5, -1.5], 2.0)
+checkMixture(d, atoms, [1.5, -1.5], 2.0, ["Skellam"])
+checkWeights(d, [1.5])
+ott.assert_almost_equal(
+    d.getDistributionCollection()[0].getParameter(), [2.0, 3.0], 0.0, 0.0
+)
+
 # Test merge of discrete and continuous atoms
 # Deactivate the fusion of discrete atoms
 ot.ResourceMap.SetAsUnsignedInteger("LinearCombinationDistribution-MaximumSupportSize", 0)
