@@ -29,6 +29,7 @@
 #include "openturns/Brent.hxx"
 #include "openturns/SobolSequence.hxx"
 #include "openturns/IdentityFunction.hxx"
+#include "openturns/ComposedFunction.hxx"
 
 BEGIN_NAMESPACE_OPENTURNS
 
@@ -121,6 +122,14 @@ void CompositeDistribution::setFunctionAndAntecedent(const Function & function,
   if (function.getInputDimension() != 1) throw InvalidArgumentException(HERE) << "Error: the function must have an input dimension equal to 1, here input dimension=" << function.getInputDimension();
   if (function.getOutputDimension() != 1) throw InvalidArgumentException(HERE) << "Error: the function must have an output dimension equal to 1, here input dimension=" << function.getOutputDimension();
   if (antecedent.getDimension() != 1) throw InvalidArgumentException(HERE) << "Error: the antecedent must have dimension 1. Here dimension=" << antecedent.getDimension();
+  // If the antecedent is itself a composite distribution, compose the two
+  // functions so that the antecedent remains non composite, see issue #1479
+  const CompositeDistribution * compositeAntecedent = dynamic_cast<const CompositeDistribution *>(antecedent.getImplementation().get());
+  if (compositeAntecedent)
+  {
+    setFunctionAndAntecedent(Function(new ComposedFunction(function, compositeAntecedent->getFunction())), compositeAntecedent->getAntecedent());
+    return;
+  }
   function_ = function;
   antecedent_ = antecedent;
   isAlreadyComputedMean_ = false;

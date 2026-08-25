@@ -167,3 +167,22 @@ assert not (d1 == d2), "different function should not be equal"
 assert d1 != d2, "different function should be different"
 d3 = ot.CompositeDistribution(f, ot.Uniform())  # different antecedent
 assert not (d1 == d3), "different antecedent should not be equal"
+
+# Nesting composite distributions composes the functions and keeps a
+# non-composite antecedent, see issue #1479
+g = ot.SymbolicFunction(["x"], ["sin(x) + cos(x)"])
+h = ot.SymbolicFunction(["x"], ["x^3"])
+distY = ot.CompositeDistribution(g, ot.Normal(1.0, 0.5))
+distZ = ot.CompositeDistribution(h, distY)
+antecedent_class = distZ.getAntecedent().getImplementation().getClassName()
+assert antecedent_class != "CompositeDistribution", "antecedent not composite"
+# for increasing h, F_Z(z) = F_Y(h^-1(z))
+z = 2.0
+hinv = z ** (1.0 / 3.0)
+ott.assert_almost_equal(distZ.computeCDF([z]), distY.computeCDF([hinv]))
+# same law as the explicitly composed version
+expected = ot.CompositeDistribution(
+    ot.ComposedFunction(h, distY.getFunction()), distY.getAntecedent()
+)
+ott.assert_almost_equal(distZ.computeCDF([1.2]), expected.computeCDF([1.2]))
+ott.assert_almost_equal(distZ.computePDF([1.2]), expected.computePDF([1.2]))
