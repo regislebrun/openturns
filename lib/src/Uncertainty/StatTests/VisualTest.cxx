@@ -41,7 +41,9 @@ static String VisualTestGetPointStyle(const UnsignedInteger size)
   else if (size < mediumSize)
     return"bullet";
   else
-    return "dot";
+    // dots are almost invisible, use crosses so that outliers remain visible
+    // even for very large samples, see issue #1357
+    return "plus";
 }
 
 /* Draw the QQplot of the two Samples when its dimension is 1 */
