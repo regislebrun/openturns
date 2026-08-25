@@ -47,6 +47,17 @@ The correlation function :math:`\rho` writes:
 
 and is equal to zero outside the sphere.
 
+The spherical covariance function is positive definite for spatial dimensions
+:math:`n \leq 3`. For :math:`n \geq 4`, it is generally *not* positive definite,
+so covariance matrices built from it may fail to be factored. See
+[Stein1999] for a discussion of the positive definiteness of covariance
+functions.
+
+References
+----------
+Stein, M. L. (1999). *Interpolation of Spatial Data: Some Theory for Kriging.*
+Springer, New York.
+
 
 See Also
 --------
