@@ -270,8 +270,8 @@ def computeSobolIndicesConfidenceInterval(fo_sample, to_sample, alpha=0.95):
     """
     if fo_sample.getSize() == 0 or to_sample.getSize() == 0:
         raise ValueError(
-            "Empty bootstrap sample: all Sobol' index estimates were "
-            "rejected. Try increasing the training sample size."
+            "Cannot compute confidence intervals: either the first order "
+            "or the total order Sobol' indices sample is empty."
         )
     dim_input = fo_sample.getDimension()
     fo_lb = [0] * dim_input
