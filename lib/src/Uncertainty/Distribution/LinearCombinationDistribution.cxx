@@ -3252,9 +3252,7 @@ void LinearCombinationDistribution::adaptBand()
     // the characteristic values are recycled
     bandBeta_ = probedBeta;
     computeRange();
-    fprintf(stderr, "TRACE widen to %.6g\n", bandBeta_);
     computeReferenceBandwidth(true);
-    fprintf(stderr, "TRACE recycled\n");
   } // while
 }
 

@@ -91,7 +91,9 @@ fig = plt.figure(figsize=(11, 22 / 3))
 index = 1
 factor = 0.5
 
+numericalPrecision = ot.PlatformInfo.GetNumericalPrecision()
 ot.PlatformInfo.SetNumericalPrecision(3)
+
 grid = ot.GridLayout(2, 3)
 grid.setTitle("VonMisesFisher(mu, kappa)")
 for i, mu in enumerate([[-1.0, -1.0, -1.0], [0.0, 0.0, -1.0]]):
@@ -111,3 +113,5 @@ for i, mu in enumerate([[-1.0, -1.0, -1.0], [0.0, 0.0, -1.0]]):
         grid.setGraph(i, j, pdf_graph)
 otv.View(grid, figure=fig, add_legend=True, square_axes=True)
 plt.subplots_adjust(wspace=0.3, hspace=0.3)
+
+ot.PlatformInfo.SetNumericalPrecision(numericalPrecision)
