@@ -91,6 +91,7 @@ int main(int, char *[])
         try
         {
           Mesh badMesh(vertices, IndicesCollection(Collection<Indices>(1, badIndices)), true);
+          (void)badMesh;
         }
         catch (const InvalidArgumentException &)
         {
@@ -107,6 +108,7 @@ int main(int, char *[])
         try
         {
           Mesh badMesh(vertices, IndicesCollection(Collection<Indices>(1, badIndices)), true);
+          (void)badMesh;
         }
         catch (const InvalidArgumentException &)
         {
