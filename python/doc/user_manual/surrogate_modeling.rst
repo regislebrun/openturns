@@ -92,6 +92,8 @@ Main classes
     GaussianProcessFitterResult
     experimental.SparseGaussianProcessFitterResult
     experimental.GaussianProcessRegressionCrossValidation
+    experimental.SparseGaussianProcessEvaluation
+    experimental.SparseGaussianProcessGradient
     GaussianProcessConditionalCovariance
     GaussianProcessRandomVector
     KrigingAlgorithm
