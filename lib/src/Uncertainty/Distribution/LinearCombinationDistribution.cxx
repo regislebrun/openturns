@@ -87,6 +87,7 @@ LinearCombinationDistribution::LinearCombinationDistribution()
   , characteristicValuesCache_(0)
   , alpha_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultAlpha" ))
   , beta_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultBeta" ))
+  , bandBeta_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultBeta" ))
   , pdfPrecision_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultPDFEpsilon" ))
   , cdfPrecision_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultCDFEpsilon" ))
   , equivalentNormal_()
@@ -123,6 +124,7 @@ LinearCombinationDistribution::LinearCombinationDistribution(const DistributionC
   , characteristicValuesCache_(0)
   , alpha_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultAlpha" ))
   , beta_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultBeta" ))
+  , bandBeta_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultBeta" ))
   , pdfPrecision_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultPDFEpsilon" ))
   , cdfPrecision_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultCDFEpsilon" ))
   , equivalentNormal_()
@@ -163,6 +165,7 @@ LinearCombinationDistribution::LinearCombinationDistribution(const DistributionC
   , characteristicValuesCache_(0)
   , alpha_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultAlpha" ))
   , beta_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultBeta" ))
+  , bandBeta_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultBeta" ))
   , pdfPrecision_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultPDFEpsilon" ))
   , cdfPrecision_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultCDFEpsilon" ))
   , equivalentNormal_()
@@ -204,6 +207,7 @@ LinearCombinationDistribution::LinearCombinationDistribution(const DistributionC
   , characteristicValuesCache_(0)
   , alpha_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultAlpha" ))
   , beta_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultBeta" ))
+  , bandBeta_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultBeta" ))
   , pdfPrecision_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultPDFEpsilon" ))
   , cdfPrecision_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultCDFEpsilon" ))
   , equivalentNormal_()
@@ -246,6 +250,7 @@ LinearCombinationDistribution::LinearCombinationDistribution(const DistributionC
   , characteristicValuesCache_(0)
   , alpha_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultAlpha" ))
   , beta_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultBeta" ))
+  , bandBeta_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultBeta" ))
   , pdfPrecision_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultPDFEpsilon" ))
   , cdfPrecision_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultCDFEpsilon" ))
   , equivalentNormal_()
@@ -285,6 +290,7 @@ LinearCombinationDistribution::LinearCombinationDistribution(const DistributionC
   , characteristicValuesCache_(0)
   , alpha_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultAlpha" ))
   , beta_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultBeta" ))
+  , bandBeta_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultBeta" ))
   , pdfPrecision_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultPDFEpsilon" ))
   , cdfPrecision_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultCDFEpsilon" ))
   , equivalentNormal_()
@@ -322,6 +328,7 @@ LinearCombinationDistribution::LinearCombinationDistribution(const DistributionC
   , characteristicValuesCache_(0)
   , alpha_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultAlpha" ))
   , beta_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultBeta" ))
+  , bandBeta_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultBeta" ))
   , pdfPrecision_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultPDFEpsilon" ))
   , cdfPrecision_(ResourceMap::GetAsScalar( "LinearCombinationDistribution-DefaultCDFEpsilon" ))
   , equivalentNormal_()
@@ -1413,6 +1420,9 @@ Scalar LinearCombinationDistribution::computePDF(const Point & point) const
   // hX is only useful in 1D
   Scalar hX = referenceBandwidth_[0] * point[0];
   Scalar error = 2.0 * precision;
+  // Warm up the equivalent normal covariance cache before entering the
+  // parallel section to avoid a data race on isAlreadyComputedCovariance_
+  if (dimension_ > 1) equivalentNormal_.getCovariance();
   LOGDEBUG(OSS() << std::setprecision(20) << "h=" << referenceBandwidth_ << ", equivalent normal pdf sum=" << value << ", k=" << k << ", precision=" << precision << ", kmin=" << kmin << ", kmax=" << kmax << ", error=" << error);
   while ( (k < kmin) || ( (k < kmax) && (error > precision) ) )
   {
@@ -2520,12 +2530,20 @@ Scalar LinearCombinationDistribution::computeProbability(const Interval & interv
     const Scalar savedPdfPrecision = pdfPrecision_;
     pdfPrecision_ = std::pow(SpecFunc::ScalarEpsilon, 2.0 / (3.0 * dimension_));
     Scalar probability;
-    // Generic implementation for continuous distributions
-    if (isContinuous()) probability = computeProbabilityContinuous(interval);
-    // Generic implementation for discrete distributions
-    else if (isDiscrete()) probability = computeProbabilityDiscrete(interval);
-    // Generic implementation for general distributions
-    else probability = computeProbabilityGeneral(interval);
+    try
+    {
+      // Generic implementation for continuous distributions
+      if (isContinuous()) probability = computeProbabilityContinuous(interval);
+      // Generic implementation for discrete distributions
+      else if (isDiscrete()) probability = computeProbabilityDiscrete(interval);
+      // Generic implementation for general distributions
+      else probability = computeProbabilityGeneral(interval);
+    }
+    catch (...)
+    {
+      pdfPrecision_ = savedPdfPrecision;
+      throw;
+    }
     pdfPrecision_ = savedPdfPrecision;
     return probability;
   }
@@ -3384,6 +3402,7 @@ void LinearCombinationDistribution::recycleCharacteristicValues(const SphereUnif
   // The recycled levels of the new mesh go from 1 to twice the old ones,
   // capped by the maximum size of the cache. The values are appended
   // sequentially, reusing the old entries whenever possible
+  const ComplexPersistentCollection oldCache(characteristicValuesCache_);
   storedSize_ = 0;
   characteristicValuesCache_ = ComplexPersistentCollection(0);
   Point pti(dimension);
@@ -3397,26 +3416,31 @@ void LinearCombinationDistribution::recycleCharacteristicValues(const SphereUnif
       SignedInteger c[3] = {0, 0, 0};
       for (UnsignedInteger k = 0; k < dimension; ++k)
       {
-        const SignedInteger np = static_cast<SignedInteger>(std::lround(points(i, k) / referenceBandwidth_[k]));
+        pti[k] = points(i, k);
+        const SignedInteger np = static_cast<SignedInteger>(std::lround(pti[k] / referenceBandwidth_[k]));
         if (((np % 2) != 0) || (std::abs(np) >= static_cast<SignedInteger>(bias)))
         {
           recyclable = false;
           break;
         }
         c[k] = np / 2;
-        pti[k] = points(i, k);
       }
+      Bool found = false;
       Complex value(0.0, 0.0);
       if (recyclable)
       {
-        const UnsignedInteger oldLevel = static_cast<UnsignedInteger>(std::max(std::max(std::abs(c[0]), std::abs(c[1])), std::abs(c[2])));
+        const UnsignedInteger oldLevel = static_cast<SignedInteger>(std::max(std::max(std::abs(c[0]), std::abs(c[1])), std::abs(c[2])));
         if ((oldLevel >= 1) && (oldLevel <= oldLevels))
         {
           const auto it = lookup.find(pack(c));
-          if (it != lookup.end()) value = characteristicValuesCache_[it->second];
+          if (it != lookup.end())
+          {
+            value = oldCache[it->second];
+            found = true;
+          }
         }
       }
-      if (value == Complex(0.0, 0.0)) value = computeDeltaCharacteristicFunction(pti);
+      if (!found) value = computeDeltaCharacteristicFunction(pti);
       characteristicValuesCache_.add(value);
       ++storedSize_;
     } // points of the level

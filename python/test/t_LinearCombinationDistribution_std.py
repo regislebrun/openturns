@@ -359,22 +359,26 @@ ott.assert_almost_equal(
 # For ticket 953
 atom1 = ot.TruncatedDistribution(ot.Uniform(0.0, 1.0), 0.0, 1.0)
 atom2 = ot.Uniform(0.0, 2.0)
-sum = atom1 + atom2
-ott.assert_almost_equal(sum.computeCDF(2.0), 0.75, 1e-10, 1e-12, "ticket 953 cdf")
-quantile = sum.computeQuantile(0.2)[0]
-ott.assert_almost_equal(quantile, sqrt(0.8), 1e-8, 1e-10, "ticket 953 quantile")
+total = atom1 + atom2
+ott.assert_almost_equal(
+    total.computeCDF(2.0), 0.75, 1e-10, 1e-12, "ticket 953 cdf"
+)
+quantile = total.computeQuantile(0.2)[0]
+ott.assert_almost_equal(
+    quantile, sqrt(0.8), 1e-8, 1e-10, "ticket 953 quantile"
+)
 minS = 0.2
 maxS = 10.0
 muS = (log(minS) + log(maxS)) / 2.0
 sigma = (log(maxS) - muS) / 3.0
 atom1 = ot.TruncatedDistribution(ot.LogNormal(muS, sigma), minS, maxS)
 atom2 = ot.Uniform(0.0, 2.0)
-sum = atom1 + atom2
-cdfValue = sum.computeCDF(2.0)
+total = atom1 + atom2
+cdfValue = total.computeCDF(2.0)
 ott.assert_almost_equal(cdfValue, 0.306712, 1e-5, 1e-8, "ticket 953 bis cdf")
-quantile = sum.computeQuantile(0.2)[0]
+quantile = total.computeQuantile(0.2)[0]
 ott.assert_almost_equal(
-    sum.computeCDF(quantile), 0.2, 1e-6, 1e-8, "ticket 953 bis quantile"
+    total.computeCDF(quantile), 0.2, 1e-6, 1e-8, "ticket 953 bis quantile"
 )
 # For ticket 1129
 dist = ot.LinearCombinationDistribution([ot.Uniform()] * 200)

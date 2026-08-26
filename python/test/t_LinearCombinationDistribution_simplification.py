@@ -75,8 +75,12 @@ d = ot.LinearCombinationDistribution(atoms, [0.5, 2.5, 3.0], 2.0)
 checkMixture(d, atoms, [0.5, 2.5, 3.0], 2.0, ["Logistic", "Normal"])
 # The Normal atom absorbs the constant and the aggregated normal part
 coll = d.getDistributionCollection()
-assert coll[1].getParameter()[0] == 8.5, "wrong merged Normal mean"
-assert coll[1].getParameter()[1] == 5.0, "wrong merged Normal sigma"
+ott.assert_almost_equal(
+    coll[1].getParameter()[0], 8.5, 1e-10, 1e-12, "wrong merged Normal mean"
+)
+ott.assert_almost_equal(
+    coll[1].getParameter()[1], 5.0, 1e-10, 1e-12, "wrong merged Normal sigma"
+)
 checkWeights(d, [2.5, 1.0])
 
 # Test merge of Exponential, Gamma and ChiSquare atoms
