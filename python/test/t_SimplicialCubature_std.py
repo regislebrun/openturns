@@ -87,12 +87,20 @@ for _ in range(3):
 assert f.getCallsNumber() > meshUniform.getSimplicesNumber() * 16
 
 # The batched evaluation must give the same result for any block size
-f = ot.SymbolicFunction(["x1", "x2", "x3"], ["exp(-10.0 * (x1 + x2 + x3))"])
-algo.setMaximumRelativeError(1e-6)
-for blockSize in [2048, 7, 1]:
-    ot.ResourceMap.SetAsUnsignedInteger("SimplicialCubature-EvaluationBlockSize", blockSize)
-    value = algo.integrate(f, meshUniform)
-    ott.assert_almost_equal(value[0], valueRef, 1e-6, 1e-8)
+savedBlockSize = ot.ResourceMap.GetAsUnsignedInteger("SimplicialCubature-EvaluationBlockSize")
+try:
+    f = ot.SymbolicFunction(["x1", "x2", "x3"], ["exp(-10.0 * (x1 + x2 + x3))"])
+    algo.setMaximumRelativeError(1e-6)
+    reference = None
+    for blockSize in [2048, 7, 1]:
+        ot.ResourceMap.SetAsUnsignedInteger("SimplicialCubature-EvaluationBlockSize", blockSize)
+        value = algo.integrate(f, meshUniform)
+        ott.assert_almost_equal(value[0], valueRef, 1e-6, 1e-8)
+        if reference is None:
+            reference = value
+        ott.assert_almost_equal(value, reference, 0.0, 1e-12)
+finally:
+    ot.ResourceMap.SetAsUnsignedInteger("SimplicialCubature-EvaluationBlockSize", savedBlockSize)
 
 # Invalid inputs are rejected
 ot.ResourceMap.SetAsUnsignedInteger("SimplicialCubature-EvaluationBlockSize", 2048)
