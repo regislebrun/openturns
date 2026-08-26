@@ -59,6 +59,8 @@ SparseGaussianProcessEvaluation::SparseGaussianProcessEvaluation(const Covarianc
   , posteriorMean_(posteriorMean)
   , posteriorCovariance_(posteriorCovariance)
 {
+  if (covarianceModel.getOutputDimension() != 1)
+    throw InvalidArgumentException(HERE) << "In SparseGaussianProcessEvaluation::SparseGaussianProcessEvaluation, the covariance model must have output dimension 1, here output dimension = " << covarianceModel.getOutputDimension();
   if (covarianceModel.getInputDimension() != inducingPoints.getDimension())
     throw InvalidArgumentException(HERE) << "In SparseGaussianProcessEvaluation::SparseGaussianProcessEvaluation, the input dimension=" << covarianceModel.getInputDimension() << " of the covariance model should match the dimension=" << inducingPoints.getDimension() << " of the inducing points";
   const UnsignedInteger M = inducingPoints.getSize();

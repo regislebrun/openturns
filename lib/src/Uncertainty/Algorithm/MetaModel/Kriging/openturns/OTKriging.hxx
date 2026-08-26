@@ -39,6 +39,7 @@
 #include "openturns/SparseGaussianProcessFitterResult.hxx"
 #include "openturns/SparseGaussianProcessEvaluation.hxx"
 #include "openturns/SparseGaussianProcessGradient.hxx"
+#include "openturns/SparseGaussianProcessHessian.hxx"
 #include "openturns/SparseGaussianProcessFitter.hxx"
 #include "openturns/SparseGaussianProcessRegression.hxx"
 

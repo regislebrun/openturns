@@ -478,6 +478,13 @@ Point GaussianProcessFitter::computeReducedLogLikelihoodGradient(const Point & p
   // s = ||rho||^2 (before the scaling by sigma) and the weight of the
   // quadratic term is w = N/s, see the reverse sweep below.
   const Scalar s = rho.normSquare();
+  if (analyticalAmplitude_ && s == 0.0)
+  {
+    // The trend perfectly fits the data: the gradient is zero for all parameters.
+    reducedCovarianceModel_.setParameter(savedParameter);
+    reducedCovarianceModel_.setAmplitude(savedAmplitude);
+    return Point(covarianceParameterSize, 0.0);
+  }
   const Scalar w = analyticalAmplitude_ ? static_cast<Scalar>(size) / s : 1.0;
 
   // Reverse sweep
@@ -746,8 +753,10 @@ Function GaussianProcessFitter::getReducedLogLikelihoodFunction()
 {
   computeF();
   MemoizeFunction logLikelihood(ReducedLogLikelihoodEvaluation(*this));
-  // Here we use the analytical gradient of the reduced log-likelihood
-  logLikelihood.setGradient(ReducedLogLikelihoodGradient(*this).clone());
+  // The analytic gradient is only implemented for the LAPACK backend.
+  // With HMAT, rely on the default finite-difference gradient.
+  if (method_ == GaussianProcessFitterResult::LAPACK)
+    logLikelihood.setGradient(ReducedLogLikelihoodGradient(*this).clone());
   logLikelihood.enableCache();
   return logLikelihood;
 }

@@ -89,7 +89,15 @@ public:
   Bool getOptimizeNoiseVariance() const;
   void setOptimizeNoiseVariance(const Bool optimizeNoiseVariance);
 
-  /** Noise variance accessor */
+  /** Noise standard deviation accessor
+
+      NOTE: Despite the name, this stores the noise *standard deviation*,
+      not the variance.  The actual variance used in the ELBO is
+      sigma^2 = noiseStdDev^2.  The ResourceMap key
+      SparseGaussianProcessFitter-DefaultNoiseStdDev stores the default
+      standard deviation.  The optimization parameter is
+      log(noiseStdDev).
+  */
   Scalar getNoiseVariance() const;
   void setNoiseVariance(const Scalar noiseVariance);
 
@@ -286,7 +294,7 @@ private:
   // The inducing points
   Sample inducingPoints_;
 
-  // The noise variance
+  // The noise standard deviation (NOT variance; sigma2 = noiseVariance_^2)
   Scalar noiseVariance_;
 
   // The optimization algorithm used for the meta-parameters estimation
