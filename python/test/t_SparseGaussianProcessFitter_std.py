@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import math
+import os
 
 import numpy as np
 
@@ -81,9 +82,11 @@ def test_elbo_matches_exact_log_likelihood():
             [[covarianceModel.computeAsScalar(Xn[i], Xn[j]) for j in range(N)] for i in range(N)]
         )
         Knp = Kff + np.eye(N) * sigma * sigma
+        sign, logdet = np.linalg.slogdet(Knp)
+        assert sign > 0.0
         exact = -0.5 * (
             N * np.log(2.0 * np.pi)
-            + np.log(np.linalg.det(Knp))
+            + logdet
             + Yn.dot(np.linalg.solve(Knp, Yn))
         )
         ott.assert_almost_equal(elbo, exact, 1e-6, 1e-9)
@@ -613,6 +616,7 @@ def test_save_load():
         1e-10,
         1e-10,
     )
+    os.remove(filename)
 
 
 def test_resource_map_default_noise_variance_zero():

@@ -138,11 +138,7 @@ String SparseGaussianProcessRegression::__repr__() const
 SparseGaussianProcessFitterResult SparseGaussianProcessRegression::getResult() const
 {
   if (!hasRun_)
-  {
-    // run() is not const: refit through a mutable copy of the regression
-    SparseGaussianProcessRegression * self = const_cast<SparseGaussianProcessRegression *>(this);
-    self->run();
-  }
+    throw InvalidArgumentException(HERE) << "In SparseGaussianProcessRegression::getResult, call run() first";
   return result_;
 }
 

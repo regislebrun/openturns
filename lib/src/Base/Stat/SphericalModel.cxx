@@ -243,7 +243,7 @@ Matrix SphericalModel::partialGradient(const Point & s,
   }
   normTauOverScale = std::sqrt(normTauOverScale);
   // At zero norm the gradient is not defined (conical kernel): fall back to the finite-difference implementation
-  if (normTauOverScale == 0.0) return CovarianceModelImplementation::partialGradient(s, t);
+  if (normTauOverScale <= SpecFunc::ScalarEpsilon) return CovarianceModelImplementation::partialGradient(s, t);
   const Scalar z = normTauOverScale / radius_;
   // Outside the support the kernel vanishes
   if (z >= 1.0) return Matrix(inputDimension_, 1);
@@ -271,7 +271,7 @@ SymmetricMatrix SphericalModel::partialHessian(const Point & s,
   }
   norm = std::sqrt(norm) / radius_;
   // At zero norm the Hessian is not defined: fall back to the finite-difference implementation
-  if (norm == 0.0) return CovarianceModelImplementation::partialHessian(s, t);
+  if (norm <= SpecFunc::ScalarEpsilon) return CovarianceModelImplementation::partialHessian(s, t);
   // Outside the support the kernel vanishes
   if (norm >= 1.0) return SymmetricMatrix(inputDimension_);
   // k(s, t) = amplitude^2 (1 - 1.5 z + 0.5 z^3), z = ||tau/scale|| / radius

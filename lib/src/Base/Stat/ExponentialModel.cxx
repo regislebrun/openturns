@@ -249,10 +249,12 @@ Matrix ExponentialModel::parameterGradient(const Point & s,
   // Multivariate case: C(i,j) = amplitude_i * R_ij * amplitude_j * rho(tau)
   const Scalar rho = isZero ? 1.0 + nuggetFactor_ : std::exp(-norm);
   // Scalar derivative of rho wrt the scales
-  Point rhoScaleGradient(inputDimension_, 0.0);
+  // d(log rho)/dscale_i = tau_i^2 / (norm * scale_i^3), so that the rho factor
+  // cancels analytically when multiplying covariance(i,j) * d(rho)/dscale_i
+  Point logRhoScaleGradient(inputDimension_, 0.0);
   if (!isZero)
     for (UnsignedInteger i = 0; i < inputDimension_; ++i)
-      rhoScaleGradient[i] = rho * tau[i] * tau[i] / (norm * scale_[i] * scale_[i] * scale_[i]);
+      logRhoScaleGradient[i] = tau[i] * tau[i] / (norm * scale_[i] * scale_[i] * scale_[i]);
   const SquareMatrix covariance(operator()(s, t));
   // Full gradient wrt all the parameters, one row per parameter
   const UnsignedInteger fullSize = inputDimension_ + 1 + outputDimension_ + outputDimension_ * (outputDimension_ - 1) / 2;
@@ -263,7 +265,7 @@ Matrix ExponentialModel::parameterGradient(const Point & s,
     UnsignedInteger index = 0;
     for (UnsignedInteger j = 0; j < outputDimension_; ++j)
       for (UnsignedInteger i = 0; i < outputDimension_; ++i, ++index)
-        fullGradient(k, index) = covariance(i, j) * rhoScaleGradient[k] / rho;
+        fullGradient(k, index) = covariance(i, j) * logRhoScaleGradient[k];
   }
   // Gradient wrt the nugget factor
   if (isZero)

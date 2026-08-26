@@ -246,7 +246,7 @@ Matrix ExponentiallyDampedCosineModel::partialGradient(const Point & s,
   }
   z = std::sqrt(z);
   // At zero norm the gradient is not defined (conical kernel): fall back to the finite-difference implementation
-  if (z == 0.0) return CovarianceModelImplementation::partialGradient(s, t);
+  if (z <= SpecFunc::ScalarEpsilon) return CovarianceModelImplementation::partialGradient(s, t);
   // k(s, t) = amplitude^2 exp(-z) cos(omega z), z = ||tau/scale||, omega = 2 pi frequency
   // dk/dz = amplitude^2 exp(-z) (-cos(omega z) - omega sin(omega z)), dz/dtau_a = tau_a / (scale_a^2 z)
   const Scalar omega = 2.0 * M_PI * frequency_;
@@ -272,7 +272,7 @@ SymmetricMatrix ExponentiallyDampedCosineModel::partialHessian(const Point & s,
   }
   norm = std::sqrt(norm);
   // At zero norm the Hessian is not defined: fall back to the finite-difference implementation
-  if (norm == 0.0) return CovarianceModelImplementation::partialHessian(s, t);
+  if (norm <= SpecFunc::ScalarEpsilon) return CovarianceModelImplementation::partialHessian(s, t);
   // k(s, t) = amplitude^2 exp(-z) cos(omega z), z = ||tau/scale||, omega = 2 pi frequency
   // d^2 k / ds_a ds_b = u_a u_b [rho''(z) z - rho'(z)] / z^3
   //   + delta_ab rho'(z) / (scale_a^2 z), with u_i = tau_i / scale_i^2
