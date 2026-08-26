@@ -280,6 +280,9 @@ void SparseGaussianProcessFitter::setMethod(const LinearAlgebra method)
 {
   if (method != method_)
   {
+    if (method != SparseGaussianProcessFitterResult::LAPACK &&
+        method != SparseGaussianProcessFitterResult::HMAT)
+      throw InvalidArgumentException(HERE) << "In SparseGaussianProcessFitter::setMethod, expecting LAPACK or HMAT, got " << static_cast<UnsignedInteger>(method);
     method_ = method;
     reset();
   }
@@ -502,6 +505,7 @@ Point SparseGaussianProcessFitter::computeELBOGradient(const Point & parameters)
 
   const UnsignedInteger N = inputSample_.getSize();
   const UnsignedInteger M = inducingPoints.getSize();
+  // noiseVariance is the noise standard deviation; sigma2 is the actual variance
   const Scalar sigma2 = noiseVariance * noiseVariance;
   const Bool hasTrace = (M < N);
 
