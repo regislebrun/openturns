@@ -87,12 +87,16 @@ Graph VisualTest::DrawQQplot(const Sample & sample,
   if (dist.getDimension() != 1) throw InvalidDimensionException(HERE) << "Error: can draw a QQplot only if dimension equals 1, here dimension=" << dist.getDimension();
   const Sample sortedSample(sample.sortUnique());
   if (!(sortedSample.getSize() >= 2)) throw InvalidArgumentException(HERE) << "Sample must have at least 2 distinct points";
-  const UnsignedInteger size = sortedSample.getSize() - 1;// avoids last point with p=1
+  // The largest observation is kept by capping its probability to 1 minus
+  // the machine precision, see #2498
+  const Scalar pMax = 1.0 - SpecFunc::Precision;
+  const UnsignedInteger size = sortedSample.getSize();
   Sample data(size, 2);
   for (UnsignedInteger i = 0; i < size; ++ i)
   {
     data(i, 0) = sortedSample(i, 0);
-    const Scalar p = sample.computeEmpiricalCDF(sortedSample[i]);
+    Scalar p = sample.computeEmpiricalCDF(sortedSample[i]);
+    if (p >= 1.0) p = pMax;
     data(i, 1) = dist.computeScalarQuantile(p);
   }
   Cloud cloudQQplot(data);
