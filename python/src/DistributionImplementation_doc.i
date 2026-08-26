@@ -3728,3 +3728,5 @@ levelSets : collection of :class:`~openturns.LevelSet`
 %enddef
 %feature("docstring") OT::Distribution::computeMinimumVolumeLevelSetCollectionWithThreshold
 OT_Distribution_computeMinimumVolumeLevelSetCollectionWithThreshold_doc
+%feature("docstring") OT::DistributionImplementation::computeMinimumVolumeLevelSetCollectionWithThreshold
+OT_Distribution_computeMinimumVolumeLevelSetCollectionWithThreshold_doc
