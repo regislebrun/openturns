@@ -1245,6 +1245,7 @@ private:
    formula 5.5.
    We use an incremental update of the trigonometric functions and reduce the complex arithmetic to a real
    arithmetic for performance purpose.
+ */
 
 /* Accumulate the contributions of the points of one level of the grid, either
    from the characteristic values cache or by direct evaluation. The range is
