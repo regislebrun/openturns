@@ -1408,6 +1408,18 @@ void ResourceMap::loadDefaultConfiguration()
   addAsString("StudentCopulaFactory-DefaultOptimizationAlgorithm", "Cobyla");
   addAsUnsignedInteger("StudentCopulaFactory-MaximumCallsNumber", 1000);
 
+  // Genz parameters //
+
+  addAsUnsignedInteger("Genz-DefaultSampleSize", 1048576);
+  addAsString("Genz-LowDiscrepancySequence", "SobolSequence");
+
+  // Ridgway parameters //
+
+  addAsUnsignedInteger("Ridgway-DefaultParticleNumber", 1000);
+  addAsScalar("Ridgway-DefaultAlpha", 0.5);
+  addAsUnsignedInteger("Ridgway-DefaultStudentSampleSize", 1024);
+  addAsString("Ridgway-LowDiscrepancySequence", "SobolSequence");
+
   // FiniteDiscreteDistribution parameters //
   addAsUnsignedInteger("FiniteDiscreteDistribution-SmallSize", 10000);
 
@@ -1420,6 +1432,12 @@ void ResourceMap::loadDefaultConfiguration()
   addAsScalar("VonMisesFactory-RelativePrecision", 1.0e-12);
   addAsScalar("VonMisesFactory-ResidualPrecision", 1.0e-12);
   addAsUnsignedInteger("VonMisesFactory-MaximumIteration", 10);
+
+  // VonMisesFisherFactory parameters //
+  addAsScalar("VonMisesFisherFactory-AbsolutePrecision", 1.0e-12);
+  addAsScalar("VonMisesFisherFactory-RelativePrecision", 1.0e-12);
+  addAsScalar("VonMisesFisherFactory-ResidualPrecision", 1.0e-12);
+  addAsUnsignedInteger("VonMisesFisherFactory-MaximumIteration", 10);
 
   // Wishart parameters //
   addAsScalar("Wishart-CDFScaleFactor", 0.5);
@@ -1613,6 +1631,12 @@ void ResourceMap::loadDefaultConfiguration()
   addAsScalar("GaussianProcessFitter-OptimizationUpperBoundScaleFactor", 2.0);
   addAsString("GaussianProcessFitter-DefaultOptimizationAlgorithm", "Cobyla");
   addAsString("GaussianProcessFitter-LinearAlgebra", "LAPACK", {"LAPACK", "HMAT"});
+
+  // GaussianProcessConditionalCovariance parameters //
+  addAsScalar("GaussianProcessConditionalCovariance-DefaultConfidenceLevel", 0.95);
+
+  // GaussianProcessRegressionCrossValidation- parameters //
+  addAsUnsignedInteger("GaussianProcessRegressionCrossValidation-DefaultBlockSize", 100);
 
   // KrigingAlgorithm parameters //
   addAsString("KrigingAlgorithm-LinearAlgebra", "LAPACK", {"LAPACK", "HMAT"});

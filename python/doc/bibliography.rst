@@ -420,6 +420,8 @@ Bibliography
 .. [park1990] Byeong U. Park and J. S. Marron.
     *Comparison of data-driven bandwidth selectors.*
     Journal of the American Statistical Association, 85(409) :66–72, 1990.
+.. [pinzon2023] Carlos Pinzón, Kangsoo Jung. *Fast Python sampler for the von Mises Fisher distribution*.
+    2023. ⟨hal-04004568v2⟩
 .. [pearson1907] Pearson, K. (1901).
     *On lines and planes of closest fit to systems of points in space.*
     The London, Edinburgh, and Dublin philosophical magazine and journal of
@@ -454,6 +456,9 @@ Bibliography
     *The Metropolis-Hastings algorithm.*
     arXiv preprint arXiv:1504.01896, 2015.
     `pdf <https://arxiv.org/pdf/1504.01896.pdf>`__
+.. [ridgway2016] Ridgway, J. (2016). *Computation of Gaussian orthant probabilities in
+    high dimension.* Statistics and Computing, 26(4), 899-916.
+    `pdf <https://arxiv.org/abs/1411.1314>`__
 .. [robertson2024] Robertson, G., Sjöstrand, H., Andersson, P., Göök, A. and Blair, P.
     *Addressing model inadequacy in fuel performance model calibration using MH-within-gibbs sampling.*
     Best Estimate Plus Uncertainty International Conference (BEPU 2024), Real Collegio, Lucca, Tuscany, Italy, May 19–24, 2024.

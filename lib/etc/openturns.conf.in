@@ -331,6 +331,16 @@
   <!-- OT::GaussLegendre parameters -->
   <GaussLegendre-DefaultMarginalIntegrationPointsNumber value_int="64" />
 
+  <!-- OT::Genz parameters -->
+  <Genz-DefaultSampleSize value_int="1048576" />
+  <Genz-LowDiscrepancySequence value_str="SobolSequence" />
+
+  <!-- OT::Ridgway parameters -->
+  <Ridgway-DefaultParticleNumber value_int="1000" />
+  <Ridgway-DefaultAlpha value_float="0.5" />
+  <Ridgway-DefaultStudentSampleSize value_int="1024" />
+  <Ridgway-LowDiscrepancySequence value_str="SobolSequence" />
+
   <!-- OT::FejerExperiment parameters -->
   <FejerExperiment-DefaultMarginalNodesNumber value_int="64" />
 
@@ -771,6 +781,12 @@
   <VonMisesFactory-ResidualPrecision value_float="1e-12"        />
   <VonMisesFactory-MaximumIteration  value_int="10" />
   
+  <!-- OT::VonMisesFisherFactory parameters -->
+  <VonMisesFisherFactory-AbsolutePrecision value_float="1e-12"        />
+  <VonMisesFisherFactory-RelativePrecision value_float="1e-12"        />
+  <VonMisesFisherFactory-ResidualPrecision value_float="1e-12"        />
+  <VonMisesFisherFactory-MaximumIteration  value_int="10" />
+  
   <!-- OT::Wishart parameters -->
   <Wishart-CDFScaleFactor value_float="0.5" />
 
@@ -963,6 +979,12 @@
   <GaussianProcessFitter-OptimizationUpperBoundScaleFactor      value_float="2.0" />
   <GaussianProcessFitter-DefaultOptimizationAlgorithm           value_str="Cobyla"     />
   <GaussianProcessFitter-LinearAlgebra                          value_str="LAPACK"  />
+
+  <!-- OT::GaussianProcessConditionalCovariance parameters -->
+  <GaussianProcessConditionalCovariance-DefaultConfidenceLevel    value_float="0.95"   />
+
+  <!-- OT::GaussianProcessRegressionCrossValidation parameters -->
+  <GaussianProcessRegressionCrossValidation-DefaultBlockSize value_int="100"   />
 
   <!-- OT::KrigingAlgorithm parameters -->
   <KrigingAlgorithm-LinearAlgebra   value_str="LAPACK"  />

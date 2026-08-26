@@ -31,6 +31,12 @@ Scalar Normal2DCDF(const Scalar x1,
                    const Scalar rho,
                    const Bool tail);
 
+Scalar Normal2DRectangularProbability(const Scalar a1,
+                                       const Scalar a2,
+                                       const Scalar b1,
+                                       const Scalar b2,
+                                       const Scalar rho);
+
 END_NAMESPACE_OPENTURNS
 
 #endif /* OPENTURNS_NORMALCDF2D_HXX */

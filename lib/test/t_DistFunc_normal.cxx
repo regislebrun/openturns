@@ -68,6 +68,140 @@ int main(int, char *[])
         fullprint << "rNormal()=" << DistFunc::rNormal() << std::endl;
       }
     } // rNormal
+    // pNormalND (Genz algorithm)
+    {
+      fullprint << "MVN d=1 exact" << std::endl;
+      TriangularMatrix L(1);
+      L(0, 0) = 1.0;
+      const Scalar p = DistFunc::pNormalND({-1.0}, {1.0}, L, 100);
+      const Scalar expected = DistFunc::pNormal(1.0) - DistFunc::pNormal(-1.0);
+      assert_almost_equal(p, expected);
+    }
+    {
+      fullprint << "MVN d=2 independent" << std::endl;
+      const UnsignedInteger dim = 2;
+      TriangularMatrix L(dim);
+      L(0, 0) = 1.0;
+      L(1, 0) = 0.0;
+      L(1, 1) = 1.0;
+      const Point a = {-1.0, -1.0};
+      const Point b = {1.0, 1.0};
+      const Scalar p = DistFunc::pNormalND(a, b, L, 10000);
+      const Scalar p1 = DistFunc::pNormal(1.0) - DistFunc::pNormal(-1.0);
+      const Scalar expected = p1 * p1;
+      assert_almost_equal(p, expected, 1e-2);
+    }
+    {
+      fullprint << "MVN d=2 correlated" << std::endl;
+      const UnsignedInteger dim = 2;
+      CovarianceMatrix sigma(dim);
+      sigma(0, 0) = 1.0;
+      sigma(1, 0) = 0.5;
+      sigma(1, 1) = 2.0;
+      const TriangularMatrix L(sigma.computeCholesky());
+      const Point a = {-1.0, -2.0};
+      const Point b = {1.0, 2.0};
+      const Scalar p = DistFunc::pNormalND(a, b, L, 10000);
+      assert_almost_equal(p, 0.5, 2e-1);
+    }
+    {
+      fullprint << "MVN d=2 with mu" << std::endl;
+      const UnsignedInteger dim = 2;
+      CovarianceMatrix sigma(dim);
+      sigma(0, 0) = 1.0;
+      sigma(1, 0) = 0.3;
+      sigma(1, 1) = 1.0;
+      const TriangularMatrix L(sigma.computeCholesky());
+      const Point a = {-1.0, -1.0};
+      const Point b = {1.0, 1.0};
+      const Point mu = {0.5, -0.5};
+      const Scalar p = DistFunc::pNormalND(a, b, mu, L, 10000);
+      assert_almost_equal(p, 0.3808, 2e-1);
+    }
+    {
+      fullprint << "Error: dimension mismatch" << std::endl;
+      TriangularMatrix L(2);
+      L(0, 0) = 1.0; L(1, 0) = 0.0; L(1, 1) = 1.0;
+      try
+      {
+        DistFunc::pNormalND({-1.0}, {1.0}, L);
+        throw TestFailed("Exception has NOT been thrown or caught!");
+      }
+      catch (const InvalidDimensionException &)
+      {
+        // expected
+      }
+    }
+    {
+      fullprint << "Error: a > b" << std::endl;
+      TriangularMatrix L(1);
+      L(0, 0) = 1.0;
+      try
+      {
+        DistFunc::pNormalND({1.0}, {-1.0}, L);
+        throw TestFailed("Exception has NOT been thrown or caught!");
+      }
+      catch (const InvalidArgumentException &)
+      {
+        // expected
+      }
+    }
+    {
+      fullprint << "Error: n = 0" << std::endl;
+      TriangularMatrix L(1);
+      L(0, 0) = 1.0;
+      try
+      {
+        DistFunc::pNormalND({-1.0}, {1.0}, L, 0);
+        throw TestFailed("Exception has NOT been thrown or caught!");
+      }
+      catch (const InvalidArgumentException &)
+      {
+        // expected
+      }
+    }
+    {
+      fullprint << "Error: L(i,i) <= 0" << std::endl;
+      TriangularMatrix L(1);
+      L(0, 0) = 0.0;
+      try
+      {
+        DistFunc::pNormalND({-1.0}, {1.0}, L);
+        throw TestFailed("Exception has NOT been thrown or caught!");
+      }
+      catch (const InvalidArgumentException &)
+      {
+        // expected
+      }
+    }
+    {
+      fullprint << "Edge: a == b" << std::endl;
+      TriangularMatrix L(1);
+      L(0, 0) = 1.0;
+      const Scalar p = DistFunc::pNormalND({0.0}, {0.0}, L);
+      assert_almost_equal(p, 0.0, 0.0, 1e-15);
+    }
+    {
+      fullprint << "Edge: wide interval" << std::endl;
+      const UnsignedInteger dim = 2;
+      TriangularMatrix L(dim);
+      L(0, 0) = 1.0; L(1, 0) = 0.0; L(1, 1) = 1.0;
+      const Scalar p = DistFunc::pNormalND({-10.0, -10.0}, {10.0, 10.0}, L);
+      assert_almost_equal(p, 1.0, 1.0, 1e-10);
+    }
+    {
+      fullprint << "MVN d=3 independent" << std::endl;
+      const UnsignedInteger dim = 3;
+      TriangularMatrix L(dim);
+      L(0, 0) = 1.0; L(1, 0) = 0.0; L(2, 0) = 0.0;
+      L(1, 1) = 1.0; L(2, 1) = 0.0; L(2, 2) = 1.0;
+      const Point a = {-1.0, -1.0, -1.0};
+      const Point b = {1.0, 1.0, 1.0};
+      const Scalar p = DistFunc::pNormalND(a, b, L, 10000);
+      const Scalar p1 = DistFunc::pNormal(1.0) - DistFunc::pNormal(-1.0);
+      const Scalar expected = p1 * p1 * p1;
+      assert_almost_equal(p, expected, 1e-2);
+    }
   }
   catch (TestFailed & ex)
   {
