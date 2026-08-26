@@ -1,0 +1,522 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!60!black,urlcolor=blue!60!black]{hyperref}
+\usepackage{enumitem}
+
+\title{Triage report of the 50 oldest open issues\\ \large openturns/openturns --- branch \texttt{bug\_hunt}}
+\author{Automated triage by ox-alpha}
+\date{August 25, 2026}
+
+\begin{document}
+\maketitle
+
+\section{Introduction and method}
+
+This report classifies the 50 oldest \emph{open} issues of the
+\href{https://github.com/openturns/openturns/issues}{openturns GitHub repository},
+ranging from issue \#998 (January 2019) to issue \#1585 (September 2020).
+Each issue body was read from the GitHub API; for ambiguous cases the full
+comment threads were also reviewed and cross-checked against the current
+source tree.
+
+Each issue is assigned:
+\begin{itemize}[noitemsep]
+  \item a \textbf{category}: \emph{actual bug}, \emph{feature request}, or
+        \emph{other} (documentation work, usage questions, duplicates);
+  \item an \textbf{effort estimate}: \emph{easy} (contained change, at most a
+        few files plus a test), \emph{medium} (single subsystem, needs design or
+        broad but mechanical edits), \emph{hard} (new algorithms, API-wide
+        refactors, platform-specific debugging), or \emph{no more valid}
+        (stale, duplicate, support-only, or already superseded in master).
+\end{itemize}
+
+Category assignment follows the \emph{content} of the report rather than its
+GitHub labels, which proved unreliable: several items labelled
+\texttt{enhancement} describe genuine misbehaviours, while some items labelled
+\texttt{doc} hide behavioural questions.
+
+\section{Overview}
+
+\begin{table}[h]
+\centering
+\caption{Effort estimate per category.}
+\begin{tabular}{lrrrrr}
+\toprule
+Category & Easy & Medium & Hard & No longer valid & Total \\
+\midrule
+Bug & 0 & 2 & 4 & 2 & 8 \\
+Feature & 6 & 9 & 10 & 0 & 25 \\
+Other & 8 & 5 & 1 & 3 & 17 \\
+\midrule
+Total & 14 & 16 & 15 & 5 & 50 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Key observations:
+\begin{itemize}[noitemsep]
+  \item Only 16\% of the oldest backlog are confirmed bugs; the backlog is
+        dominated by feature requests (50\%) and documentation/questions (34\%).
+  \item No true bug of this vintage is an ``easy'' fix: the surviving bugs all
+        involve numerical internals, drawing semantics or platform-specific
+        behaviour.
+  \item 5 issues (10\%) are no longer actionable: one duplicate (\#1396), two
+        stale reports predating major renamings (\#1231), superseded
+        implementations (\#1585) or answerable support questions
+        (\#1468, \#1542).
+  \item 14 issues (28\%) qualify as easy wins, mostly documentation and small,
+        well-contained API additions.
+\end{itemize}
+
+\section{Detailed classification}
+
+\footnotesize
+\begin{longtable}{rrp{7.1cm}ll}
+\toprule
+\# & Year & Title & Category & Effort \\
+\midrule
+\endhead
+998 & 2019 & Theory doc for interpolation methods missing & Other & Medium \\
+1056 & 2019 & SRC indices lack confidence bounds & Feature & Hard \\
+1077 & 2019 & Docstrings suggest kwargs are available & Other & Easy \\
+1225 & 2019 & Analytical gradients for kriging parameters estimation & Feature & Hard \\
+1227 & 2019 & Kernel smoothing: user-specified boundary conditions & Feature & Hard \\
+1230 & 2019 & Cannot override setDimension/setDescription from PythonDistribution & Feature & Medium \\
+1231 & 2019 & Cannot save NumericalPointWithDescriptionCollection & Bug & No longer valid \\
+1237 & 2019 & Anderson-Darling test for non-gaussian distributions & Feature & Hard \\
+1239 & 2019 & KernelSmoothing object from Parameters collection & Feature & Medium \\
+1242 & 2019 & Circular dependency ContinuousDistribution/DistributionImplementation & Bug & Hard \\
+1243 & 2019 & UserDefinedStationaryCovarianceModel ctor consistency & Feature & Easy \\
+1244 & 2019 & Performance of OrthonormalizationAlgorithm::getNodesAndWeights & Bug & Hard \\
+1245 & 2019 & Wrong comparison operator for interface classes & Bug & Medium \\
+1246 & 2019 & Distribution comparison improvement (semantic equality) & Feature & Hard \\
+1250 & 2019 & Iso-probabilistic transformation parameters & Bug & Hard \\
+1256 & 2019 & Move simulation draw methods to result classes & Feature & Hard \\
+1262 & 2019 & Storage backend for HistoryStrategy & Feature & Hard \\
+1284 & 2019 & ParetoFactory ML estimator not exact & Feature & Medium \\
+1318 & 2019 & Example of function with discrete input & Other & Easy \\
+1320 & 2019 & PythonCovarianceModel class & Feature & Hard \\
+1322 & 2019 & Fitting methods documentation & Other & Easy \\
+1325 & 2019 & Extract discrete/continuous parts of a distribution & Feature & Hard \\
+1328 & 2019 & GeneralLinearModelAlgorithm log-likelihood code question & Other & Medium \\
+1353 & 2020 & KrigingResult conditional variance as Function & Feature & Medium \\
+1355 & 2020 & Multiprocessing runs on Windows/Anaconda & Bug & Hard \\
+1357 & 2020 & DrawQQplot draws indistinguishable points & Feature & Easy \\
+1358 & 2020 & CorrelationAnalysis class undocumented & Other & Easy \\
+1363 & 2020 & DrawCorrelationCoefficients cannot draw SRC indices & Feature & Easy \\
+1396 & 2020 & MC generation with ComposedDistribution is column-wise & Other & No longer valid \\
+1409 & 2020 & SphericalModel must remove the a parameter & Feature & Medium \\
+1410 & 2020 & SphericalModel positive definiteness reference & Other & Easy \\
+1424 & 2020 & ProcessSample has no split method & Feature & Easy \\
+1427 & 2020 & Cannot extract part of a Sample by index list & Feature & Medium \\
+1445 & 2020 & Symbolic distribution arithmetics & Feature & Hard \\
+1463 & 2020 & Methods of Field have wrong name & Feature & Medium \\
+1468 & 2020 & Karhunen-Loeve expansion of a cyclic field & Other & No longer valid \\
+1475 & 2020 & Field has no arithmetic & Feature & Medium \\
+1477 & 2020 & KissFFT classes have no example & Other & Easy \\
+1479 & 2020 & Missing type check in CompositeDistribution ctors & Feature & Easy \\
+1480 & 2020 & Kernel smoothing improvements (refs, Silverman naming) & Other & Medium \\
+1481 & 2020 & Inadequate solver options are not signaled & Other & Medium \\
+1488 & 2020 & Distribution parameters in examples must be checked & Other & Hard \\
+1489 & 2020 & Mixture with Dirac does not draw its PDF correctly & Bug & Medium \\
+1496 & 2020 & No example of optimization config in EfficientGlobalOptimization & Other & Easy \\
+1511 & 2020 & LeastSquaresMethod doc issues & Other & Medium \\
+1542 & 2020 & Conditional GP simulation and matrix compression & Other & No longer valid \\
+1554 & 2020 & Weighted samples in KernelSmoothing & Feature & Medium \\
+1582 & 2020 & Inconsistent stochastic process definitions in theory & Other & Easy \\
+1583 & 2020 & Uneasy to configure the bounds of a Graph & Feature & Easy \\
+1585 & 2020 & KS fitting test p-value takes random values & Bug & No longer valid \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section{Category analysis}
+
+\subsection{Actual bugs (8 issues)}
+
+\begin{description}
+  \item[\#1231 -- Cannot save NumericalPointWithDescriptionCollection (no longer valid).]
+        Uses pre-1.14 API names that no longer exist; not reproducible against
+        any supported version. Should simply be closed after a quick sanity check.
+  \item[\#1242 -- Circular dependency of ContinuousDistribution (hard).]
+        Design flaw acknowledged by maintainers: remove the
+        \texttt{ContinuousDistribution}/\texttt{DiscreteDistribution} layers.
+        Touches the whole distribution hierarchy.
+  \item[\#1244 -- Performance of OrthonormalizationAlgorithm (hard).]
+        Numerical robustness/performance of recurrence-coefficient computation
+        for extreme parameters; requires algorithmic expertise.
+  \item[\#1245 -- Wrong comparison operator for interface classes (medium).]
+        \texttt{ot.SobolSequence(2) == ot.HaltonSequence(2)} returns true because
+        interface \texttt{operator==} compares only the top-level implementation
+        type. Fix requires virtual dispatch in several hierarchies.
+  \item[\#1250 -- Iso-probabilistic transformation parameters (hard).]
+        Parameter reporting of marginal/copula transformations is inconsistent;
+        needed for FORM sensitivities, so changes must be made carefully.
+  \item[\#1355 -- Multiprocessing on Windows/Anaconda (hard).]
+        Output printed once per worker with \texttt{n\_cpu > 1}; Windows-specific
+        process/spawn semantics of \texttt{PythonFunction}; hard to reproduce
+        and debug outside Windows.
+  \item[\#1489 -- Mixture with Dirac does not draw its PDF (medium).]
+        The discussion concludes that mixed distributions should render their
+        atoms as arrows whose height relates to the dominant density mode;
+        requires drawing-machinery work.
+  \item[\#1585 -- KS fitting test p-value random (no longer valid).]
+        Declared invalid (Monte-Carlo p-value by design). The follow-up action
+        item (raise \texttt{FittingTest-KolmogorovSamplingSize}) has meanwhile
+        been superseded in master by an adaptive Lilliefors scheme
+        (\texttt{FittingTest-LillieforsMinimumSamplingSize},
+        \texttt{...MaximumSamplingSize}, \texttt{...Precision}). Close as
+        resolved/superseded.
+\end{description}
+
+\subsection{Feature requests (25 issues)}
+
+Hard items are substantial algorithmic or API-wide projects: SRC confidence
+bounds (\#1056), analytical kriging gradients (\#1225), kernel-smoothing
+boundary specification (\#1227), Anderson-Darling for non-gaussian laws
+(\#1237), semantic distribution equality (\#1246), moving draw methods to
+result objects (\#1256), a storage backend for HistoryStrategy (\#1262),
+PythonCovarianceModel (\#1320), discrete/continuous decomposition (\#1325),
+symbolic distribution arithmetics (\#1445).
+
+Easy, well-contained additions:
+\begin{itemize}[noitemsep]
+  \item \#1583 convenience axis-bound setters for Graph
+        (\texttt{setXMin}/\texttt{setXMax}/\texttt{setYMin}/\texttt{setYMax});
+  \item \#1424 \texttt{ProcessSample::split}, mirroring \texttt{Sample::split};
+  \item \#1363 proper y-axis labelling when plotting SRC indices;
+  \item \#1357 QQ-plot point style so outliers remain visible;
+  \item \#1243 constructor consistency for
+        UserDefinedStationaryCovarianceModel;
+  \item \#1479 flattening/type checks in CompositeDistribution constructors.
+\end{itemize}
+
+\subsection{Other: documentation, questions, duplicates (17 issues)}
+
+Eight easy documentation tasks (\#1077 kwargs ambiguity in ctor docstrings,
+\#1318 discrete-input function example, \#1322 fitting-methods notes,
+\#1358 CorrelationAnalysis reference pages, \#1410 SphericalModel
+positive-definiteness note, \#1477 KissFFT example, \#1496 EGO configuration
+example, \#1582 theory-page notation consistency), five medium ones (\#998,
+\#1328, \#1480, \#1481, \#1511) and one hard sweep over examples (\#1488).
+Three require no code change: \#1396 (duplicate), \#1468 and \#1542
+(support questions answered in-thread).
+
+\section{Action plan for the easy fixes}
+
+The following easy code fixes were selected to start with, ordered by value:
+\begin{enumerate}[noitemsep]
+  \item \textbf{\#1583} Graph: add \texttt{setXMin}/\texttt{setXMax}/%
+        \texttt{setYMin}/\texttt{setYMax} implemented on top of
+        \texttt{setBoundingBox}, switching off automatic bounding box;
+        document them; add a test.
+  \item \textbf{\#1424} ProcessSample: add \texttt{split(index)} mirroring
+        \texttt{Sample::split}; add a test.
+  \item \textbf{\#1363} SobolIndicesAlgorithm: allow a dedicated y-axis label
+        so SRC indices are no longer plotted as ``correlation coefficient''.
+  \item \textbf{\#1410} SphericalModel help page: document that positive
+        definiteness is guaranteed only for spatial dimension $\leq 3$, with
+        the Stein (1999) reference.
+\end{enumerate}
+Remaining easy items (mostly examples/docstrings) can then be processed in
+batches; the two invalid bug reports should be closed upstream.
+
+\section{Recommendations}
+
+\begin{itemize}[noitemsep]
+  \item Close \#1231, \#1396, \#1468, \#1542 and re-triage \#1585 (superseded
+        by the Lilliefors implementation).
+  \item Fix label hygiene: \#1489 and \#1585 are bugs filed under other labels;
+        \#1231 filed as enhancement.
+  \item Batch the eight easy documentation issues into a single
+        ``documentation day'' PR series.
+  \item The medium bugs \#1245 and \#1489 are good next candidates after the
+        easy batch.
+\end{itemize}
+
+
+\section{Proposed qualifiers for the remaining open issues}
+
+Five of the triaged issues should be closed outright (\#1231 stale,
+\#1396 duplicate, \#1468 and \#1542 answered support questions, \#1585
+superseded by the Lilliefors implementation); they receive no replacement
+qualifiers. The 45 remaining issues are re-labelled below using a coherent
+three-axis scheme: \textbf{type} (\texttt{bug}, \texttt{enhancement},
+\texttt{doc}, \texttt{question}), \textbf{area} and \textbf{effort}
+(\texttt{effort:easy}, \texttt{effort:medium}, \texttt{effort:hard}).
+Issues \#1583, \#1424, \#1363 and \#1410 additionally receive
+\texttt{fix-ready} once the corresponding patches are submitted upstream.
+
+\footnotesize
+\begin{longtable}{rp{10.8cm}}
+\toprule
+\# & Proposed qualifiers \\
+\midrule
+\endhead
+998 & doc, theory, effort:medium \\
+1056 & enhancement, sensitivity, effort:hard \\
+1077 & doc, API, effort:easy \\
+1225 & enhancement, surrogate, effort:hard \\
+1227 & enhancement, probas, effort:hard \\
+1230 & enhancement, API, python, effort:medium \\
+1237 & enhancement, probas, effort:hard \\
+1239 & enhancement, API, probas, effort:medium \\
+1242 & bug, probas, refactor, effort:hard \\
+1243 & enhancement, API, process, effort:easy \\
+1244 & bug, performance, probas, effort:hard \\
+1245 & bug, API, effort:medium \\
+1246 & enhancement, probas, API, effort:hard \\
+1250 & bug, reliability, API, effort:hard \\
+1256 & enhancement, API, refactor, effort:hard \\
+1262 & enhancement, performance, effort:hard \\
+1284 & bug, probas, effort:medium \\
+1318 & doc, example, effort:easy \\
+1320 & enhancement, surrogate, python, effort:hard \\
+1322 & doc, probas, effort:easy \\
+1325 & enhancement, probas, API, effort:hard \\
+1328 & question, surrogate, needs review, effort:medium \\
+1353 & enhancement, surrogate, effort:medium \\
+1355 & bug, performance, python, windows, effort:hard \\
+1357 & enhancement, graph, effort:easy \\
+1358 & doc, sensitivity, effort:easy \\
+1363 & enhancement, sensitivity, graph, effort:easy, fix-ready \\
+1409 & enhancement, API, surrogate, effort:medium \\
+1410 & doc, surrogate, effort:easy, fix-ready \\
+1424 & enhancement, process, API, effort:easy, fix-ready \\
+1427 & enhancement, sample, API, effort:medium \\
+1445 & enhancement, probas, effort:hard \\
+1463 & enhancement, API, process, refactor, effort:medium \\
+1475 & enhancement, process, effort:medium \\
+1477 & doc, example, signal, effort:easy \\
+1479 & enhancement, probas, effort:easy \\
+1480 & doc, probas, API, effort:medium \\
+1481 & doc, optimization, effort:medium \\
+1488 & doc, example, effort:hard \\
+1489 & bug, graph, probas, effort:medium \\
+1496 & doc, example, optimization, effort:easy \\
+1511 & doc, API, effort:medium \\
+1554 & enhancement, probas, effort:medium \\
+1582 & doc, theory, process, effort:easy \\
+1583 & enhancement, graph, API, effort:easy, fix-ready \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+New qualifier vocabulary introduced here: \texttt{theory},
+\texttt{example}, \texttt{refactor}, \texttt{performance},
+\texttt{process}, \texttt{sample}, \texttt{signal}, \texttt{python},
+\texttt{windows}, \texttt{effort:*} and \texttt{fix-ready}; all other
+qualifiers reuse existing repository labels. The old
+\texttt{difficulty:easy}/\texttt{difficulty:medium} labels map to
+\texttt{effort:easy}/\texttt{effort:medium}.
+
+
+\section{Second batch: next 50 open issues}
+
+A second pass classified the following 50 oldest open issues
+(\#1587--\#2164, September 2020 -- October 2022) with the same method.
+Issues fixed during the working session are marked ``(fixed)''.
+
+\begin{table}[h]
+\centering
+\caption{Effort estimate per category, second batch.}
+\begin{tabular}{lrrrr}
+\toprule
+Category & Easy & Medium & Hard & Total \\
+\midrule
+Bug & 1 & 1 & 4 & 6 \\
+Feature & 3 & 15 & 4 & 22 \\
+Other & 10 & 9 & 3 & 22 \\
+Total & 14 & 25 & 11 & 50 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\footnotesize
+\begin{longtable}{rp{8.4cm}ll}
+\toprule
+\# & Title & Category & Effort \\
+\midrule
+\endhead
+1587 & GridLayout subplots & Feature & Medium \\
+1595 & Undocumented ResourceMap keys & Other & Hard \\
+1596 & Mixture PDF hides discrete part & Bug & Easy (fixed) \\
+1601 & Sobol'/Halton sequences start at zero & Feature & Hard \\
+1678 & Process event example vs theory & Other & Easy (fixed) \\
+1700 & Kriging setNoise vs setNuggetFactor & Other & Medium \\
+1703 & P1 gram / KL decomposition performance & Bug & Hard \\
+1707 & ANCOVA indices outside [0,1] & Other & Easy (fixed) \\
+1720 & Distribution square root hangs & Bug & Hard \\
+1722 & StandardEvent full-length example & Other & Medium \\
+1730 & Sample.erase() with a set of indices & Feature & Easy (fixed) \\
+1734 & Minimum volume level sets for several levels & Feature & Medium (fixed) \\
+1741 & Factories do not describe their method & Other & Medium \\
+1757 & Finite difference classes without example & Other & Medium \\
+1762 & FunctionalChaosSobolIndices ResourceMap key & Other & Easy \\
+1765 & PCG instead of Mersenne Twister & Feature & Hard \\
+1769 & GridLayout limited features & Feature & Medium \\
+1779 & Draw methods ignore default palette & Feature & Medium \\
+1780 & OpenTURNSPythonFunction example & Other & Medium \\
+1786 & EGO expected improvement accessor & Feature & Medium \\
+1841 & AbdoRackwitz ignores error thresholds & Bug & Medium (fixed) \\
+1850 & Missing distribution factories & Feature & Hard \\
+1852 & Chaos moments validity check & Feature & Medium \\
+1853 & Merging distributions through copulas & Other & Easy \\
+1873 & GP sampling instability & Bug & Hard \\
+1875 & PythonDistribution automatic CDF & Feature & Medium \\
+1886 & Jumbled high-dimensional PlotDesign & Feature & Medium \\
+1888 & numpy.where on Point/Sample & Feature & Hard \\
+1892 & Sobol' with low discrepancy example & Other & Easy \\
+1893 & FORM versus discrete variables & Feature & Medium \\
+1899 & ResourceMap key reference consistency & Other & Medium \\
+1924 & SpaceFillingMinDist wrong doc or code & Other & Medium \\
+1928 & Default finite difference formula doc & Other & Easy \\
+1937 & FunctionalChaosSobolIndices.draw() & Feature & Easy (fixed) \\
+1948 & ProductFunction constructor too rigid & Feature & Medium \\
+1951 & discretizeRow undocumented & Other & Easy \\
+1957 & OptimalLHS const correctness & Feature & Medium \\
+1960 & SimulationSensitivityAnalysis examples & Other & Medium \\
+1992 & HMatrix theoretical documentation & Other & Hard \\
+1996 & FunctionCollection slicing & Feature & Medium (fixed) \\
+1999 & Collection classes doc issue & Other & Easy \\
+2000 & Collection setter doc consistency & Other & Easy \\
+2078 & Student estimation inaccurate df<2 & Bug & Hard \\
+2080 & Wrong cross reference in KL SVD doc & Other & Easy \\
+2114 & Theory/API cross links generalization & Other & Hard \\
+2118 & Cloud point size control & Feature & Medium \\
+2119 & ComposedFunction left/right accessors & Feature & Easy (fixed) \\
+2127 & Navigation bar improvements & Other & Medium \\
+2128 & enumerate API renames & Feature & Medium \\
+2164 & BoxCoxFactory BasisCollection deprecation & Feature & Medium \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+Notable differences with the first batch: no duplicate or stale report,
+and a larger share of feature requests. The GP/Kriging related items
+(\#1700, \#1703, \#1786, \#1873) were deliberately parked because these
+classes evolve in parallel pull requests, as well as the API renames
+and deprecations (\#1601, \#2128, \#2164) which require an upstream
+policy decision.
+
+\section{Session outcome}
+
+Sixteen issues of the two batches received a fix during the session,
+one commit each:
+
+\begin{itemize}[noitemsep]
+  \item \#1363 SRC y-axis label, \#1410 SphericalModel note, \#1424
+        ProcessSample.split, \#1583 Graph bounds setters;
+  \item \#1318 discrete input example, \#1322 fitting estimation notes,
+        \#1477 KissFFT example, \#1496 EGO solver configuration,
+        \#1582 process mean notations;
+  \item \#1357 visible plot points, \#1479 nested CompositeDistribution;
+  \item \#1596 arrows for any discrete component, \#1678 process Monte
+        Carlo example, \#1707 ANCOVA indices range, \#1730 erase a set
+        of indices, \#1937 chaos Sobol indices drawing,
+        \#2119 ComposedFunction accessors;
+  \item \#1243 single matrix constructor, \#1554 weighted kernel
+        smoothing, \#1734 multi-level minimum volume level sets,
+        \#1841 AbdoRackwitz convergence reason, \#1996 collection
+        slicing.
+\end{itemize}
+
+Three further issues are verified fixed upstream or superseded
+(\#1077, \#1358, \#1427, plus \#1245 in another pull request) and five
+of the first batch should be closed outright (\#1231, \#1396, \#1468,
+\#1542, \#1585).
+
+
+\section{Third batch: next 50 open issues}
+
+Third pass over the following 50 oldest open issues (\#2178--\#2537,
+December 2022 -- May 2024). Issues fixed during the session are marked
+``(fixed)'', issues already resolved upstream are marked ``superseded''.
+
+\begin{table}[h]
+\centering
+\caption{Effort estimate per category, third batch.}
+\begin{tabular}{lrrrrr}
+\toprule
+Category & Easy & Medium & Hard & Superseded & Total \\
+\midrule
+Bug & 3 & 3 & 2 & 2 & 10 \\
+Feature & 4 & 8 & 5 & 0 & 17 \\
+Other & 13 & 9 & 1 & 0 & 23 \\
+Total & 20 & 20 & 8 & 2 & 50 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\footnotesize
+\begin{longtable}{rp{7.6cm}ll}
+\toprule
+\# & Title & Category & Effort \\
+\midrule
+\endhead
+2178 & HaarWavelet/Fourier signal examples & Other & Medium \\
+2201 & FiniteBasis not exposed to Python & Feature & Easy \\
+2228 & Deprecate Factory.buildAs* methods & Feature & Medium \\
+2247 & getResult returns wrong result class in docs & Other & Easy \\
+2248 & NormalCopula.getCorrelation documentation & Other & Easy \\
+2249 & Switch COBYLA to PRIMA implementation & Feature & Hard \\
+2253 & getBasisSizeFromTotalDegree example bug & Other & Easy \\
+2260 & Sobol indices documentation versus code & Other & Medium \\
+2280 & drawObservationsVsInputs misleading plot & Other & Medium \\
+2294 & Polynomial chaos documentation rewrite & Other & Hard \\
+2319 & GP Gibbs sampling with output dimension > 1 & Bug & Hard \\
+2331 & setConfidenceLevel undocumented ResourceMap key & Other & Easy \\
+2333 & Aggregated Sobol indices from a PCE & Feature & Medium \\
+2334 & Exact Ishigami coefficients in C++ tests & Feature & Easy \\
+2335 & LeastSquaresStrategy API help issues & Other & Easy \\
+2355 & Full/active parameters documentation & Other & Medium \\
+2365 & Kriging trend coefficients ordering doc & Other & Medium \\
+2370 & Numerical methods section on the website & Other & Medium \\
+2376 & Principal component analysis class & Feature & Hard \\
+2378 & ExpectationSimulationAlgorithm with an experiment & Feature & Medium \\
+2379 & SobolSimulationAlgorithm bootstrap keys doc & Other & Easy \\
+2380 & Sobol indices distribution from PCE by bootstrap & Feature & Medium \\
+2383 & Model selection example for step B & Other & Medium \\
+2385 & LeastSquaresMethod doc wrongly tied to PCE & Other & Medium \\
+2390 & Relative default quantile epsilon & Feature & Medium \\
+2400 & PenalizedLeastSquares ridge completion & Other & Medium \\
+2401 & QuantileMatchingFactory robustness & Bug & Medium \\
+2407 & PythonFunction setNCpus after construction & Feature & Medium \\
+2408 & LeastSquaresExpansion/IntegrationExpansion doc & Other & Easy \\
+2409 & SparseMethod purpose and example & Other & Easy \\
+2428 & FieldImplementation.drawMarginal missing colorbar & Bug & Medium \\
+2432 & Point sum dimension mismatch message & Bug & Easy (fixed) \\
+2436 & Error messages should state their origin & Feature & Hard \\
+2440 & Copula FittingTest normalization clarification & Other & Easy \\
+2444 & Multivariate goodness of fit test for copulas & Feature & Hard \\
+2445 & Suboptimal TruncatedDistribution.drawPDF range & Bug & Medium \\
+2465 & Unused dNonCentralStudentAlt0 function & Other & Easy \\
+2482 & Legend corner API redesign & Feature & Medium \\
+2483 & Combining OpenTURNS graphics with Matplotlib & Other & Easy \\
+2484 & CorrelationAnalysis API renaming & Feature & Medium \\
+2485 & Matrix to Sample conversion & Feature & Easy \\
+2494 & getCoefficientsStandardErrors formula & Other & Easy \\
+2498 & QQ plot ignores largest observation & Bug & Easy (fixed) \\
+2502 & Covariance out of bounds message & Bug & Easy (fixed) \\
+2509 & Gumbel default location parameter & Feature & Easy \\
+2512 & Sphinx substitution for experimental warning & Other & Easy \\
+2521 & Normal.computeProbability infinite bounds & Bug & Superseded \\
+2522 & MetaModelAlgorithm failure with -O3 on POWER & Bug & Hard \\
+2533 & Specialized simulation getResult classes & Feature & Hard \\
+2537 & ChiSquared factory discrete mismatch & Bug & Superseded \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+The GP related item \#2319 remains parked like the rest of that area.
+Two issues were found already fixed in master (\#2521 infinite bounds in
+Normal::computeProbability, \#2537 discrete ChiSquared through a
+factory) and should be closed. The session fixed three contained bugs:
+the swallowed dimension mismatch message of Point additions, the
+misleading out of bounds message of symmetric matrices, and the dropped
+largest observation of QQ plots.
+
+\end{document}
