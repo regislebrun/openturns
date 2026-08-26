@@ -13,7 +13,8 @@ The metamodel comes with its gradient and Hessian (the latter being computed by 
 differences).
 
 The conditional variance of the prediction at any point can be obtained thanks to the
-:meth:`getConditionalVariance` method of the resulting
+:meth:`getConditionalVariance() <openturns.experimental.SparseGaussianProcessFitterResult.getConditionalVariance>`
+method of the resulting
 :class:`~openturns.experimental.SparseGaussianProcessFitterResult`.
 
 See also

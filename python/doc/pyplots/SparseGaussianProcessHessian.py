@@ -23,8 +23,8 @@ hessianValues = ot.Sample(n_points, 1)
 for i in range(n_points):
     hessianValues[i, 0] = metaModel.hessian(vertices[i])[0, 0, 0]
 
-modelValues = ot.Sample(sampleX.getSize(), 1)
-for i in range(sampleX.getSize()):
+modelValues = ot.Sample(len(sampleX), 1)
+for i in range(len(sampleX)):
     modelValues[i, 0] = f.hessian(sampleX[i])[0, 0, 0]
 
 graph = ot.Graph("Sparse GP metamodel hessian", "x", r"$\partial^2 \mu / \partial x^2$")
