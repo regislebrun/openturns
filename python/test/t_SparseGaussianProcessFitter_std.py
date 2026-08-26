@@ -137,14 +137,13 @@ def test_prediction_matches_posterior():
     result = algo.getResult()
     m_w, S_ww = _numpy_posterior(np.array(X), np.array(Y).ravel(), np.array(Z), sigma, covarianceModel)
     x_test = ot.Point([1.5])
-    Z_np = np.array(Z)
     kz = np.array(
-        [covarianceModel.computeAsScalar(ot.Point([float(x_test[0])]), ot.Point([float(Z_np[j])])) for j in range(4)]
+        [covarianceModel.computeAsScalar(x_test, Z[j]) for j in range(4)]
     )
     Luu = np.linalg.cholesky(
         np.array(
             [
-                [covarianceModel.computeAsScalar(ot.Point([float(Z_np[i])]), ot.Point([float(Z_np[j])])) for j in range(4)]
+                [covarianceModel.computeAsScalar(Z[i], Z[j]) for j in range(4)]
                 for i in range(4)
             ]
         )
