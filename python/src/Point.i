@@ -139,4 +139,31 @@ def _Point___iter__(self):
     for i in range(self.getSize()):
         yield self[i]
 Point.__iter__ = _Point___iter__
+
+
+def _Point___add__(self, other):
+    # The SWIG wrapper swallows the C++ dimension check into a generic
+    # "unsupported operand" TypeError, so validate here to keep the
+    # informative message, see issue #2432
+    if isinstance(other, Point) and other.getDimension() != self.getDimension():
+        raise ValueError(
+            "Points of different dimensions cannot be added "
+            "(LHS dimension = %d; RHS dimension = %d)"
+            % (self.getDimension(), other.getDimension())
+        )
+    return _typ.Point___add__(self, other)
+
+
+def _Point___sub__(self, other):
+    if isinstance(other, Point) and other.getDimension() != self.getDimension():
+        raise ValueError(
+            "Points of different dimensions cannot be subtracted "
+            "(LHS dimension = %d; RHS dimension = %d)"
+            % (self.getDimension(), other.getDimension())
+        )
+    return _typ.Point___sub__(self, other)
+
+
+Point.__add__ = _Point___add__
+Point.__sub__ = _Point___sub__
 %}
