@@ -232,7 +232,7 @@ print("relative summation thresholds")
 
 
 def irwinHallCDF(x):
-    # CDF of the sum of three standard uniform variables
+    """CDF of the sum of three standard uniform variables."""
     if x <= 0.0:
         return 0.0
     if x >= 3.0:

@@ -7,6 +7,7 @@ import math
 
 # Mesh of the unit sphere
 def icosahedron_sphere(refinements=3):
+    """Build a triangulated mesh of the unit sphere from an icosahedron."""
     t = (1.0 + math.sqrt(5.0)) / 2.0
     vertices = [
         [-1, t, 0],

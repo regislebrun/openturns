@@ -31,6 +31,7 @@ def checkMixture(distribution, atoms, weights, constant, classNames):
 
 
 def checkWeights(distribution, weights):
+    """Check that the weight matrix of the distribution matches the expected values."""
     got = distribution.getWeights()
     assert got.getNbRows() == 1, "wrong weight matrix shape"
     assert got.getNbColumns() == len(weights), "wrong number of weights"
