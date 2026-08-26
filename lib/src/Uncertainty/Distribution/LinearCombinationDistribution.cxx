@@ -2471,9 +2471,9 @@ Scalar LinearCombinationDistribution::computeComplementaryCDF(const Point & poin
   const Scalar x = point[0];
   // Special case for combination containing only one contributor Y = alpha * X + beta
   // for alpha > 0.0:
-  // P(Y < y) = P(X < (y - beta) / alpha) = CDF_X((y - beta) / alpha)
+  // P(Y > y) = P(X > (y - beta) / alpha) = complementaryCDF_X((y - beta) / alpha)
   // for alpha < 0.0:
-  // P(Y < y) = P(X > (y - beta) / alpha) = 1.0 - CDF_X((y - beta) / alpha)
+  // P(Y > y) = P(X < (y - beta) / alpha) = CDF_X((y - beta) / alpha)
   if (isAnalytical_)
   {
     const Scalar alpha = weights_(0, 0);
