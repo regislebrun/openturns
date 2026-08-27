@@ -3355,7 +3355,7 @@ void LinearCombinationDistribution::recycleCharacteristicValues(const SphereUnif
   // Bias used to pack signed multi-indices into a single integer. A zero key
   // is impossible for a valid multi-index, so it flags out-of-range indices.
   const std::uint64_t bias = std::uint64_t(1) << 20;
-  auto pack = [bias, dimension](const SignedInteger * n) -> std::uint64_t
+  auto pack = [dimension](const SignedInteger * n) -> std::uint64_t
   {
     std::uint64_t key = 0;
     for (UnsignedInteger k = 0; k < dimension; ++k)
