@@ -270,7 +270,7 @@ Examples
 >>> distribution = ot.LinearCombinationDistribution([ot.Normal(), ot.Uniform(-1.0, 1.0)], [1.0, 0.5])
 >>> pi = distribution.getPositionIndicator()
 >>> print(pi)
-0.25)RAW"
+0.0)RAW"
 
 // ---------------------------------------------------------------------
 %feature("docstring") OT::LinearCombinationDistribution::getDispersionIndicator
@@ -292,7 +292,7 @@ Examples
 >>> distribution = ot.LinearCombinationDistribution([ot.Normal(), ot.Uniform(-1.0, 1.0)], [1.0, 0.5])
 >>> di = distribution.getDispersionIndicator()
 >>> print("%.3f" % di)
-1.118)RAW"
+1.041)RAW"
 
 // ---------------------------------------------------------------------
 %feature("docstring") OT::LinearCombinationDistribution::getBlockMin
