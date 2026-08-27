@@ -3363,7 +3363,7 @@ void LinearCombinationDistribution::recycleCharacteristicValues(const SphereUnif
     std::uint64_t key = 0;
     for (UnsignedInteger k = 0; k < dimension; ++k)
     {
-      const SignedInteger value = n[k] + static_cast<SignedInteger>(bias);
+      const SignedInteger value = n[k] + static_cast<SignedInteger>(std::uint64_t(1) << 20);
       if ((value <= 0) || (value >= static_cast<SignedInteger>(std::uint64_t(1) << 21))) return 0;
       key = (key << 21) | static_cast<std::uint64_t>(value);
     }
