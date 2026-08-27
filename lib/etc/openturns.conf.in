@@ -813,6 +813,7 @@
   <LinearCombinationDistribution-BetaAdaptation                value_bool="true"  />
   <LinearCombinationDistribution-BetaAdaptationEpsilon         value_float="1.0e-6" />
   <LinearCombinationDistribution-MaximumBeta                   value_float="64.0" />
+  <LinearCombinationDistribution-BandwidthConvergenceEpsilon   value_float="1.0e-9" />
   <LinearCombinationDistribution-ProjectionDefaultSize          value_int="25"    />
   <LinearCombinationDistribution-SmallSize                      value_int="100"   />
 

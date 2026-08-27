@@ -2777,6 +2777,8 @@ Complex LinearCombinationDistribution::computeDeltaCharacteristicFunction(const 
     const Complex logNormalCF(equivalentNormal_.computeLogCharacteristicFunction(x));
     const Complex deltaLog(logCF - logNormalCF);
     Complex value;
+    // Use a 3rd order Taylor expansion of exp(deltaLog) - 1 if |deltaLog| <= 1e-5
+    // to avoid catastrophic cancellation when logCF and logNormalCF are close
     if (std::abs(deltaLog) < 1.0e-5) value = std::exp(logNormalCF) * (deltaLog * (1.0 + deltaLog * (0.5 + deltaLog / 6.0)));
     else value = std::exp(logCF) - std::exp(logNormalCF);
     return value;
@@ -3336,9 +3338,10 @@ void LinearCombinationDistribution::recycleCharacteristicValues(const SphereUnif
 {
   const UnsignedInteger dimension = getDimension();
   // The nesting only holds when the bandwidth is exactly halved along every axis
+  const Scalar bandwidthConvergenceEpsilon = std::max(0.0, ResourceMap::GetAsScalar("LinearCombinationDistribution-BandwidthConvergenceEpsilon"));
   for (UnsignedInteger k = 0; k < dimension; ++k)
   {
-    if ((getReferenceBandwidth()[k] <= 0.0) || (std::abs(oldBandwidth[k] / getReferenceBandwidth()[k] - 2.0) > 1.0e-9))
+    if ((getReferenceBandwidth()[k] <= 0.0) || (std::abs(oldBandwidth[k] / getReferenceBandwidth()[k] - 2.0) > bandwidthConvergenceEpsilon))
     {
       storedSize_ = 0;
       characteristicValuesCache_ = ComplexPersistentCollection(0);

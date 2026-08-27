@@ -1465,6 +1465,7 @@ void ResourceMap::loadDefaultConfiguration()
   addAsBool("LinearCombinationDistribution-BetaAdaptation", true);
   addAsScalar("LinearCombinationDistribution-BetaAdaptationEpsilon", 1.0e-6);
   addAsScalar("LinearCombinationDistribution-MaximumBeta", 64.0);
+  addAsScalar("LinearCombinationDistribution-BandwidthConvergenceEpsilon", 1.0e-9);
   addAsUnsignedInteger("LinearCombinationDistribution-ProjectionDefaultSize", 25);
   addAsUnsignedInteger("LinearCombinationDistribution-SmallSize", 100);
 

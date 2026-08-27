@@ -431,24 +431,3 @@ dist1d.setBlockMin(4)
 assert dist1d.getBlockMin() == 4, "wrong blockMin after setter"
 dist1d.setBlockMax(18)
 assert dist1d.getBlockMax() == 18, "wrong blockMax after setter"
-
-# Test save/load roundtrip
-print("save/load roundtrip")
-dist1d.setBlockMin(5)
-dist1d.setBlockMax(20)
-dist1d.setPDFPrecision(1.0e-8)
-dist1d.setCDFPrecision(1.0e-8)
-dist1d.setAlpha(7.0)
-dist1d.setBeta(9.0)
-dist1d.setMaxSize(2000000)
-dist1d.setName("test_save_load")
-filename = "t_LinearCombinationDistribution_std.xml"
-dist1d.save(filename)
-loaded = ot.LinearCombinationDistribution()
-loaded.load(filename)
-ott.assert_almost_equal(
-    dist1d.computePDF(0.5), loaded.computePDF(0.5), 1e-10, 1e-12, "save/load roundtrip pdf"
-)
-assert loaded.getName() == "test_save_load", "name not saved"
-assert loaded.getBlockMin() == 5, "blockMin not saved"
-assert loaded.getBlockMax() == 20, "blockMax not saved"

@@ -16,6 +16,7 @@
  * LinearCombinationDistribution-BetaAdaptation: enables or disables the automatic widening of the confidence band (default is True)
  * LinearCombinationDistribution-BetaAdaptationEpsilon: target for the estimated mass outside the confidence band (default is 1e-6)
  * LinearCombinationDistribution-MaximumBeta: upper bound on the confidence band parameter reached by the adaptation (default is 64.0)
+ * LinearCombinationDistribution-BandwidthConvergenceEpsilon: tolerance for the bandwidth nesting check when recycling the characteristic function cache (default is 1e-9)
 
 ==== New classes ====
  * InverseGammaFactory (openturns.experimental)
