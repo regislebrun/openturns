@@ -11,6 +11,7 @@
  * ComplexDataContainer
  * AlgebraEngine
  * StatisticsEngine
+
  * InverseGammaFactory (openturns.experimental)
  * MultivariateUniform, MultivariateUniformFactory (openturns.experimental)
  * SquaredNormalFactory (openturns.experimental)
