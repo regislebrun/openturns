@@ -389,3 +389,66 @@ dist = ot.Gumbel() + ot.Normal(0, 0.1)
 p = [1849.41, -133.6, -133.6, 359.172]
 dist.setParameter(p)
 ott.assert_almost_equal(dist.getParameter(), p, 0.0, 0.0, "parameter accessors")
+
+# Test getPositionIndicator and getDispersionIndicator
+print("position and dispersion indicators")
+dist1d = ot.LinearCombinationDistribution(
+    [ot.Normal(1.0, 2.0), ot.Uniform(-1.0, 1.0)], [1.0, 0.5]
+)
+pi = dist1d.getPositionIndicator()
+ott.assert_almost_equal(pi, dist1d.getMean()[0], 1e-10, 1e-12, "position indicator")
+di = dist1d.getDispersionIndicator()
+ott.assert_almost_equal(di, dist1d.getStandardDeviation()[0], 1e-10, 1e-12, "dispersion indicator")
+
+# Test setReferenceBandwidth / getReferenceBandwidth
+print("reference bandwidth")
+bw = dist1d.getReferenceBandwidth()
+assert len(bw) == 1, "wrong bandwidth dimension"
+newBw = [0.75]
+dist1d.setReferenceBandwidth(newBw)
+ott.assert_almost_equal(dist1d.getReferenceBandwidth(), newBw, 1e-12, 1e-12, "reference bandwidth")
+
+# Test setPDFPrecision / setCDFPrecision
+print("precision setters")
+dist1d.setPDFPrecision(1.0e-12)
+dist1d.setCDFPrecision(1.0e-12)
+
+# Test setAlpha / setBeta
+print("alpha and beta setters")
+dist1d.setAlpha(8.0)
+ott.assert_almost_equal(dist1d.getAlpha(), 8.0, 1e-12, 1e-12, "alpha setter")
+dist1d.setBeta(10.0)
+ott.assert_almost_equal(dist1d.getBeta(), 10.0, 1e-12, 1e-12, "beta setter")
+
+# Test setMaxSize
+print("max size setter")
+dist1d.setMaxSize(1000000)
+assert dist1d.getMaxSize() == 1000000, "wrong maxSize after setter"
+
+# Test setBlockMin / setBlockMax
+print("block min/max setters")
+dist1d.setBlockMin(4)
+assert dist1d.getBlockMin() == 4, "wrong blockMin after setter"
+dist1d.setBlockMax(18)
+assert dist1d.getBlockMax() == 18, "wrong blockMax after setter"
+
+# Test save/load roundtrip
+print("save/load roundtrip")
+dist1d.setBlockMin(5)
+dist1d.setBlockMax(20)
+dist1d.setPDFPrecision(1.0e-8)
+dist1d.setCDFPrecision(1.0e-8)
+dist1d.setAlpha(7.0)
+dist1d.setBeta(9.0)
+dist1d.setMaxSize(2000000)
+dist1d.setName("test_save_load")
+filename = "t_LinearCombinationDistribution_std.xml"
+dist1d.save(filename)
+loaded = ot.LinearCombinationDistribution()
+loaded.load(filename)
+ott.assert_almost_equal(
+    dist1d.computePDF(0.5), loaded.computePDF(0.5), 1e-10, 1e-12, "save/load roundtrip pdf"
+)
+assert loaded.getName() == "test_save_load", "name not saved"
+assert loaded.getBlockMin() == 5, "blockMin not saved"
+assert loaded.getBlockMax() == 20, "blockMax not saved"

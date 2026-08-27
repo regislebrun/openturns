@@ -251,6 +251,50 @@ Examples
 [[ 1 ]]"
 
 // ---------------------------------------------------------------------
+%feature("docstring") OT::LinearCombinationDistribution::getPositionIndicator
+R"RAW(Return the position indicator of the distribution.
+
+Only available in dimension 1. The position indicator is computed as the
+weighted sum of the position indicators of the atoms, which is exact for
+the mean and approximately true for the median of moderately skewed
+distributions.
+
+Returns
+-------
+out : float
+    The position indicator
+
+Examples
+--------
+>>> import openturns as ot
+>>> distribution = ot.LinearCombinationDistribution([ot.Normal(), ot.Uniform(-1.0, 1.0)], [1.0, 0.5])
+>>> pi = distribution.getPositionIndicator()
+>>> print(pi)
+0.25)RAW"
+
+// ---------------------------------------------------------------------
+%feature("docstring") OT::LinearCombinationDistribution::getDispersionIndicator
+R"RAW(Return the dispersion indicator of the distribution.
+
+Only available in dimension 1. The dispersion indicator is computed as the
+square root of the sum of squared weighted dispersion indicators of the
+atoms, which is exact for the standard deviation and approximately true for
+the interquartile range of moderately skewed distributions.
+
+Returns
+-------
+out : float
+    The dispersion indicator
+
+Examples
+--------
+>>> import openturns as ot
+>>> distribution = ot.LinearCombinationDistribution([ot.Normal(), ot.Uniform(-1.0, 1.0)], [1.0, 0.5])
+>>> di = distribution.getDispersionIndicator()
+>>> print("%.3f" % di)
+1.118)RAW"
+
+// ---------------------------------------------------------------------
 %feature("docstring") OT::LinearCombinationDistribution::getBlockMin
 "Return the blockMin parameter.
 
@@ -305,8 +349,8 @@ Examples
 %feature("docstring") OT::LinearCombinationDistribution::setBlockMax
 "Set the blockMax parameter.
 
-Returns
--------
+Parameters
+----------
 blockMax : int
     Number of maximal evaluations of blocks for characteristic function
     evaluations
