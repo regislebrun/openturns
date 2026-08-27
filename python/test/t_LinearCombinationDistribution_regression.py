@@ -2,7 +2,10 @@
 
 import openturns as ot
 import openturns.testing as ott
-import numpy as np
+try:
+    import numpy as np
+except ModuleNotFoundError:
+    np = None
 from math import sqrt
 
 ot.TESTPREAMBLE()
@@ -308,9 +311,10 @@ ot.ResourceMap.SetAsBool("LinearCombinationDistribution-SimplifyAtoms", False)
 heavy = ot.LinearCombinationDistribution([ot.LogNormal(0.0, 1.0), ot.Normal()], [1.0, 0.1])
 upperBound = heavy.getRange().getUpperBound()[0]
 ott.assert_almost_equal(upperBound, 75.2081, 1e-3, 0.0, "adapted upper bound")
-sample = np.asarray(heavy.getSample(500000))[:, 0]
-exceedance = float((sample > upperBound).mean())
-assert exceedance <= 1e-4, "discarded mass too large: %g" % exceedance
+if np is not None:
+    sample = np.asarray(heavy.getSample(500000))[:, 0]
+    exceedance = float((sample > upperBound).mean())
+    assert exceedance <= 1e-4, "discarded mass too large: %g" % exceedance
 quantile = heavy.computeQuantile(0.999)[0]
 assert quantile < upperBound, "quantile clipped at the range bound"
 ott.assert_almost_equal(
