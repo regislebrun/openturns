@@ -62,6 +62,12 @@ Distribution CrossEntropyImportanceSampling::getInitialDistribution() const
   return getEvent().getAntecedent().getDistribution();
 }
 
+/* Setter for MaximumCoefficientOfVariation. */
+void CrossEntropyImportanceSampling::setMaximumCoefficientOfVariation(const Scalar)
+{
+  throw InvalidArgumentException(HERE) << "The maximum coefficient cannot be used as termination criterion in this algorithm.";
+}
+
 // Get quantileLevel
 Scalar CrossEntropyImportanceSampling::getQuantileLevel() const
 {

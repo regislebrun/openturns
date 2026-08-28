@@ -235,6 +235,9 @@ Bibliography
 .. [jackson1991] Jackson, J. E. (1991).
     *A user’s guide to principal components.*
     John Wiley & Sons.
+.. [jakeman2019] Jakeman J., Franzelin F., Narayan A., Eldred M., Pflüger D. (2019)
+    *Polynomial chaos expansions for dependent random variables*,
+    Computer Methods in Applied Mechanics and Engineering, 351, pp.643-666.
 .. [janon2014] Janon A., Klein T., Lagnoux-Renaudie A., Prieur C., *Asymptotic
     normality and efficiency of two Sobol index estimators*,
     ESAIM: Probability and Statistics, EDP Sciences, 2014, 18, pp.342-364.
@@ -266,6 +269,13 @@ Bibliography
 .. [Keutelian1991] Hovhannes Keutelian.
     *The Kolmogorov-Smirnov test when parameters are estimated from data*,
     30 April 1991, Fermilab.
+.. [kent1982] Kent J.T.,
+    *The Fisher-Bingham distribution on a sphere*,
+    Journal of the Royal Statistical Society. Series B (Methodological),
+    44(1), 71-80, 1982.
+.. [kent2013] Kent J.T., Ganeiber A.M., Mardia K.V.,
+    *A new method to simulate the Bingham and related distributions in directional data analysis with applications*,
+    arXiv:1310.8110, 2013.
 .. [kiureghian1998] Kiureghian A., Dakessian T., *Multiple design points in first and second-order reliability*
     Structural Safety, Volume 20, Issue 1, 1998, Pages 37-49
     `pdf <https://openturns.github.io/openturns/papers/kiureghian1998.pdf>`__

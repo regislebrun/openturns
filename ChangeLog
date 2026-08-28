@@ -13,6 +13,7 @@
  * StatisticsEngine
 
  * InverseGammaFactory (openturns.experimental)
+ * Kent, KentFactory (openturns.experimental)
  * MultivariateUniform, MultivariateUniformFactory (openturns.experimental)
  * SquaredNormalFactory (openturns.experimental)
  * TruncatedDistributionFactory (openturns.experimental)

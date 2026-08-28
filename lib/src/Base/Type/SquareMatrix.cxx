@@ -172,6 +172,7 @@ SquareMatrix SquareMatrix::power(const UnsignedInteger n) const
 /* Resolution of a linear system */
 Point SquareMatrix::solveLinearSystemInPlace(const Point & b)
 {
+  copyOnWrite();
   return getImplementation()->solveLinearSystemSquareInPlace(b);
 }
 
@@ -182,6 +183,7 @@ Point SquareMatrix::solveLinearSystem(const Point & b) const
 
 Matrix SquareMatrix::solveLinearSystemInPlace(const Matrix & b)
 {
+  copyOnWrite();
   return Implementation(getImplementation()->solveLinearSystemSquareInPlace(*b.getImplementation()).clone());
 }
 

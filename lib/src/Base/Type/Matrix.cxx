@@ -232,6 +232,7 @@ Matrix Matrix::operator/ (const Scalar s) const
 /* Resolution of a linear system */
 Point Matrix::solveLinearSystemInPlace(const Point & b)
 {
+  copyOnWrite();
   return getImplementation()->solveLinearSystemRectInPlace(b);
 }
 
@@ -242,6 +243,7 @@ Point Matrix::solveLinearSystem(const Point & b) const
 
 Matrix Matrix::solveLinearSystemInPlace(const Matrix & b)
 {
+  copyOnWrite();
   return Implementation(getImplementation()->solveLinearSystemRectInPlace(*(b.getImplementation())).clone());
 }
 

@@ -13,7 +13,7 @@ of the Metropolis-Hastings algorithm.
 # .. math::
 #     \forall \vect{x} \in [-3, 3]^2 \quad f(\vect{x}) \propto a(\vect{x})^{10},
 #
-# where :math:`a` is the Ackey function defined in :ref:`use-case-ackley` page.
+# where :math:`a` is the Ackley function defined in :ref:`use-case-ackley` page.
 # In the following we call it the "Ackley distribution".
 
 import openturns as ot

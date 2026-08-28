@@ -47,13 +47,14 @@ BEGIN_NAMESPACE_OPENTURNS
 namespace {
 
 // Draw from N(0,1) truncated to [lower, upper] using inverse CDF
-Scalar truncatedNormalDraw(const Scalar lower, const Scalar upper)
+// Uses a pre-generated uniform draw for thread safety in TBB regions
+Scalar truncatedNormalDraw(const Scalar lower, const Scalar upper, const Scalar u)
 {
   if (!(upper > lower)) return 0.0;
   const Scalar ei = DistFunc::pNormal(lower);
   const Scalar fi = DistFunc::pNormal(upper);
   if (!(fi > ei)) return 0.0;
-  return DistFunc::qNormal(ei + (fi - ei) * RandomGenerator::Generate());
+  return DistFunc::qNormal(ei + (fi - ei) * u);
 }
 
 // Systematic resampling (Algorithm 4 in the paper)
@@ -82,11 +83,14 @@ void systematicResampling(const Point& normWeights,
 
 // One Gibbs sweep for particle eta at time t (Section 4.3.1)
 // Updates all components 0..t-1 of eta in place
+// Uses pre-generated uniform random numbers u[offset..offset+t-1] for thread safety
 void gibbsMove(Point& eta,
                const TriangularMatrix& L,
                const Point& a,
                const Point& b,
-               const UnsignedInteger t)
+               const UnsignedInteger t,
+               const Point& u,
+               UnsignedInteger& offset)
 {
   for (UnsignedInteger i = 0; i < t; ++i)
   {
@@ -119,7 +123,7 @@ void gibbsMove(Point& eta,
     }
 
     if (lower < upper)
-      eta[i] = truncatedNormalDraw(lower, upper);
+      eta[i] = truncatedNormalDraw(lower, upper, u[offset++]);
   }
 }
 
@@ -215,26 +219,32 @@ Scalar mvn_orthant_probability(
                         - DistFunc::pNormal(a0[0] / L(0, 0));
   if (!(initProb > 0.0)) return 0.0;
   Scalar logZ = std::log(initProb);
+  // Pre-generate random numbers for thread safety with TBB
+  Point initU(M);
+  for (UnsignedInteger i = 0; i < M; ++i)
+    initU[i] = RandomGenerator::Generate();
   struct InitParticlesFunctor {
     std::vector<Point>& particles_;
     const TriangularMatrix& L_;
     const Point& a0_;
     const Point& b0_;
-    InitParticlesFunctor(std::vector<Point>& particles, const TriangularMatrix& L, const Point& a0, const Point& b0)
+    const Point& u_;
+    InitParticlesFunctor(std::vector<Point>& particles, const TriangularMatrix& L, const Point& a0, const Point& b0, const Point& u)
       : particles_(particles)
       , L_(L)
       , a0_(a0)
-      , b0_(b0) {}
+      , b0_(b0)
+      , u_(u) {}
     void operator()(const TBBImplementation::BlockedRange<UnsignedInteger>& r) const {
       for (UnsignedInteger m = r.begin(); m != r.end(); ++m) {
         const Scalar lower = a0_[0] / L_(0, 0);
         const Scalar upper = b0_[0] / L_(0, 0);
         if (upper > lower)
-          particles_[m][0] = truncatedNormalDraw(lower, upper);
+          particles_[m][0] = truncatedNormalDraw(lower, upper, u_[m]);
       }
     }
   };
-  TBBImplementation::ParallelFor(0, M, InitParticlesFunctor(particles, L, a0, b0));
+  TBBImplementation::ParallelFor(0, M, InitParticlesFunctor(particles, L, a0, b0, initU));
 
   // Iterate over remaining dimensions
   for (UnsignedInteger t = 1; t < d; ++t)
@@ -274,27 +284,40 @@ Scalar mvn_orthant_probability(
       std::fill(logWeights.begin(), logWeights.end(), 0.0);
 
       // Gibbs moves to rejuvenate particles
+      // Pre-generate t*M random numbers (at most t draws per particle)
+      const UnsignedInteger totalGibbsU = M * t;
+      Point gibbsU(totalGibbsU);
+      for (UnsignedInteger i = 0; i < totalGibbsU; ++i)
+        gibbsU[i] = RandomGenerator::Generate();
       struct GibbsMoveFunctor {
         std::vector<Point>& particles_;
         const TriangularMatrix& L_;
         const Point& a0_;
         const Point& b0_;
         const UnsignedInteger t_;
-        GibbsMoveFunctor(std::vector<Point>& particles, const TriangularMatrix& L, const Point& a0, const Point& b0, const UnsignedInteger t)
+        const Point& u_;
+        GibbsMoveFunctor(std::vector<Point>& particles, const TriangularMatrix& L, const Point& a0, const Point& b0, const UnsignedInteger t, const Point& u)
           : particles_(particles)
           , L_(L)
           , a0_(a0)
           , b0_(b0)
-          , t_(t) {}
+          , t_(t)
+          , u_(u) {}
         void operator()(const TBBImplementation::BlockedRange<UnsignedInteger>& r) const {
-          for (UnsignedInteger i = r.begin(); i != r.end(); ++i)
-            gibbsMove(particles_[i], L_, a0_, b0_, t_);
+          for (UnsignedInteger i = r.begin(); i != r.end(); ++i) {
+            UnsignedInteger offset = i * t_;
+            gibbsMove(particles_[i], L_, a0_, b0_, t_, u_, offset);
+          }
         }
       };
-      TBBImplementation::ParallelFor(0, M, GibbsMoveFunctor(particles, L, a0, b0, t));
+      TBBImplementation::ParallelFor(0, M, GibbsMoveFunctor(particles, L, a0, b0, t, gibbsU));
     }
 
     // Extend to dimension t (Algorithm 3 inner loop)
+    // Pre-generate M random numbers for thread safety
+    Point extendU(M);
+    for (UnsignedInteger i = 0; i < M; ++i)
+      extendU[i] = RandomGenerator::Generate();
     struct ExtendDimensionFunctor {
       std::vector<Point>& particles_;
       Point& logWeights_;
@@ -302,13 +325,15 @@ Scalar mvn_orthant_probability(
       const Point& a0_;
       const Point& b0_;
       const UnsignedInteger t_;
-      ExtendDimensionFunctor(std::vector<Point>& particles, Point& logWeights, const TriangularMatrix& L, const Point& a0, const Point& b0, const UnsignedInteger t)
+      const Point& u_;
+      ExtendDimensionFunctor(std::vector<Point>& particles, Point& logWeights, const TriangularMatrix& L, const Point& a0, const Point& b0, const UnsignedInteger t, const Point& u)
         : particles_(particles)
         , logWeights_(logWeights)
         , L_(L)
         , a0_(a0)
         , b0_(b0)
-        , t_(t) {}
+        , t_(t)
+        , u_(u) {}
       void operator()(const TBBImplementation::BlockedRange<UnsignedInteger>& r) const {
         for (UnsignedInteger m = r.begin(); m != r.end(); ++m) {
           Scalar y = 0.0;
@@ -319,14 +344,14 @@ Scalar mvn_orthant_probability(
           if (upper > lower) {
             const Scalar prob = DistFunc::pNormal(upper) - DistFunc::pNormal(lower);
             logWeights_[m] += std::log(prob);
-            particles_[m][t_] = truncatedNormalDraw(lower, upper);
+            particles_[m][t_] = truncatedNormalDraw(lower, upper, u_[m]);
           } else {
             logWeights_[m] = SpecFunc::LowestScalar;
           }
         }
       }
     };
-    TBBImplementation::ParallelFor(0, M, ExtendDimensionFunctor(particles, logWeights, L, a0, b0, t));
+    TBBImplementation::ParallelFor(0, M, ExtendDimensionFunctor(particles, logWeights, L, a0, b0, t, extendU));
   }
 
   // Final estimate: Z * (1/M) * sum(w_T)

@@ -80,6 +80,10 @@ public:
 
   /** Method load() reloads the object from the StorageManager */
   void load(Advocate & adv) override;
+
+  /** Maximum coefficient of variation accessor */
+  void setMaximumCoefficientOfVariation(const Scalar) override;
+
 private:
 
   /** Function computing the auxiliary distribution as a function of current samples and associated weights */

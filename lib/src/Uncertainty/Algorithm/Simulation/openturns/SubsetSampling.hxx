@@ -79,6 +79,9 @@ public:
   void setInitialExperiment(const WeightedExperiment & initialExperiment);
   WeightedExperiment getInitialExperiment() const;
 
+  /** Maximum coefficient of variation accessor */
+  void setMaximumCoefficientOfVariation(const Scalar) override;
+
   /** Performs the actual computation. */
   void run() override;
 
