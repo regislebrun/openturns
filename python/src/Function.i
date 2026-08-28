@@ -63,37 +63,6 @@ PyObject * __getitem__(PyObject * args) const
   }
   else if (PySequence_Check(args))
   {
-#ifndef Py_LIMITED_API
-    PyObject * seq = PySequence_Fast(args, "expected a sequence of indices");
-    if (!seq)
-    {
-      PyErr_Clear();
-      throw OT::InvalidArgumentException(HERE) << "FunctionCollection.__getitem__: expected a sequence of indices";
-    }
-    const Py_ssize_t count = PySequence_Fast_GET_SIZE(seq);
-    OT::Collection< OT::Function > result(count);
-    for (Py_ssize_t i = 0; i < count; ++i)
-    {
-      PyObject * elt = PySequence_Fast_GET_ITEM(seq, i);
-      long index = PyLong_AsLong(elt);
-      if ((index == -1) && PyErr_Occurred())
-      {
-        Py_DECREF(seq);
-        PyErr_Clear();
-        throw OT::InvalidArgumentException(HERE) << "FunctionCollection.__getitem__: indices must be integers";
-      }
-      if (index < 0)
-        index += size;
-      if ((index < 0) || (index >= (long)size))
-      {
-        Py_DECREF(seq);
-        throw OT::OutOfBoundException(HERE) << "index should be in [0, " << size - 1 << "]";
-      }
-      result[i] = (*self)[index];
-    }
-    Py_DECREF(seq);
-    return SWIG_NewPointerObj(new OT::Collection< OT::Function >(result), SWIG_TypeQuery("OT::Collection< OT::Function > *"), SWIG_POINTER_OWN);
-#else
     const Py_ssize_t count = PySequence_Length(args);
     if (count < 0)
     {
@@ -125,7 +94,6 @@ PyObject * __getitem__(PyObject * args) const
       result[i] = (*self)[index];
     }
     return SWIG_NewPointerObj(new OT::Collection< OT::Function >(result), SWIG_TypeQuery("OT::Collection< OT::Function > *"), SWIG_POINTER_OWN);
-#endif
   }
   throw OT::InvalidArgumentException(HERE) << "FunctionCollection.__getitem__ expects an integer, a slice or a sequence of integers";
 }
