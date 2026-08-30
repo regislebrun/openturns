@@ -1,5 +1,9 @@
-%feature("docstring") OT::StandardDistributionPolynomialFactory
+%feature("docstring") OT::UniVariateDistributionPolynomialFactory
 R"RAW(Build orthonormal or orthogonal univariate polynomial families.
+
+.. warning::
+    This class is experimental and likely to be modified in future releases.
+    To use it, import the ``openturns.experimental`` submodule.
 
 Parameters
 ----------
@@ -90,7 +94,7 @@ Examples
 Build the specific orthonormal polynomial factory associated to the normal
 distribution (Hermite):
 
->>> polynomial_factory = otexp.StandardDistributionPolynomialFactory(ot.Normal())
+>>> polynomial_factory = otexp.UniVariateDistributionPolynomialFactory(ot.Normal())
 >>> for i in range(3):
 ...     print(polynomial_factory.build(i))
 1
@@ -100,18 +104,18 @@ X
 Build an orthonormal polynomial factory for the WeibullMin distribution with
 the default orthonormalization algorithm:
 
->>> polynomial_factory = otexp.StandardDistributionPolynomialFactory(ot.WeibullMin())
+>>> polynomial_factory = otexp.UniVariateDistributionPolynomialFactory(ot.WeibullMin())
 >>> for i in range(3):
 ...     print(polynomial_factory.build(i))
 1
 -1 + X
 1 - 2 * X + 0.5 * X^2
 
-Build an orthonormal polynomial factory for the WeibullMin distribution with
+Build an orthonormal polynomial factory for the Weibull min distribution with
 adaptive Stieltjes's orthonormalization algorithm:
 
 >>> algorithm = ot.AdaptiveStieltjesAlgorithm(ot.WeibullMin())
->>> polynomial_factory = otexp.StandardDistributionPolynomialFactory(algorithm)
+>>> polynomial_factory = otexp.UniVariateDistributionPolynomialFactory(algorithm)
 >>> for i in range(3):
 ...     print(polynomial_factory.build(i))
 1
@@ -121,7 +125,7 @@ adaptive Stieltjes's orthonormalization algorithm:
 
 // ---------------------------------------------------------------------
 
-%feature("docstring") OT::StandardDistributionPolynomialFactory::getHasSpecificFamily
+%feature("docstring") OT::UniVariateDistributionPolynomialFactory::getHasSpecificFamily
 "Accessor to the specific family boolean.
 
 Returns
@@ -131,7 +135,7 @@ hasSpecificFamily : bool
 
 // ---------------------------------------------------------------------
 
-%feature("docstring") OT::StandardDistributionPolynomialFactory::getOrthonormalizationAlgorithm
+%feature("docstring") OT::UniVariateDistributionPolynomialFactory::getOrthonormalizationAlgorithm
 "Accessor to the orthonormalization algorithm.
 
 Returns
@@ -141,7 +145,7 @@ orthonormalizationAlgorithm : :class:`~openturns.OrthonormalizationAlgorithm`
 
 // ---------------------------------------------------------------------
 
-%feature("docstring") OT::StandardDistributionPolynomialFactory::getSpecificFamily
+%feature("docstring") OT::UniVariateDistributionPolynomialFactory::getSpecificFamily
 "Accessor to the specific orthonormal polynomial family.
 
 Returns
