@@ -3,6 +3,15 @@ R"RAW(Legendre specific orthonormal univariate polynomial family.
 
 For the :class:`~openturns.Uniform` distribution.
 
+Parameters
+----------
+a : float, optional
+    Lower bound :math:`a` of the :class:`~openturns.Uniform` distribution.
+    Defaults to -1.0.
+b : float, optional
+    Upper bound :math:`b` of the :class:`~openturns.Uniform` distribution.
+    Defaults to 1.0.
+
 Notes
 -----
 Any sequence of orthogonal polynomials has a recurrence formula relating any
@@ -25,9 +34,13 @@ read:
                                        {(i + 1) \sqrt{2 i - 1}}
     \end{array}, \quad 1 < i
 
+The nodes and weights of the associated Gauss-Legendre quadrature rule are
+computed using the fast algorithm of Bogaert [bogaert2014]_ via the ``fastgl``
+library, which provides O(1) computation per node for any degree.
+
 See also
 --------
-StandardDistributionPolynomialFactory
+experimental.UniVariateDistributionPolynomialFactory
 
 Examples
 --------
@@ -37,4 +50,11 @@ Examples
 ...     print(polynomial_factory.build(i))
 1
 1.73205 * X
--1.11803 + 3.3541 * X^2)RAW"
+-1.11803 + 3.3541 * X^2
+
+>>> polynomial_factory = ot.LegendreFactory(0.0, 2.0)
+>>> for i in range(3):
+...     print(polynomial_factory.build(i))
+1
+-1.73205 + 1.73205 * X
+2.23607 - 6.7082 * X + 3.3541 * X^2)RAW"
