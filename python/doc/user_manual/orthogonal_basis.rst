@@ -57,6 +57,7 @@ Refer to :ref:`orthonormal_polynomials`.
 
     OrthogonalUniVariatePolynomial
     OrthogonalUniVariatePolynomialFamily
+    experimental.StandardDistributionPolynomialFactory
     OrthogonalUniVariatePolynomialFactory
     UniVariateDistributionPolynomialFactory
     UniVariateFunctionFamily
@@ -101,6 +102,7 @@ Orthogonal multivariate functions
     :template: class.rst_t
 
     experimental.FiniteOrthogonalFunctionFactory
+    experimental.UniVariateDistributionPolynomialFactory
 
 Making orthogonal multivariate functions from orthogonal univariate functions
 -----------------------------------------------------------------------------
