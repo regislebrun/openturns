@@ -67,7 +67,11 @@ int main(int, char *[])
       assert_almost_equal(weights[0], 1.0, 0.0, 1.0e-14, ", n=1 weight");
     }
     // Cross-check against the reference Golub-Welsch implementation exposed
-    // by HermiteFactory (weight = standard normal density, orthonormal basis)
+    // by HermiteFactory (weight = standard normal density, orthonormal basis).
+    // This is an independent implementation: HermiteFactory goes through the
+    // eigenvector path (LAPACK dstev with jobz='V', weights from the first
+    // eigenvector components) while FastHermite uses the eigenvalues-only
+    // solve plus Newton polishing and Christoffel weights.
     {
       const UnsignedInteger order[] = {4, 12, 40, 1024};
       const HermiteFactory refFactory;
