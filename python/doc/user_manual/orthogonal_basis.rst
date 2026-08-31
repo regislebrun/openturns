@@ -102,7 +102,6 @@ Orthogonal multivariate functions
     :template: class.rst_t
 
     experimental.FiniteOrthogonalFunctionFactory
-    experimental.UniVariateDistributionPolynomialFactory
 
 Making orthogonal multivariate functions from orthogonal univariate functions
 -----------------------------------------------------------------------------
