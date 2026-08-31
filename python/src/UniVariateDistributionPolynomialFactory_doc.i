@@ -121,6 +121,13 @@ adaptive Stieltjes's orthonormalization algorithm:
 1
 -1 + X
 1 - 2 * X + 0.5 * X^2
+
+Non-standard parameters trigger an affine transformation. For example,
+a Normal distribution with :math:`\mu = 2.0` and :math:`\sigma = 3.0`:
+
+>>> polynomial_factory = otexp.UniVariateDistributionPolynomialFactory(ot.Normal(2.0, 3.0))
+>>> polynomial_factory.getHasSpecificFamily()
+True
 )RAW"
 
 // ---------------------------------------------------------------------
