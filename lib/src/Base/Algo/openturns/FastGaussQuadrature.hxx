@@ -61,7 +61,7 @@ namespace FastGaussQuadrature
    *  @param b      off-diagonal of the Jacobi matrix, length n; b[0] is unused,
    *                b[i] for i=1..n-1 are the sub/super-diagonal entries
    *  @param n      number of quadrature nodes (> 0)
-   *  @param nodes  input: initial guesses (length n); output: refined nodes
+   *  @param nodes  output: refined nodes (length n)
    *  @param weights output: quadrature weights (length n), sums to 1
    */
   void PolishedSolve(const Scalar * gamma,

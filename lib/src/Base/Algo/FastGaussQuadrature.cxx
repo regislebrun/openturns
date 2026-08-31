@@ -85,18 +85,17 @@ namespace FastGaussQuadrature
     for (UnsignedInteger i = 0; i < n; ++i)
     {
       Scalar x = d[i];
-      Scalar previousStep = 0.0;
+      Scalar previousMagnitude = 0.0;
       UnsignedInteger stallCount = 0;
       for (UnsignedInteger iter = 0; iter < 20; ++iter)
       {
         // Evaluate p_n(x) and p'_n(x) by the symmetric three-term recurrence
-        Scalar pN = 0.0;
-        Scalar dPN = 0.0;
+        // Loop runs n-1 times to compute p_{n-1} and p'_{n-1}
         Scalar pp = 0.0;
         Scalar pk = 1.0;
         Scalar dpp = 0.0;
         Scalar dpk = 0.0;
-        for (UnsignedInteger j = 0; j < n; ++j)
+        for (UnsignedInteger j = 0; j < n - 1; ++j)
         {
           const Scalar bjp1 = b[j + 1];
           const Scalar pjp1 = ((x - gamma[j]) * pk - b[j] * pp) / bjp1;
@@ -106,28 +105,31 @@ namespace FastGaussQuadrature
           dpp = dpk;
           dpk = dpjp1;
         }
-        pN = pk;
-        dPN = dpk;
+        // Now pp = p_{n-2}, pk = p_{n-1}, dpk = p'_{n-1}
+        // Compute p_n and p'_n using the recurrence at the last step (b[n] = 0)
+        const Scalar pN = ((x - gamma[n - 1]) * pk - b[n - 1] * pp);
+        const Scalar dPN = ((x - gamma[n - 1]) * dpk + pk - b[n - 1] * dpp);
 
         const Scalar step = pN / dPN;
         x -= step;
         const Scalar magnitude = std::abs(step) / (1.0 + std::abs(x));
         if (magnitude <= tolerance) break;
-        if (magnitude >= 0.5 * std::abs(previousStep))
+        if ((iter > 0) && (magnitude >= 0.5 * previousMagnitude))
         {
           ++stallCount;
           if (stallCount >= 2) break;
         }
         else stallCount = 0;
-        previousStep = step;
+        previousMagnitude = magnitude;
       }
-      // Re-evaluate at the final point
+      // Re-evaluate at the final point for weight computation
+      // We need p_{n-1}(x_i) and p'_n(x_i)
       {
         Scalar pp = 0.0;
         Scalar pk = 1.0;
         Scalar dpp = 0.0;
         Scalar dpk = 0.0;
-        for (UnsignedInteger j = 0; j < n; ++j)
+        for (UnsignedInteger j = 0; j < n - 1; ++j)
         {
           const Scalar bjp1 = b[j + 1];
           const Scalar pjp1 = ((x - gamma[j]) * pk - b[j] * pp) / bjp1;
@@ -137,8 +139,9 @@ namespace FastGaussQuadrature
           dpp = dpk;
           dpk = dpjp1;
         }
-        fm[i] = pp;   // p_{n-1}
-        dfm[i] = dpk;  // p'_n
+        // pp = p_{n-2}, pk = p_{n-1}, dpk = p'_{n-1}
+        fm[i] = pk;   // p_{n-1}
+        dfm[i] = ((x - gamma[n - 1]) * dpk + pk - b[n - 1] * dpp);  // p'_n
       }
       d[i] = x;
     }
