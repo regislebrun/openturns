@@ -51,7 +51,7 @@ Examples
 >>> # Construction of the multivariate orthonormal basis
 >>> polyColl = [0.0]*inputDim
 >>> for i in range(distribution.getDimension()):
-...     polyColl[i] = otexp.StandardDistributionPolynomialFactory(distribution.getMarginal(i))
+...     polyColl[i] = otexp.UniVariateDistributionPolynomialFactory(distribution.getMarginal(i))
 >>> enumerateFunction = ot.LinearEnumerateFunction(inputDim)
 >>> productBasis = ot.OrthogonalProductPolynomialFactory(polyColl, enumerateFunction)
 >>> # Truncature strategy of the multivariate orthonormal basis

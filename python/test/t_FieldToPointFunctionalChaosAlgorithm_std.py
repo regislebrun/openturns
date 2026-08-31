@@ -88,7 +88,7 @@ yFCE = resultFCE.getOutputSample()
 validation = ot.MetaModelValidation(yFCE, resultFCE.getMetaModel()(xFCE))
 mse = validation.computeMeanSquaredError()
 print("MSE", mse)
-assert mse.norm() < 2e-2, "MSE too large"
+ott.assert_almost_equal(mse.norm(), 0.0, 0.0, 2e-2)
 
 # check modes retained
 kl_results = result.getInputKLResultCollection()
@@ -109,7 +109,7 @@ yFCE = resultFCE.getOutputSample()
 validation = ot.MetaModelValidation(yFCE, resultFCE.getMetaModel()(xFCE))
 mse = validation.computeMeanSquaredError()
 print("MSE", mse)
-assert mse.norm() < 2e-2, "MSE too large"
+ott.assert_almost_equal(mse.norm(), 0.0, 0.0, 2e-2)
 
 # check modes retained
 kl_results = result.getInputKLResultCollection()

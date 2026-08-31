@@ -63,7 +63,7 @@ First, we create the PCE.
 >>> distribution = ot.JointDistribution([ot.Uniform()] * inputDimension)
 >>> polyColl = [0.0] * inputDimension
 >>> for i in range(distribution.getDimension()):
-...     polyColl[i] = otexp.StandardDistributionPolynomialFactory(distribution.getMarginal(i))
+...     polyColl[i] = otexp.UniVariateDistributionPolynomialFactory(distribution.getMarginal(i))
 >>> enumerateFunction = ot.LinearEnumerateFunction(inputDimension)
 >>> productBasis = ot.OrthogonalProductPolynomialFactory(polyColl, enumerateFunction)
 >>> degree = 4
