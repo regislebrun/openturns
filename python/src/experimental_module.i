@@ -62,6 +62,7 @@
 %include MarginalUniformOrderStatistics.i
 %include MultivariateUniform.i
 %include MultivariateUniformFactory.i
+%include PiecewiseLinearDistribution.i
 %include TruncatedDistributionFactory.i
 %include SquaredNormalFactory.i
 %include InverseGammaFactory.i
