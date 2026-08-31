@@ -90,7 +90,7 @@ Of the :class:`~openturns.Beta` distribution.
 Returns
 -------
 alpha : float
-    Alternative shape parameter :math:`\alpha = r - 1` of the
+    Alternative shape parameter :math:`\alpha = t - r - 1` of the
     :class:`~openturns.Beta` distribution.)RAW"
 
 // ---------------------------------------------------------------------
@@ -103,5 +103,5 @@ Of the :class:`~openturns.Beta` distribution.
 Returns
 -------
 beta : float
-    Alternative shape parameter :math:`\beta = t - r - 1` of the
+    Alternative shape parameter :math:`\beta = r - 1` of the
     :class:`~openturns.Beta` distribution.)RAW"

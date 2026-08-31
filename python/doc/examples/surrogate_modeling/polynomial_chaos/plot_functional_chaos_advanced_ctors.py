@@ -73,7 +73,7 @@ polyColl[1] = ot.CharlierFactory()
 polyColl[0] = ot.HermiteFactory()
 polyColl[1] = ot.LegendreFactory()
 polyColl[2] = ot.LaguerreFactory(2.75)
-polyColl[3] = ot.JacobiFactory(2.5, 3.5)
+polyColl[3] = ot.JacobiFactory(2.5, 1.0, -1.0, 2.0)
 
 # %%
 # Create the enumeration function.
