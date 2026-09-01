@@ -35,6 +35,9 @@ x : sequence of float, size :math:`n \geq 2`
 y : sequence of float, size :math:`n`
     Ordinates (PDF values at the abscissae), nonnegative.
 
+    Using the default constructor, the values are :math:`\vect{x} = (-1, 1)`
+    and :math:`\vect{y} = (0.5, 0.5)`.
+
 Examples
 --------
 Create a distribution:
