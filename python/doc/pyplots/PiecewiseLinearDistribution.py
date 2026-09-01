@@ -8,10 +8,7 @@ ot.RandomGenerator.SetSeed(0)
 
 n_points = 21
 x = ot.RegularGrid(-2.0 * math.pi, 4.0 * math.pi / (n_points - 1), n_points).getVertices().asPoint()
-y = [math.sin(xi) for xi in x]
-# Shift so that all ordinates are nonnegative (minimum of sin on this range is -1)
-offset = -min(y)
-y = [yi + offset for yi in y]
+y = [math.sin(xi) + 1.5 for xi in x]
 distribution = otexp.PiecewiseLinearDistribution(x, y)
 
 fig = plt.figure(figsize=(10, 4))
@@ -28,4 +25,4 @@ cdf_graph = distribution.drawCDF()
 otv.View(cdf_graph, figure=fig, axes=[ax_cdf], add_legend=False)
 ax_cdf.set_title("CDF")
 
-fig.suptitle("PiecewiseLinearDistribution discretizing $x \\mapsto \\sin(x) + 1$ on $[-2\\pi, 2\\pi]$")
+fig.suptitle("PiecewiseLinearDistribution discretizing $x \\mapsto \\sin(x) + 1.5$ on $[-2\\pi, 2\\pi]$")

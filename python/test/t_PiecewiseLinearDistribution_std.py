@@ -105,6 +105,11 @@ for prob in [0.1, 0.25, 0.5, 0.75, 0.9]:
     q = distribution.computeScalarQuantile(prob)
     cdf = distribution.computeCDF(q)
     ott.assert_almost_equal(cdf, prob)
+
+# same round-trip on non-unit segment widths (dist0 has dx=2)
+for prob in [0.1, 0.25, 0.5, 0.75, 0.9]:
+    q = dist0.computeScalarQuantile(prob)
+    ott.assert_almost_equal(dist0.computeCDF(q), prob)
 print("Quantile OK")
 
 # ---------------------------------------------------------------------------
@@ -362,6 +367,9 @@ y_asym = ot.Point([0.1, 0.5, 0.3, 0.05])
 dist_asym = otexp.PiecewiseLinearDistribution(x_asym, y_asym)
 ott.assert_almost_equal(dist_asym.computeCDF(0.0), 0.0)
 ott.assert_almost_equal(dist_asym.computeCDF(5.0), 1.0)
+for prob in [0.1, 0.25, 0.5, 0.75, 0.9]:
+    q = dist_asym.computeScalarQuantile(prob)
+    ott.assert_almost_equal(dist_asym.computeCDF(q), prob)
 print("Asymmetric shape OK")
 
 # Interior zero: y touches zero at an interior knot

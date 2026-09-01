@@ -32,11 +32,8 @@ Parameters
 x : sequence of float, size :math:`n \geq 2`
     Abscissae, strictly increasing.
 
-    Default value is [-1.0, 1.0].
 y : sequence of float, size :math:`n`
     Ordinates (PDF values at the abscissae), nonnegative.
-
-    Default value is [0.5, 0.5].
 
 Examples
 --------
@@ -90,26 +87,6 @@ Parameters
 ----------
 y : sequence of float, size :math:`n`
     Ordinates (PDF values at the abscissae), nonnegative."
-
-// ---------------------------------------------------------------------
-
-%feature("docstring") OT::PiecewiseLinearDistribution::computeEntropy
-"Entropy of the distribution.
-
-Returns
--------
-entropy : float
-    The entropy of the distribution."
-
-// ---------------------------------------------------------------------
-
-%feature("docstring") OT::PiecewiseLinearDistribution::getRoughness
-"Roughness of the distribution, i.e. the L2-norm of the PDF.
-
-Returns
--------
-roughness : float
-    The roughness of the distribution, :math:`\int f_X(x)^2 \, dx`."
 
 // ---------------------------------------------------------------------
 

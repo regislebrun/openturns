@@ -19,6 +19,7 @@
  *
  */
 #include <cmath>
+#include <algorithm>
 #include "openturns/PiecewiseLinearDistribution.hxx"
 #include "openturns/RandomGenerator.hxx"
 #include "openturns/PersistentObjectFactory.hxx"
@@ -66,7 +67,7 @@ PiecewiseLinearDistribution::PiecewiseLinearDistribution(const Point & x,
   , x_(x)
   , y_(y)
   , yNorm_(y)
-  , probabilities_(x.getSize() - 1)
+  , probabilities_(0)
 {
   setName("PiecewiseLinearDistribution");
   if (x.getSize() < 2)
@@ -284,7 +285,9 @@ Scalar PiecewiseLinearDistribution::computeScalarQuantile(const Scalar prob,
     if (cumProb + probabilities_[i] >= q)
     {
       // Target is within this segment
-      const Scalar remain = q - cumProb;
+      const Scalar dx = x_[i + 1] - x_[i];
+      if (dx <= 0.0) return x_[i];
+      const Scalar remain = (q - cumProb) / dx;
       const Scalar a = 0.5 * (yNorm_[i + 1] - yNorm_[i]);
       const Scalar b = yNorm_[i];
       Scalar t = 0.0;
@@ -292,6 +295,7 @@ Scalar PiecewiseLinearDistribution::computeScalarQuantile(const Scalar prob,
       {
         // Linear case: b*t = remain
         t = (b > 0.0) ? remain / b : 0.0;
+        if (t > 1.0) t = 1.0;
       }
       else
       {
@@ -405,7 +409,8 @@ void PiecewiseLinearDistribution::computeCovariance() const
                      + y1 * (x0_2 + 2.0 * x0 * x1 + 3.0 * x1_2)) / 12.0);
   }
   covariance_ = CovarianceMatrix(1);
-  covariance_(0, 0) = m2Sum.value - mean_[0] * mean_[0];
+  const Scalar mu = getMean()[0];
+  covariance_(0, 0) = m2Sum.value - mu * mu;
   isAlreadyComputedCovariance_ = true;
 }
 
@@ -436,7 +441,7 @@ Point PiecewiseLinearDistribution::getSkewness() const
     m3Sum.add(dx * (y0 * (4.0 * x0_3 + 3.0 * x0_2 * x1 + 2.0 * x0 * x1_2 + x1_3)
                     + y1 * (x0_3 + 2.0 * x0_2 * x1 + 3.0 * x0 * x1_2 + 4.0 * x1_3)) / 20.0);
   }
-  const Scalar mu = mean_[0];
+  const Scalar mu = getMean()[0];
   const Scalar sigma2 = getCovariance()(0, 0);
   const Scalar sigma = std::sqrt(sigma2);
   if (sigma == 0.0) return Point(1, 0.0);
@@ -465,7 +470,7 @@ Point PiecewiseLinearDistribution::getKurtosis() const
     m4Sum.add(dx * (y0 * (5.0 * x0_4 + 4.0 * x0_3 * x1 + 3.0 * x0_2 * x1_2 + 2.0 * x0 * x1_3 + x1_4)
                     + y1 * (x0_4 + 2.0 * x0_3 * x1 + 3.0 * x0_2 * x1_2 + 4.0 * x0 * x1_3 + 5.0 * x1_4)) / 30.0);
   }
-  const Scalar mu = mean_[0];
+  const Scalar mu = getMean()[0];
   const Scalar sigma2 = getCovariance()(0, 0);
   if (sigma2 == 0.0) return Point(1, 0.0);
   const Scalar sigma4 = sigma2 * sigma2;
@@ -495,11 +500,8 @@ Point PiecewiseLinearDistribution::getParameter() const
 {
   const UnsignedInteger n = x_.getSize();
   Point parameter(2 * n);
-  for (UnsignedInteger i = 0; i < n; ++i)
-  {
-    parameter[i] = x_[i];
-    parameter[n + i] = y_[i];
-  }
+  std::copy(x_.begin(), x_.end(), parameter.begin());
+  std::copy(y_.begin(), y_.end(), parameter.begin() + n);
   return parameter;
 }
 
@@ -510,11 +512,8 @@ void PiecewiseLinearDistribution::setParameter(const Point & parameter)
   const Scalar w = getWeight();
   Point x(n);
   Point y(n);
-  for (UnsignedInteger i = 0; i < n; ++i)
-  {
-    x[i] = parameter[i];
-    y[i] = parameter[n + i];
-  }
+  std::copy(parameter.begin(), parameter.begin() + n, x.begin());
+  std::copy(parameter.begin() + n, parameter.end(), y.begin());
   *this = PiecewiseLinearDistribution(x, y);
   setWeight(w);
 }
@@ -524,12 +523,8 @@ void PiecewiseLinearDistribution::setParameter(const Point & parameter)
 Description PiecewiseLinearDistribution::getParameterDescription() const
 {
   const UnsignedInteger n = x_.getSize();
-  Description description(2 * n);
-  for (UnsignedInteger i = 0; i < n; ++i)
-  {
-    description[i] = OSS() << "x" << i;
-    description[n + i] = OSS() << "y" << i;
-  }
+  Description description(Description::BuildDefault(n, "x"));
+  description.add(Description::BuildDefault(n, "y"));
   return description;
 }
 
@@ -565,6 +560,8 @@ void PiecewiseLinearDistribution::setY(const Point & y)
     if (y[i] < 0.0)
       throw InvalidArgumentException(HERE) << "Error: y must be nonnegative";
   }
+  if (*std::max_element(y.begin(), y.end()) <= 0.0)
+    throw InvalidArgumentException(HERE) << "Error: at least one y value must be strictly positive";
   if (y != y_)
   {
     y_ = y;
@@ -604,9 +601,10 @@ void PiecewiseLinearDistribution::load(Advocate & adv)
   DistributionImplementation::load(adv);
   adv.loadAttribute("x_", x_);
   adv.loadAttribute("y_", y_);
-  const UnsignedInteger n = x_.getSize();
+  if (x_.getSize() < 2)
+    throw InvalidArgumentException(HERE) << "Error: x must have at least 2 elements, here x.getSize()=" << x_.getSize();
   yNorm_ = y_;
-  probabilities_ = Point(n - 1);
+  probabilities_ = Point(x_.getSize() - 1);
   update();
 }
 
