@@ -22,9 +22,8 @@ read:
     \end{array}, \quad 1 < i
 
 The nodes and weights of the associated Gauss-Hermite quadrature rule are
-computed using the Golub-Welsch algorithm [golub1969]_ via the symmetric
-tridiagonal Jacobi matrix. Fast dedicated solvers are available in
-``FastHermite`` [gst2018]_ [gst2026]_.
+computed using the Golub-Welsch algorithm via the symmetric
+tridiagonal Jacobi matrix.
 
 See also
 --------

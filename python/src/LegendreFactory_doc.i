@@ -35,8 +35,7 @@ read:
     \end{array}, \quad 1 < i
 
 The nodes and weights of the associated Gauss-Legendre quadrature rule are
-computed using the fast algorithm of Bogaert [bogaert2014]_ via the ``fastgl``
-library, which provides O(1) computation per node for any degree.
+computed using the symmetric tridiagonal Jacobi matrix approach.
 
 See also
 --------
