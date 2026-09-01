@@ -362,15 +362,14 @@ Bool TruncatedDistribution::hasSimplifiedVersion(Distribution & simplified) cons
       const PiecewiseLinearDistribution * pwd(dynamic_cast< const PiecewiseLinearDistribution * >(localDistribution.getImplementation().get()));
       const Point xOld(pwd->getX());
       const Point yOld(pwd->getY());
-      const Scalar a = xOld[0];
-      const Scalar b = xOld[xOld.getSize() - 1];
+      const Scalar xLow = xOld[0];
+      const Scalar xUp = xOld[xOld.getSize() - 1];
       // Collect x and y values within [alpha, beta], interpolating at boundaries
       Point xNew;
       Point yNew;
       // Interpolate at alpha if it falls inside the original support
-      if (alpha > a)
+      if (alpha > xLow)
       {
-        const Scalar t = (alpha - a) / (b - a);
         // Find the segment containing alpha
         for (UnsignedInteger i = 0; i < xOld.getSize() - 1; ++i)
         {
@@ -395,7 +394,7 @@ Bool TruncatedDistribution::hasSimplifiedVersion(Distribution & simplified) cons
         }
       }
       // Interpolate at beta if it falls inside the original support
-      if (beta < b)
+      if (beta < xUp)
       {
         for (UnsignedInteger i = 0; i < xOld.getSize() - 1; ++i)
         {
