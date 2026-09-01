@@ -4,7 +4,7 @@
 
 Parameters
 ----------
-evaluation : :class:`~openturns.Evaluation`
+evaluation : ``Evaluation``
     The evaluation.
 inputPositions : :class:`~openturns.Indices`
     The positions of the parameters in the input vector.
@@ -18,7 +18,7 @@ parameters : :class:`~openturns.Point`
 
 Returns
 -------
-evaluation : :class:`~openturns.Evaluation`
+evaluation : ``Evaluation``
     The underlying evaluation"
 
 

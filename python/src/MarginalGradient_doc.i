@@ -4,7 +4,7 @@
 
 Parameters
 ----------
-gradient : :class:`~openturns.Gradient`
+gradient : ``Gradient``
     The gradient.
 indices : :class:`~openturns.Indices`
     The indices of the input variables to keep."
@@ -16,7 +16,7 @@ indices : :class:`~openturns.Indices`
 
 Returns
 -------
-gradient : :class:`~openturns.Gradient`
+gradient : ``Gradient``
     The underlying gradient"
 
 

@@ -4,7 +4,7 @@
 
 Parameters
 ----------
-evaluation : :class:`~openturns.Evaluation`
+evaluation : ``Evaluation``
     The evaluation.
 indices : :class:`~openturns.Indices`
     The indices of the input variables to keep."
@@ -16,7 +16,7 @@ indices : :class:`~openturns.Indices`
 
 Returns
 -------
-evaluation : :class:`~openturns.Evaluation`
+evaluation : ``Evaluation``
     The underlying evaluation"
 
 

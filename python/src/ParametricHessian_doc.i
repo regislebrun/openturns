@@ -4,7 +4,7 @@
 
 Parameters
 ----------
-hessian : :class:`~openturns.Hessian`
+hessian : ``Hessian``
     The hessian.
 inputPositions : :class:`~openturns.Indices`
     The positions of the parameters in the input vector."
@@ -16,7 +16,7 @@ inputPositions : :class:`~openturns.Indices`
 
 Returns
 -------
-evaluation : :class:`~openturns.Hessian`
+evaluation : ``Hessian``
     The underlying hessian"
 
 
