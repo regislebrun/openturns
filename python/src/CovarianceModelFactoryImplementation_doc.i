@@ -7,8 +7,43 @@ This class is an interface class for all the classes that build covariance model
 
 See also
 --------
-StationaryCovarianceModelFactory, NonStationaryCovarianceModelFactory"
+StationaryCovarianceModelFactory, NonStationaryCovarianceModelFactory
+
+Notes
+-----
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *CovarianceModel-DefaultNuggetFactor* (:raw:`Scalar`, default: `1e-12`)"
+
+
+
+
+
+
+
 %enddef
 %feature("docstring") OT::CovarianceModelFactoryImplementation
 OT_CovarianceModelFactory_doc
+
+
+
+%feature("docstring") OT::CovarianceModelFactoryImplementation::build
+"Estimate a covariance model from data.
+
+Available usages:
+    build(*sample*)
+
+    build(*sample, center*)
+
+Parameters
+----------
+sample : :class:`~openturns.NumericalSample`
+    The sample of a stochastic process.
+center : :class:`~openturns.NumericalPoint`
+    The center of the process.
+
+Returns
+-------
+covModel : :class:`~openturns.CovarianceModel`
+    The estimated covariance model."
 

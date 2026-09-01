@@ -55,6 +55,14 @@ Create a *SpectralGaussianProcess* from a spectral model and a time grid:
 >>> mySpectralModel = ot.CauchyModel(scale, amplitude, spatialCorrelation)
 >>> mySpectNormProc1 = ot.SpectralGaussianProcess(mySpectralModel, myTimeGrid)
 
+
+Notes
+-----
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *SpectralGaussianProcess-CholeskyCacheSize* (:raw:`UnsignedInteger`, default: `16384`)
+- *SpectralGaussianProcess-MaximalScaling* (:raw:`Scalar`, default: `1e-05`)
+- *SpectralGaussianProcess-StartingScaling* (:raw:`Scalar`, default: `1e-13`)
 )RAW"
 // ---------------------------------------------------------------------
 
@@ -131,3 +139,13 @@ Returns
 specMod : :class:`~openturns.SpectralModel`
     The spectral model defining the process.
 "
+
+
+%feature("docstring") OT::SpectralGaussianProcess::AdaptGrid
+"Adapt the frequency grid.
+
+Returns
+-------
+grid : :class:`~openturns.RegularGrid`
+    The adapted frequency grid"
+
