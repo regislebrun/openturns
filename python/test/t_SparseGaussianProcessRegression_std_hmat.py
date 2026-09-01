@@ -29,8 +29,8 @@ def test_regression_from_result():
     variance = {}
     for method in (SparseGaussianProcessFitterResult.LAPACK, SparseGaussianProcessFitterResult.HMAT):
         fit_algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X)
-        fit_algo.setNoiseVariance(1e-2)
-        fit_algo.setOptimizeNoiseVariance(False)
+        fit_algo.setNoiseStdDev(1e-2)
+        fit_algo.setOptimizeNoiseStdDev(False)
         fit_algo.setMethod(method)
         fit_algo.run()
         algo = SparseGaussianProcessRegression(fit_algo.getResult())

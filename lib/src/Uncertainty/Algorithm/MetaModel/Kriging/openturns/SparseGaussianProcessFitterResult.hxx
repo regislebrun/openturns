@@ -56,7 +56,7 @@ public:
                                     const TriangularMatrix & whiteningFactor,
                                     const Point & posteriorMean,
                                     const CovarianceMatrix & posteriorCovariance,
-                                    const Scalar noiseVariance,
+                                     const Scalar noiseStdDev,
                                     const Scalar optimalELBO,
                                     const Function & metaModel,
                                     const LinearAlgebra linearAlgebraMethod = LAPACK);
@@ -93,7 +93,7 @@ public:
   CovarianceMatrix getPosteriorCovariance() const;
 
   /** Noise variance accessor */
-  Scalar getNoiseVariance() const;
+  Scalar getNoiseStdDev() const;
 
   /** optimal ELBO value */
   Scalar getOptimalELBO() const;
@@ -131,8 +131,8 @@ private:
   /** The covariance of the whitened variational posterior */
   CovarianceMatrix posteriorCovariance_;
 
-  /** The noise variance */
-  Scalar noiseVariance_ = 1.0;
+  /** The noise standard deviation */
+  Scalar noiseStdDev_ = 1.0;
 
   /** optimal ELBO value */
   Scalar optimalELBO_ = 0.0;

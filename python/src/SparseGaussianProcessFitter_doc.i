@@ -11,17 +11,44 @@ Titsias [titsias2009]_ (see also [wenliang2021]_ for the whitened parametrisatio
 We consider a Gaussian process :math:`Y` with covariance model :math:`k` and an independent
 centered Gaussian noise of variance :math:`\sigma^2` on the observations
 :math:`\vect{y} = (y_1, \dots, y_n)^t \in \Rset^n`.
+Let :math:`p(y \mid f) = \cN(y \mid f, \sigma^2 \mat{I}_n)` denote the likelihood of
+the observations given the latent function values :math:`\vect{f}`.
 
-The model is approximated by introducing a set of :math:`m` inducing points
-:math:`\mat{Z} = (\vect{z}_1, \dots, \vect{z}_m)^t` with :math:`m \leq n`, and the variational
-posterior is taken in the whitened parametrisation:
+The model is approximated by introducing a set of :math:`m` inducing inputs
+:math:`\mat{Z} = (\vect{z}_1, \dots, \vect{z}_m)^t \in \Rset^{\inputDim \times m}` with
+:math:`m \leq n`. The inducing inputs lie in the same input space as the training data.
+They are associated with inducing variables
+:math:`\vect{u} = (u_1, \dots, u_m)^t` corresponding to the evaluation of the Gaussian
+process at the inducing inputs, so that
+:math:`p(\vect{u} \mid \mat{Z}) = \cN(\vect{u} \mid \vect{0}, \mat{K}_{uu})` with
+:math:`\mat{K}_{uu} = k(\mat{Z}, \mat{Z})`. The joint distribution of the latent
+function values :math:`\vect{f}` at the training inputs :math:`\mat{X}` and the inducing
+variables :math:`\vect{u}` is:
+
+.. math::
+
+    p(\vect{f}, \vect{u} \mid \mat{X}, \mat{Z}) = \cN\left(
+    \vect{0}, \begin{pmatrix} \mat{K}_{ff} & \mat{K}_{fu} \\ \mat{K}_{uf} & \mat{K}_{uu}
+    \end{pmatrix}\right)
+
+where :math:`\mat{K}_{ff} = k(\mat{X}, \mat{X})` and :math:`\mat{K}_{fu} = k(\mat{X}, \mat{Z})`.
+The conditional distribution of :math:`\vect{f}` given :math:`\vect{u}` is:
+
+.. math::
+
+    p(\vect{f} \mid \vect{u}, \mat{X}, \mat{Z}) = \cN(\vect{f} \mid
+    \mat{K}_{fu} \mat{K}_{uu}^{-1} \vect{u},\, \mat{K}_{ff} - \mat{K}_{fu}
+    \mat{K}_{uu}^{-1} \mat{K}_{fu}^t)
+
+The model is approximated by introducing a variational posterior
+in the whitened parametrisation:
 
 .. math::
 
     q(\vect{w}) = \cN(\vect{m}_w, \mat{S}_{ww})
 
 The optimal variational parameters are available in closed form given the covariance model
-parameters, the inducing points and the noise variance:
+parameters, the inducing inputs and the noise standard deviation:
 
 .. math::
 
@@ -32,8 +59,9 @@ with :math:`\mat{A} = \mat{K}_{fu} \mat{L}_{uu}^{-t}`,
 :math:`\mat{B} = \sigma^2 \mat{I}_m + \mat{A}^t \mat{A}`, :math:`\mat{K}_{uu} = k(\mat{Z}, \mat{Z})`
 and :math:`\mat{L}_{uu}` its Cholesky factor.
 
-The objective function, namely the collapsed ELBO, is maximized with respect to the active
-parameters of the covariance model, the logarithm of the noise variance and the inducing points:
+The objective function, namely the collapsed Evidence Lower Bound (ELBO), is maximized with
+respect to the active parameters of the covariance model, the logarithm of the noise
+standard deviation and the inducing inputs:
 
 .. math::
 
@@ -47,7 +75,7 @@ where :math:`\vect{c} = \mat{L}_B^{-1} \mat{A}^t \vect{y}` and
 The behaviour of the algorithm is controlled by the following flags:
 
 - :meth:`setOptimizeParameters` controls the optimization of the active covariance model parameters (default True),
-- :meth:`setOptimizeNoiseVariance` controls the optimization of the noise variance (default True),
+- :meth:`setOptimizeNoiseStdDev` controls the optimization of the noise standard deviation (default True),
 - :meth:`setOptimizeInducingPoints` controls the optimization of the inducing points (default False).
 
 When the number of inducing points :math:`m` equals the number of observations :math:`n` and
@@ -59,7 +87,7 @@ The optimization of the hyperparameters relies on a local optimizer
 (:class:`~openturns.TNC` by default) and can converge to a degenerate optimum when the
 initial inducing points are not informative enough, e.g. when they are too few or clustered:
 the amplitude of the covariance model is then driven to its lower bound and the noise
-variance to a large value, which leads to a metamodel predicting a constant value. This is a
+standard deviation to a large value, which leads to a metamodel predicting a constant value. This is a
 genuine maximum of the ELBO for such a loose approximation. Increasing the number of
 inducing points, spreading them over the input domain or restarting the optimization from
 different initial parameters usually avoids this configuration.
@@ -75,7 +103,8 @@ covarianceModel : :class:`~openturns.CovarianceModel`
 
 inducingPoints : :class:`~openturns.Sample` or int
     The inducing points :math:`(\vect{z}_j)_{1 \leq j \leq m}`. If an integer is given,
-    the inducing points are deterministically selected as a subset of the input sample.
+    the inducing points are uniformly subsampled from the input sample at approximately
+    regular index intervals.
 
 Notes
 -----
@@ -86,9 +115,9 @@ This class is controlled by the following :class:`~openturns.ResourceMap` entrie
 - `SparseGaussianProcessFitter-DefaultOptimizationUpperBound` (default 1.0e2): the default upper bound for the covariance model parameters,
 - `SparseGaussianProcessFitter-OptimizationLowerBoundScaleFactor` (default 1.0e-3): the lower bound scale factor for the covariance model parameters,
 - `SparseGaussianProcessFitter-OptimizationUpperBoundScaleFactor` (default 2.0): the upper bound scale factor for the covariance model parameters,
-- `SparseGaussianProcessFitter-DefaultNoiseVariance` (default 1.0e-3): the default noise variance,
-- `SparseGaussianProcessFitter-DefaultNoiseLowerBound` (default 1.0e-12): the default lower bound for the noise variance,
-- `SparseGaussianProcessFitter-DefaultNoiseUpperBound` (default 1.0e8): the default upper bound for the noise variance,
+- `SparseGaussianProcessFitter-DefaultNoiseStdDev` (default 1.0e-3): the default noise standard deviation,
+- `SparseGaussianProcessFitter-DefaultNoiseStdDevLowerBound` (default 1.0e-12): the default lower bound for the noise standard deviation,
+- `SparseGaussianProcessFitter-DefaultNoiseStdDevUpperBound` (default 1.0e8): the default upper bound for the noise standard deviation,
 - `SparseGaussianProcessFitter-OptimizationNormalization` (default ``True``): whether to internally scale the hyperparameters during the optimization using a min-max transformation,
 - `SparseGaussianProcessFitter-LinearAlgebra` (default ``"LAPACK"``): the default linear algebra method.
 
@@ -102,11 +131,12 @@ Create the model :math:`\model: \Rset \mapsto \Rset` and the samples:
 >>> inputSample = ot.Sample([[1.0], [3.0], [5.0], [6.0], [7.0], [8.0]])
 >>> outputSample = g(inputSample)
 
-Create the algorithm:
+Create the algorithm with 3 inducing points:
 
 >>> covarianceModel = ot.SquaredExponential([1.0])
 >>> covarianceModel.setActiveParameter([0])
->>> algo = SparseGaussianProcessFitter(inputSample, outputSample, covarianceModel, 3)
+>>> numberOfInducingPoints = 3
+>>> algo = SparseGaussianProcessFitter(inputSample, outputSample, covarianceModel, numberOfInducingPoints)
 >>> algo.run()
 
 Get the resulting structure:
@@ -145,7 +175,7 @@ Returns
 -------
 elbo : :class:`~openturns.Function`
     The collapsed ELBO as a function of the optimized parameters (active covariance model
-    parameters, logarithm of the noise variance and inducing points).
+    parameters, logarithm of the noise standard deviation and inducing points).
 
 Notes
 -----
@@ -215,43 +245,43 @@ optimizeInducingPoints : bool
 
 // ---------------------------------------------------------------------
 
-%feature("docstring") OT::SparseGaussianProcessFitter::setOptimizeNoiseVariance
-"Accessor to the noise variance optimization flag.
+%feature("docstring") OT::SparseGaussianProcessFitter::setOptimizeNoiseStdDev
+"Accessor to the noise standard deviation optimization flag.
 
 Parameters
 ----------
-optimizeNoiseVariance : bool
-    Whether to optimize the noise variance."
+optimizeNoiseStdDev : bool
+    Whether to optimize the noise standard deviation."
 
 // ---------------------------------------------------------------------
 
-%feature("docstring") OT::SparseGaussianProcessFitter::getOptimizeNoiseVariance
-"Accessor to the noise variance optimization flag.
+%feature("docstring") OT::SparseGaussianProcessFitter::getOptimizeNoiseStdDev
+"Accessor to the noise standard deviation optimization flag.
 
 Returns
 -------
-optimizeNoiseVariance : bool
-    Whether to optimize the noise variance."
+optimizeNoiseStdDev : bool
+    Whether to optimize the noise standard deviation."
 
 // ---------------------------------------------------------------------
 
-%feature("docstring") OT::SparseGaussianProcessFitter::setNoiseVariance
-"Accessor to the noise variance.
+%feature("docstring") OT::SparseGaussianProcessFitter::setNoiseStdDev
+"Accessor to the noise standard deviation.
 
 Parameters
 ----------
-noiseVariance : float
-    The noise variance :math:`\sigma^2` of the sparse Gaussian process."
+noiseStdDev : float
+    The noise standard deviation :math:`\\sigma` of the sparse Gaussian process."
 
 // ---------------------------------------------------------------------
 
-%feature("docstring") OT::SparseGaussianProcessFitter::getNoiseVariance
-"Accessor to the noise variance.
+%feature("docstring") OT::SparseGaussianProcessFitter::getNoiseStdDev
+"Accessor to the noise standard deviation.
 
 Returns
 -------
-noiseVariance : float
-    The noise variance :math:`\sigma^2` of the sparse Gaussian process."
+noiseStdDev : float
+    The noise standard deviation :math:`\\sigma` of the sparse Gaussian process."
 
 // ---------------------------------------------------------------------
 

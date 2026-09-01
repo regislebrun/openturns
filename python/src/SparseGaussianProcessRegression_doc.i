@@ -5,12 +5,21 @@ R"RAW(Sparse Gaussian process regression.
     This class is experimental and likely to be modified in future releases.
     To use it, import the ``openturns.experimental`` submodule.
 
-This class builds the metamodel associated to a sparse Gaussian process. The mean of the
-prediction is :math:`\mu(\vect{x}) = \vect{a}(\vect{x})^t \vect{m}_w` with
-:math:`\vect{a}(\vect{x}) = \mat{L}_{uu}^{-1} \vect{k}(\mat{Z}, \vect{x})`.
+This class builds the metamodel associated to a sparse Gaussian process. Given the
+optimized inducing inputs :math:`\mat{Z}`, the variational mean :math:`\vect{m}_w` and
+the Cholesky factor :math:`\mat{L}_{uu}` of the inducing-point covariance matrix
+:math:`\mat{K}_{uu} = k(\mat{Z}, \mat{Z})`, the mean of the prediction at a new point
+:math:`\vect{x}` is:
 
-The metamodel comes with its gradient and Hessian (the latter being computed by finite
-differences).
+.. math::
+
+    \mu(\vect{x}) = \vect{a}(\vect{x})^t \vect{m}_w
+
+where :math:`\vect{a}(\vect{x}) = \mat{L}_{uu}^{-1} \vect{k}(\mat{Z}, \vect{x})` and
+:math:`\vect{k}(\mat{Z}, \vect{x}) = (k(\vect{z}_1, \vect{x}), \dots, k(\vect{z}_m, \vect{x}))^t`
+is the cross-covariance vector between the inducing inputs and the prediction point.
+
+The metamodel comes with its gradient and Hessian (the latter using covariance partial Hessians).
 
 The conditional variance of the prediction at any point can be obtained thanks to the
 :meth:`getConditionalVariance() <openturns.experimental.SparseGaussianProcessFitterResult.getConditionalVariance>`
@@ -84,20 +93,20 @@ Returns
 linAlgMethod : int
     The used linear algebra method to fit the model:
 
-    - ot.SparseGaussianProcessFitterResult.LAPACK or 0: using `LAPACK` to fit the model,
+    - ot.experimental.SparseGaussianProcessFitterResult.LAPACK or 0: using `LAPACK` to fit the model,
 
-    - ot.SparseGaussianProcessFitterResult.HMAT or 1: using `HMAT` to fit the model."
+    - ot.experimental.SparseGaussianProcessFitterResult.HMAT or 1: using `HMAT` to fit the model."
 
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::SparseGaussianProcessRegression::setMethod
-"Accessor to the linear algebra method.
+"Set the linear algebra method.
 
 Parameters
 ----------
 linAlgMethod : int
     The used linear algebra method to fit the model:
 
-    - ot.SparseGaussianProcessFitterResult.LAPACK or 0: using `LAPACK` to fit the model,
+    - ot.experimental.SparseGaussianProcessFitterResult.LAPACK or 0: using `LAPACK` to fit the model,
 
-    - ot.SparseGaussianProcessFitterResult.HMAT or 1: using `HMAT` to fit the model."
+    - ot.experimental.SparseGaussianProcessFitterResult.HMAT or 1: using `HMAT` to fit the model."

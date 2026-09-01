@@ -26,35 +26,37 @@
 
 BEGIN_NAMESPACE_OPENTURNS
 
-// Adjoint of the lower Cholesky factorization A = L L^T, i.e. given
-// L = chol(A) and LBar = dL/dL, compute ABar = dL/dA by reversing the
-// in-place forward elimination algorithm (see e.g. Murray, 2016,
-// "Differentiation of the Cholesky decomposition").
+// Adjoint of the lower Cholesky factorization A = L L^T. Given L = chol(A)
+// and LBar = dJ/dL for a scalar objective J, compute ABar = dJ/dA by
+// reversing the in-place forward elimination algorithm (see e.g. Murray,
+// 2016, "Differentiation of the Cholesky decomposition"). Only the lower
+// triangle of ABar is filled, as A is symmetric and the factorization uses
+// its lower triangle.
 inline Matrix cholAdjoint(const TriangularMatrix & L,
                           const Matrix & LBar)
 {
   const UnsignedInteger n = L.getDimension();
   Matrix ABar(n, n);
-  Matrix Lbar(LBar);
+  Matrix work(LBar);
   for (UnsignedInteger j = n; j-- > 0;)
   {
     // Reverse of the inner loop over the rows below the diagonal
     for (UnsignedInteger i = j + 1; i < n; ++i)
     {
-      const Scalar NBar = Lbar(i, j) / L(j, j);
-      Lbar(j, j) -= NBar * L(i, j);
+      const Scalar NBar = work(i, j) / L(j, j);
+      work(j, j) -= NBar * L(i, j);
       ABar(i, j) += NBar;
       for (UnsignedInteger k = 0; k < j; ++k)
       {
-        Lbar(i, k) -= NBar * L(j, k);
-        Lbar(j, k) -= NBar * L(i, k);
+        work(i, k) -= NBar * L(j, k);
+        work(j, k) -= NBar * L(i, k);
       }
     }
     // Reverse of the diagonal square-root step
-    const Scalar sBar = Lbar(j, j) / (2.0 * L(j, j));
+    const Scalar sBar = work(j, j) / (2.0 * L(j, j));
     ABar(j, j) += sBar;
     for (UnsignedInteger k = 0; k < j; ++k)
-      Lbar(j, k) -= 2.0 * sBar * L(j, k);
+      work(j, k) -= 2.0 * sBar * L(j, k);
   }
   return ABar;
 }
