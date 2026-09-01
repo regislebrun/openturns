@@ -74,8 +74,8 @@ def test_elbo_matches_exact_log_likelihood():
     Yn = np.array(Y).ravel()
     for sigma in [1.0, 0.5, 0.1, 1e-2, 1e-6]:
         algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X)
-        algo.setNoiseVariance(sigma)
-        algo.setOptimizeNoiseVariance(False)
+        algo.setNoiseStdDev(sigma)
+        algo.setOptimizeNoiseStdDev(False)
         algo.run()
         elbo = algo.getResult().getOptimalELBO()
         Kff = np.array(
@@ -101,8 +101,8 @@ def test_elbo_matches_reference_for_sparse():
     Xn, Yn = np.array(X), np.array(Y).ravel()
     for sigma in [0.5, 0.1, 1e-2]:
         algo = SparseGaussianProcessFitter(X, Y, covarianceModel, Z)
-        algo.setNoiseVariance(sigma)
-        algo.setOptimizeNoiseVariance(False)
+        algo.setNoiseStdDev(sigma)
+        algo.setOptimizeNoiseStdDev(False)
         algo.run()
         elbo = algo.getResult().getOptimalELBO()
         reference = _numpy_elbo(Xn, Yn, np.array(Z), sigma, covarianceModel)
@@ -117,8 +117,8 @@ def test_posterior_matches_reference():
     Z = X[0:4]
     sigma = 0.1
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, Z)
-    algo.setNoiseVariance(sigma)
-    algo.setOptimizeNoiseVariance(False)
+    algo.setNoiseStdDev(sigma)
+    algo.setOptimizeNoiseStdDev(False)
     algo.run()
     result = algo.getResult()
     m_w, S_ww = _numpy_posterior(np.array(X), np.array(Y).ravel(), np.array(Z), sigma, covarianceModel)
@@ -134,8 +134,8 @@ def test_prediction_matches_posterior():
     Z = X[0:4]
     sigma = 0.1
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, Z)
-    algo.setNoiseVariance(sigma)
-    algo.setOptimizeNoiseVariance(False)
+    algo.setNoiseStdDev(sigma)
+    algo.setOptimizeNoiseStdDev(False)
     algo.run()
     result = algo.getResult()
     m_w, S_ww = _numpy_posterior(np.array(X), np.array(Y).ravel(), np.array(Z), sigma, covarianceModel)
@@ -159,8 +159,8 @@ def test_prediction_matches_posterior():
 
     # exact posterior for M=N: mean 2.34789, variance 0.177189
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X)
-    algo.setNoiseVariance(1e-2)
-    algo.setOptimizeNoiseVariance(False)
+    algo.setNoiseStdDev(1e-2)
+    algo.setOptimizeNoiseStdDev(False)
     algo.run()
     result = algo.getResult()
     ott.assert_almost_equal(result.getMetaModel()(x_test), [2.34789], 1e-4, 1e-5)
@@ -176,8 +176,8 @@ def test_elbo_monotonicity():
     previous = -1e300
     for M in range(1, 7):
         algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:M])
-        algo.setNoiseVariance(sigma)
-        algo.setOptimizeNoiseVariance(False)
+        algo.setNoiseStdDev(sigma)
+        algo.setOptimizeNoiseStdDev(False)
         algo.run()
         elbo = algo.getResult().getOptimalELBO()
         assert elbo >= previous, "ELBO decreases when M increases"
@@ -189,17 +189,17 @@ def test_optimization_improves_elbo():
     X, Y = _sample()
     covarianceModel = ot.SquaredExponential([1.0])
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:4])
-    algo.setNoiseVariance(0.5)
+    algo.setNoiseStdDev(0.5)
     algo.run()
     optimized_elbo = algo.getResult().getOptimalELBO()
     algo2 = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:4])
-    algo2.setNoiseVariance(0.5)
-    algo2.setOptimizeNoiseVariance(False)
+    algo2.setNoiseStdDev(0.5)
+    algo2.setOptimizeNoiseStdDev(False)
     algo2.run()
     fixed_elbo = algo2.getResult().getOptimalELBO()
     assert optimized_elbo >= fixed_elbo, "optimization degrades the ELBO"
     # the optimized noise variance must be consistent with the ELBO
-    assert algo.getResult().getNoiseVariance() > 0.0
+    assert algo.getResult().getNoiseStdDev() > 0.0
 
 
 # The inducing points must be optimized in the allowed range
@@ -208,7 +208,7 @@ def test_optimize_inducing_points():
     covarianceModel = ot.SquaredExponential([1.0])
     covarianceModel.setActiveParameter([])
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:3])
-    algo.setNoiseVariance(0.5)
+    algo.setNoiseStdDev(0.5)
     algo.setOptimizeInducingPoints(True)
     algo.run()
     result = algo.getResult()
@@ -217,8 +217,8 @@ def test_optimize_inducing_points():
     assert inducingPoints.getMax()[0] <= X.getMax()[0] + 0.1 * (X.getMax()[0] - X.getMin()[0])
     # optimizing the inducing points must improve the ELBO
     algo2 = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:3])
-    algo2.setNoiseVariance(0.5)
-    algo2.setOptimizeNoiseVariance(False)
+    algo2.setNoiseStdDev(0.5)
+    algo2.setOptimizeNoiseStdDev(False)
     algo2.run()
     assert result.getOptimalELBO() >= algo2.getResult().getOptimalELBO()
 
@@ -230,7 +230,7 @@ def test_elbo_gradient():
     covarianceModel.setActiveParameter([])
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X)
     algo.setOptimizeParameters(False)
-    algo.setNoiseVariance(0.1)
+    algo.setNoiseStdDev(0.1)
     objective = algo.getObjectiveFunction()
     logNoise = math.log(0.1)
     epsilon = 1e-6
@@ -247,8 +247,8 @@ def test_elbo_gradient_all_parameters():
     covarianceModel.setParameter([1.5, 2.0])
     Z = X[0:3]
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, Z)
-    algo.setNoiseVariance(0.4)
-    algo.setOptimizeNoiseVariance(True)
+    algo.setNoiseStdDev(0.4)
+    algo.setOptimizeNoiseStdDev(True)
     algo.setOptimizeInducingPoints(True)
     objective = algo.getObjectiveFunction()
     parameter = ot.Point([1.5, 2.0, math.log(0.4)])
@@ -266,8 +266,8 @@ def test_elbo_gradient_all_parameters():
         ott.assert_almost_equal(analytic, fd, 1e-3, 1e-4)
     # same check when the number of inducing points equals the training size
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X)
-    algo.setNoiseVariance(0.4)
-    algo.setOptimizeNoiseVariance(True)
+    algo.setNoiseStdDev(0.4)
+    algo.setOptimizeNoiseStdDev(True)
     algo.setOptimizeInducingPoints(True)
     objective = algo.getObjectiveFunction()
     parameter = ot.Point([1.5, 2.0, math.log(0.4)])
@@ -354,22 +354,22 @@ def test_constructor_empty_output_sample():
         SparseGaussianProcessFitter(X, Y, covarianceModel, X)
 
 
-# setNoiseVariance: zero
+# setNoiseStdDev: zero
 def test_set_noise_variance_zero():
     X, Y = _sample()
     covarianceModel = ot.SquaredExponential([1.0])
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:3])
     with ott.assert_raises((TypeError, RuntimeError)):
-        algo.setNoiseVariance(0.0)
+        algo.setNoiseStdDev(0.0)
 
 
-# setNoiseVariance: negative
+# setNoiseStdDev: negative
 def test_set_noise_variance_negative():
     X, Y = _sample()
     covarianceModel = ot.SquaredExponential([1.0])
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:3])
     with ott.assert_raises((TypeError, RuntimeError)):
-        algo.setNoiseVariance(-1.0)
+        algo.setNoiseStdDev(-1.0)
 
 
 # setInducingPoints: dimension mismatch
@@ -408,8 +408,8 @@ def test_objective_wrong_param_size():
     covarianceModel = ot.SquaredExponential([1.0])
     covarianceModel.setActiveParameter([])
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:3])
-    algo.setNoiseVariance(0.1)
-    algo.setOptimizeNoiseVariance(False)
+    algo.setNoiseStdDev(0.1)
+    algo.setOptimizeNoiseStdDev(False)
     obj = algo.getObjectiveFunction()
     # right size is 1 (log noise) since parameters are fixed
     with ott.assert_raises((TypeError, RuntimeError)):
@@ -422,8 +422,8 @@ def test_metamodel_wrong_input_dim():
     covarianceModel = ot.SquaredExponential([1.0])
     covarianceModel.setActiveParameter([])
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:3])
-    algo.setNoiseVariance(0.1)
-    algo.setOptimizeNoiseVariance(False)
+    algo.setNoiseStdDev(0.1)
+    algo.setOptimizeNoiseStdDev(False)
     algo.run()
     meta = algo.getResult().getMetaModel()
     with ott.assert_raises((TypeError, RuntimeError)):
@@ -436,8 +436,8 @@ def test_metamodel_gradient_wrong_input_dim():
     covarianceModel = ot.SquaredExponential([1.0])
     covarianceModel.setActiveParameter([])
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:3])
-    algo.setNoiseVariance(0.1)
-    algo.setOptimizeNoiseVariance(False)
+    algo.setNoiseStdDev(0.1)
+    algo.setOptimizeNoiseStdDev(False)
     algo.run()
     meta = algo.getResult().getMetaModel()
     with ott.assert_raises((TypeError, RuntimeError)):
@@ -450,8 +450,8 @@ def test_metamodel_hessian_wrong_input_dim():
     covarianceModel = ot.SquaredExponential([1.0])
     covarianceModel.setActiveParameter([])
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:3])
-    algo.setNoiseVariance(0.1)
-    algo.setOptimizeNoiseVariance(False)
+    algo.setNoiseStdDev(0.1)
+    algo.setOptimizeNoiseStdDev(False)
     algo.run()
     meta = algo.getResult().getMetaModel()
     with ott.assert_raises((TypeError, RuntimeError)):
@@ -464,15 +464,15 @@ def test_conditional_variance_wrong_input_dim():
     covarianceModel = ot.SquaredExponential([1.0])
     covarianceModel.setActiveParameter([])
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:3])
-    algo.setNoiseVariance(0.1)
-    algo.setOptimizeNoiseVariance(False)
+    algo.setNoiseStdDev(0.1)
+    algo.setOptimizeNoiseStdDev(False)
     algo.run()
     result = algo.getResult()
     with ott.assert_raises((TypeError, RuntimeError)):
         result.getConditionalVariance(ot.Point([1.0, 2.0]))
 
 
-# getOptimizeParameters / getOptimizeInducingPoints / getOptimizeNoiseVariance
+# getOptimizeParameters / getOptimizeInducingPoints / getOptimizeNoiseStdDev
 # must return the value set by the corresponding setter
 def test_optimization_flag_accessors():
     X, Y = _sample()
@@ -481,14 +481,14 @@ def test_optimization_flag_accessors():
     # defaults
     assert algo.getOptimizeParameters() is True
     assert algo.getOptimizeInducingPoints() is False
-    assert algo.getOptimizeNoiseVariance() is True
+    assert algo.getOptimizeNoiseStdDev() is True
     # after set
     algo.setOptimizeParameters(False)
     assert algo.getOptimizeParameters() is False
     algo.setOptimizeInducingPoints(True)
     assert algo.getOptimizeInducingPoints() is True
-    algo.setOptimizeNoiseVariance(False)
-    assert algo.getOptimizeNoiseVariance() is False
+    algo.setOptimizeNoiseStdDev(False)
+    assert algo.getOptimizeNoiseStdDev() is False
 
 
 # getMethod / setMethod on the fitter must store and retrieve correctly
@@ -540,20 +540,20 @@ def test_covariance_model_accessor():
     assert reduced.getInputDimension() == 1
 
 
-# SparseGaussianProcessFitterResult accessors: getNoiseVariance,
+# SparseGaussianProcessFitterResult accessors: getNoiseStdDev,
 # getCovarianceModel, getWhiteningFactor
 def test_fitter_result_accessors():
     X, Y = _sample()
     covarianceModel = ot.SquaredExponential([1.0])
     covarianceModel.setParameter([1.5, 2.0])
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:4])
-    algo.setNoiseVariance(0.3)
+    algo.setNoiseStdDev(0.3)
     algo.setOptimizeParameters(False)
-    algo.setOptimizeNoiseVariance(False)
+    algo.setOptimizeNoiseStdDev(False)
     algo.run()
     result = algo.getResult()
-    # getNoiseVariance
-    ott.assert_almost_equal(result.getNoiseVariance(), 0.3, 1e-14, 1e-14)
+    # getNoiseStdDev
+    ott.assert_almost_equal(result.getNoiseStdDev(), 0.3, 1e-14, 1e-14)
     # getCovarianceModel
     cov = result.getCovarianceModel()
     ott.assert_almost_equal(cov.getParameter(), [1.5, 2.0], 1e-14, 1e-14)
@@ -592,8 +592,8 @@ def test_save_load():
     X, Y = _sample()
     covarianceModel = ot.SquaredExponential([1.0])
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:4])
-    algo.setNoiseVariance(0.1)
-    algo.setOptimizeNoiseVariance(False)
+    algo.setNoiseStdDev(0.1)
+    algo.setOptimizeNoiseStdDev(False)
     algo.run()
     result = algo.getResult()
     filename = "test_sparse_gp_fitter_result.xml"
@@ -605,7 +605,7 @@ def test_save_load():
     result2 = SparseGaussianProcessFitterResult()
     study2.fillObject("result", result2)
     ott.assert_almost_equal(result.getOptimalELBO(), result2.getOptimalELBO(), 1e-10, 1e-10)
-    ott.assert_almost_equal(result.getNoiseVariance(), result2.getNoiseVariance(), 1e-14, 1e-14)
+    ott.assert_almost_equal(result.getNoiseStdDev(), result2.getNoiseStdDev(), 1e-14, 1e-14)
     ott.assert_almost_equal(result.getPosteriorMean(), result2.getPosteriorMean(), 1e-10, 1e-10)
     ott.assert_almost_equal(
         result.getPosteriorCovariance(), result2.getPosteriorCovariance(), 1e-10, 1e-10
@@ -621,31 +621,31 @@ def test_save_load():
 
 def test_resource_map_default_noise_variance_zero():
     original = ot.ResourceMap.GetAsScalar(
-        "SparseGaussianProcessFitter-DefaultNoiseVariance"
+        "SparseGaussianProcessFitter-DefaultNoiseStdDev"
     )
-    ot.ResourceMap.SetAsScalar("SparseGaussianProcessFitter-DefaultNoiseVariance", 0.0)
+    ot.ResourceMap.SetAsScalar("SparseGaussianProcessFitter-DefaultNoiseStdDev", 0.0)
     try:
         with ott.assert_raises((TypeError, RuntimeError)):
             SparseGaussianProcessFitter()
     finally:
         ot.ResourceMap.SetAsScalar(
-            "SparseGaussianProcessFitter-DefaultNoiseVariance", original
+            "SparseGaussianProcessFitter-DefaultNoiseStdDev", original
         )
 
 
 def test_resource_map_default_noise_variance_negative():
     original = ot.ResourceMap.GetAsScalar(
-        "SparseGaussianProcessFitter-DefaultNoiseVariance"
+        "SparseGaussianProcessFitter-DefaultNoiseStdDev"
     )
     ot.ResourceMap.SetAsScalar(
-        "SparseGaussianProcessFitter-DefaultNoiseVariance", -1.0
+        "SparseGaussianProcessFitter-DefaultNoiseStdDev", -1.0
     )
     try:
         with ott.assert_raises((TypeError, RuntimeError)):
             SparseGaussianProcessFitter()
     finally:
         ot.ResourceMap.SetAsScalar(
-            "SparseGaussianProcessFitter-DefaultNoiseVariance", original
+            "SparseGaussianProcessFitter-DefaultNoiseStdDev", original
         )
 
 
@@ -720,30 +720,30 @@ def test_resource_map_noise_bounds_nonpositive():
     X, Y = _sample()
     cov = ot.MaternModel([1.0], 1.5)
     original_lo = ot.ResourceMap.GetAsScalar(
-        "SparseGaussianProcessFitter-DefaultNoiseLowerBound"
+        "SparseGaussianProcessFitter-DefaultNoiseStdDevLowerBound"
     )
     ot.ResourceMap.SetAsScalar(
-        "SparseGaussianProcessFitter-DefaultNoiseLowerBound", 0.0
+        "SparseGaussianProcessFitter-DefaultNoiseStdDevLowerBound", 0.0
     )
     try:
         with ott.assert_raises((TypeError, RuntimeError)):
             SparseGaussianProcessFitter(X, Y, cov, 4)
     finally:
         ot.ResourceMap.SetAsScalar(
-            "SparseGaussianProcessFitter-DefaultNoiseLowerBound", original_lo
+            "SparseGaussianProcessFitter-DefaultNoiseStdDevLowerBound", original_lo
         )
     original_hi = ot.ResourceMap.GetAsScalar(
-        "SparseGaussianProcessFitter-DefaultNoiseUpperBound"
+        "SparseGaussianProcessFitter-DefaultNoiseStdDevUpperBound"
     )
     ot.ResourceMap.SetAsScalar(
-        "SparseGaussianProcessFitter-DefaultNoiseUpperBound", -1.0
+        "SparseGaussianProcessFitter-DefaultNoiseStdDevUpperBound", -1.0
     )
     try:
         with ott.assert_raises((TypeError, RuntimeError)):
             SparseGaussianProcessFitter(X, Y, cov, 4)
     finally:
         ot.ResourceMap.SetAsScalar(
-            "SparseGaussianProcessFitter-DefaultNoiseUpperBound", original_hi
+            "SparseGaussianProcessFitter-DefaultNoiseStdDevUpperBound", original_hi
         )
 
 

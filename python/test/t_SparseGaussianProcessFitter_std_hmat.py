@@ -27,8 +27,8 @@ def test_hmat_elbo():
     elbo = {}
     for method in (SparseGaussianProcessFitterResult.LAPACK, SparseGaussianProcessFitterResult.HMAT):
         algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X)
-        algo.setNoiseVariance(1e-2)
-        algo.setOptimizeNoiseVariance(False)
+        algo.setNoiseStdDev(1e-2)
+        algo.setOptimizeNoiseStdDev(False)
         algo.setMethod(method)
         algo.run()
         result = algo.getResult()
@@ -43,8 +43,8 @@ def test_hmat_prediction():
     posteriorCovariance = {}
     for method in (SparseGaussianProcessFitterResult.LAPACK, SparseGaussianProcessFitterResult.HMAT):
         algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X)
-        algo.setNoiseVariance(1e-2)
-        algo.setOptimizeNoiseVariance(False)
+        algo.setNoiseStdDev(1e-2)
+        algo.setOptimizeNoiseStdDev(False)
         algo.setMethod(method)
         algo.run()
         result = algo.getResult()
@@ -54,8 +54,8 @@ def test_hmat_prediction():
     ott.assert_almost_equal(posteriorCovariance[SparseGaussianProcessFitterResult.HMAT], posteriorCovariance[SparseGaussianProcessFitterResult.LAPACK], 1e-3, 1e-3)
     # the conditional variance must be positive and lower than the prior variance
     algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X)
-    algo.setNoiseVariance(1e-2)
-    algo.setOptimizeNoiseVariance(False)
+    algo.setNoiseStdDev(1e-2)
+    algo.setOptimizeNoiseStdDev(False)
     algo.setMethod(SparseGaussianProcessFitterResult.HMAT)
     algo.run()
     variance = algo.getResult().getConditionalVariance(ot.Point([1.5]))
@@ -66,8 +66,8 @@ def test_hmat_prediction():
 def test_hmat_regression():
     X, Y, covarianceModel = _data()
     fit_algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X)
-    fit_algo.setNoiseVariance(1e-8)
-    fit_algo.setOptimizeNoiseVariance(False)
+    fit_algo.setNoiseStdDev(1e-8)
+    fit_algo.setOptimizeNoiseStdDev(False)
     fit_algo.setMethod(SparseGaussianProcessFitterResult.HMAT)
     fit_algo.run()
     # regression from the HMAT result, the metamodel must interpolate the data

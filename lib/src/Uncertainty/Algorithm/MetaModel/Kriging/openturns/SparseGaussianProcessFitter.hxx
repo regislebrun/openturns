@@ -86,20 +86,12 @@ public:
   void setOptimizeParameters(const Bool optimizeParameters);
   Bool getOptimizeInducingPoints() const;
   void setOptimizeInducingPoints(const Bool optimizeInducingPoints);
-  Bool getOptimizeNoiseVariance() const;
-  void setOptimizeNoiseVariance(const Bool optimizeNoiseVariance);
+  Bool getOptimizeNoiseStdDev() const;
+  void setOptimizeNoiseStdDev(const Bool optimizeNoiseStdDev);
 
-  /** Noise standard deviation accessor
-
-      NOTE: Despite the name, this stores the noise *standard deviation*,
-      not the variance.  The actual variance used in the ELBO is
-      sigma^2 = noiseStdDev^2.  The ResourceMap key
-      SparseGaussianProcessFitter-DefaultNoiseStdDev stores the default
-      standard deviation.  The optimization parameter is
-      log(noiseStdDev).
-  */
-  Scalar getNoiseVariance() const;
-  void setNoiseVariance(const Scalar noiseVariance);
+  /** Noise standard deviation accessor */
+  Scalar getNoiseStdDev() const;
+  void setNoiseStdDev(const Scalar noiseStdDev);
 
   /** Inducing points accessor */
   Sample getInducingPoints() const;
@@ -132,9 +124,9 @@ protected:
   // Compute the gradient of the ELBO wrt the optimization parameters
   Point computeELBOGradient(const Point & parameters);
 
-  // Compute the collapsed ELBO for the given inducing points and noise variance
+  // Compute the collapsed ELBO for the given inducing points and noise standard deviation
   Scalar computeELBOValue(const Sample & inducingPoints,
-                          const Scalar noiseVariance);
+                          const Scalar noiseStdDev);
 
   // Initialize default optimization solver
   void initializeDefaultOptimizationAlgorithm();
@@ -144,23 +136,33 @@ protected:
 
 private:
 
+  // Unpack the optimization parameter vector into covariance parameters, noise
+  // standard deviation and inducing points.
+  struct UnpackedParameters
+  {
+    Point covarianceParameters;
+    Scalar noiseStdDev;
+    Sample inducingPoints;
+  };
+  UnpackedParameters unpackParameters(const Point & parameters) const;
+
   // Helper class to compute the ELBO of the model.
   // Owns a clone of the algorithm so that the returned Function can outlive the
   // original algorithm without creating a dangling reference.
-  class ELOBEEvaluation: public EvaluationImplementation
+  class ELBOEvaluation: public EvaluationImplementation
   {
   public:
     // Constructor from a SparseGaussianProcessFitter algorithm
-    ELOBEEvaluation(SparseGaussianProcessFitter & algorithm)
+    ELBOEvaluation(SparseGaussianProcessFitter & algorithm)
       : EvaluationImplementation()
       , algorithm_(algorithm.clone())
     {
       // Nothing to do
     }
 
-    ELOBEEvaluation * clone() const override
+    ELBOEvaluation * clone() const override
     {
-      return new ELOBEEvaluation(*this);
+      return new ELBOEvaluation(*this);
     }
 
     // It is a simple call to the computeELBO() of the algo
@@ -213,7 +215,7 @@ private:
 
   private:
     mutable Pointer<SparseGaussianProcessFitter> algorithm_;
-  }; // ELOBEEvaluation
+  }; // ELBOEvaluation
 
   // Helper class to compute the gradient of the ELBO of the model.
   // Owns a clone, same as the evaluation class above.
@@ -294,8 +296,8 @@ private:
   // The inducing points
   Sample inducingPoints_;
 
-  // The noise standard deviation (NOT variance; sigma2 = noiseVariance_^2)
-  Scalar noiseVariance_;
+  // The noise standard deviation
+  Scalar noiseStdDev_;
 
   // The optimization algorithm used for the meta-parameters estimation
   OptimizationAlgorithm solver_;
@@ -306,7 +308,7 @@ private:
   // Flags controlling which parameters are optimized
   Bool optimizeParameters_ = true;
   Bool optimizeInducingPoints_ = false;
-  Bool optimizeNoiseVariance_ = true;
+  Bool optimizeNoiseStdDev_ = true;
 
   // Boolean argument to tell if optimization has run
   Bool hasRun_ = false;

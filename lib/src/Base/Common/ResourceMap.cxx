@@ -1642,9 +1642,9 @@ void ResourceMap::loadDefaultConfiguration()
   addAsScalar("SparseGaussianProcessFitter-OptimizationLowerBoundScaleFactor", 1.0e-3);
   addAsScalar("SparseGaussianProcessFitter-OptimizationUpperBoundScaleFactor", 2.0);
   addAsString("SparseGaussianProcessFitter-DefaultOptimizationAlgorithm", "TNC");
-  addAsScalar("SparseGaussianProcessFitter-DefaultNoiseVariance", 1.0e-3);
-  addAsScalar("SparseGaussianProcessFitter-DefaultNoiseLowerBound", 1.0e-12);
-  addAsScalar("SparseGaussianProcessFitter-DefaultNoiseUpperBound", 1.0e8);
+  addAsScalar("SparseGaussianProcessFitter-DefaultNoiseStdDev", 1.0e-3);
+  addAsScalar("SparseGaussianProcessFitter-DefaultNoiseStdDevLowerBound", 1.0e-12);
+  addAsScalar("SparseGaussianProcessFitter-DefaultNoiseStdDevUpperBound", 1.0e8);
   addAsString("SparseGaussianProcessFitter-LinearAlgebra", "LAPACK", {"LAPACK", "HMAT"});
 
   // GaussianProcessRegressionCrossValidation- parameters //

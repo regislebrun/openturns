@@ -6,7 +6,7 @@ R"RAW(Structure which contains the results of the sparse Gaussian process fittin
     To use it, import the ``openturns.experimental`` submodule.
 
 This structure stores the results of the variational inference of a sparse Gaussian process:
-the inducing points, the (fixed) noise variance, the optimal ELBO value as well as the
+the inducing points, the (fixed) noise standard deviation, the optimal ELBO value as well as the
 by-products of the collapsed variational bound, namely the whitening factor, the variational
 posterior mean and the variational posterior covariance in the whitened parametrisation.
 Refer to :class:`~openturns.experimental.SparseGaussianProcessFitter` for the mathematical details.
@@ -86,13 +86,13 @@ posteriorCovariance : :class:`~openturns.CovarianceMatrix`
 
 // ---------------------------------------------------------------------
 
-%feature("docstring") OT::SparseGaussianProcessFitterResult::getNoiseVariance
-R"RAW(Get the noise variance.
+%feature("docstring") OT::SparseGaussianProcessFitterResult::getNoiseStdDev
+R"RAW(Get the noise standard deviation.
 
 Returns
 -------
-noiseVariance : float
-    The noise variance :math:`\sigma^2` of the sparse Gaussian process.)RAW"
+noiseStdDev : float
+    The noise standard deviation :math:`\sigma` of the sparse Gaussian process.)RAW"
 
 // ---------------------------------------------------------------------
 

@@ -30,6 +30,6 @@ for i in range(len(sampleX)):
 graph = ot.Graph("Sparse GP metamodel hessian", "x", r"$\partial^2 \mu / \partial x^2$")
 graph.add(ot.Curve(vertices, hessianValues))
 graph.add(ot.Cloud(sampleX, modelValues))
-graph.setLegends(["sparse GP metamodel", "model"])
+graph.setLegends(["sparse GP metamodel hessian", "model"])
 graph.setLegendPosition("upper right")
 otv.View(graph, figure_kw={"figsize": (8, 4)})
