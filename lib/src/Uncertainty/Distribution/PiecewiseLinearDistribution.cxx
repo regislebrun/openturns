@@ -603,6 +603,8 @@ void PiecewiseLinearDistribution::load(Advocate & adv)
   adv.loadAttribute("y_", y_);
   if (x_.getSize() < 2)
     throw InvalidArgumentException(HERE) << "Error: x must have at least 2 elements, here x.getSize()=" << x_.getSize();
+  if (y_.getSize() != x_.getSize())
+    throw InvalidArgumentException(HERE) << "Error: y must have the same size as x, here x.getSize()=" << x_.getSize() << " and y.getSize()=" << y_.getSize();
   yNorm_ = y_;
   probabilities_ = Point(x_.getSize() - 1);
   update();
