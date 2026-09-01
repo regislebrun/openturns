@@ -287,7 +287,7 @@ assert (distribution != distribution4)
 print("Equality/Inequality OK")
 
 # ---------------------------------------------------------------------------
-# 17. Copy
+# 16. Copy
 # ---------------------------------------------------------------------------
 dist_clone = copy.copy(distribution)
 ott.assert_almost_equal(dist_clone.getX(), distribution.getX())
@@ -494,7 +494,111 @@ for test_x in [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
 print("TruncatedDistribution endpoint regression OK")
 
 # ---------------------------------------------------------------------------
-# 26. Validation -- comprehensive automated tests
+# 26. Interior TruncatedDistribution truncation
+# ---------------------------------------------------------------------------
+# Truncate within the support (not at original bounds)
+t_interior = ot.TruncatedDistribution(dist_trunc, 0.5, 2.5)
+s_interior = t_interior.getSimplifiedVersion()
+for test_x in [0.5, 1.0, 1.5, 2.0, 2.5]:
+    ott.assert_almost_equal(s_interior.computePDF(test_x), t_interior.computePDF(test_x))
+    ott.assert_almost_equal(s_interior.computeCDF(test_x), t_interior.computeCDF(test_x))
+print("TruncatedDistribution interior truncation OK")
+
+# ---------------------------------------------------------------------------
+# 27. Point overload dimension checks
+# ---------------------------------------------------------------------------
+with ott.assert_raises(TypeError):
+    distribution.computePDF(ot.Point([1.0, 2.0]))
+print("OK: computePDF(Point) wrong dimension thrown")
+
+with ott.assert_raises(TypeError):
+    distribution.computeCDF(ot.Point([1.0, 2.0]))
+print("OK: computeCDF(Point) wrong dimension thrown")
+
+with ott.assert_raises(TypeError):
+    distribution.computeDDF(ot.Point([1.0, 2.0]))
+print("OK: computeDDF(Point) wrong dimension thrown")
+
+# ---------------------------------------------------------------------------
+# 28. setY all-zero guard after construction
+# ---------------------------------------------------------------------------
+dist_test = otexp.PiecewiseLinearDistribution(x, y)
+with ott.assert_raises(TypeError):
+    dist_test.setY(ot.Point([0.0, 0.0, 0.0]))
+print("OK: setY all-zero after construction thrown")
+
+# ---------------------------------------------------------------------------
+# 29. load() validation -- corrupted XML data
+# ---------------------------------------------------------------------------
+# Create valid distribution, save to XML, tamper, reload
+tmpfile = tempfile.mktemp(suffix=".xml")
+try:
+    study = ot.Study()
+    study.setStorageManager(ot.XMLStorageManager(tmpfile))
+    study.add("dist", distribution)
+    study.save()
+
+    with open(tmpfile, "r") as f:
+        xml_content = f.read()
+
+    # Test: y with negative value
+    xml_bad_y_neg = xml_content.replace(
+        '<numericalscalar index="1">1</numericalscalar>\n    <numericalscalar index="2">0.1',
+        '<numericalscalar index="1">1</numericalscalar>\n    <numericalscalar index="2">-0.1'
+    )
+    with open(tmpfile, "w") as f:
+        f.write(xml_bad_y_neg)
+    study_bad = ot.Study()
+    study_bad.setStorageManager(ot.XMLStorageManager(tmpfile))
+    study_bad.load()
+    dist_bad = otexp.PiecewiseLinearDistribution()
+    with ott.assert_raises(TypeError):
+        study_bad.fillObject("dist", dist_bad)
+    print("OK: load() negative y rejected")
+
+    # Test: y with all-zero values
+    xml_bad_y_zero = xml_content.replace(
+        '<numericalscalar index="0">0.1',
+        '<numericalscalar index="0">0'
+    ).replace(
+        '<numericalscalar index="1">1</numericalscalar>',
+        '<numericalscalar index="1">0</numericalscalar>'
+    ).replace(
+        '<numericalscalar index="2">0.1',
+        '<numericalscalar index="2">0'
+    )
+    with open(tmpfile, "w") as f:
+        f.write(xml_bad_y_zero)
+    study_bad2 = ot.Study()
+    study_bad2.setStorageManager(ot.XMLStorageManager(tmpfile))
+    study_bad2.load()
+    dist_bad2 = otexp.PiecewiseLinearDistribution()
+    with ott.assert_raises(TypeError):
+        study_bad2.fillObject("dist", dist_bad2)
+    print("OK: load() all-zero y rejected")
+
+    # Test: x not increasing (swap x[0] and x[1])
+    xml_bad_x = xml_content.replace(
+        '<numericalscalar index="0">0</numericalscalar>\n    <numericalscalar index="1">1</numericalscalar>\n    <numericalscalar index="2">2',
+        '<numericalscalar index="0">1</numericalscalar>\n    <numericalscalar index="1">0</numericalscalar>\n    <numericalscalar index="2">2'
+    )
+    with open(tmpfile, "w") as f:
+        f.write(xml_bad_x)
+    study_bad3 = ot.Study()
+    study_bad3.setStorageManager(ot.XMLStorageManager(tmpfile))
+    study_bad3.load()
+    dist_bad3 = otexp.PiecewiseLinearDistribution()
+    with ott.assert_raises(TypeError):
+        study_bad3.fillObject("dist", dist_bad3)
+    print("OK: load() non-increasing x rejected")
+
+finally:
+    if os.path.exists(tmpfile):
+        os.remove(tmpfile)
+print("load() validation OK")
+
+# ---------------------------------------------------------------------------
+# 30. Validation -- comprehensive automated tests
 # ---------------------------------------------------------------------------
 print("Running DistributionValidation...")
 ot.Log.Show(ot.Log.TRACE)
