@@ -89,6 +89,11 @@ frequency satisfying the Nyquist criterion (which ensures to avoid aliasing effe
 In the paper by Saltelli et al. (1999), for high sample size, it is suggested
 that :math:`16 \leq \omega_i/N_r \leq 64`.
 
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *FAST-DefaultInterferenceFactor* (:raw:`UnsignedInteger`, default: `4`)
+- *FAST-DefaultResamplingSize* (:raw:`UnsignedInteger`, default: `1`)
+
 
 Examples
 --------
@@ -100,12 +105,6 @@ Examples
 >>> sensitivityAnalysis = ot.FAST(model, distribution, 101)
 >>> print(sensitivityAnalysis.getFirstOrderIndices())
 [0.311097,0.441786,0.000396837]
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *FAST-DefaultInterferenceFactor* (:raw:`UnsignedInteger`, default: `4`)
-- *FAST-DefaultResamplingSize* (:raw:`UnsignedInteger`, default: `1`)
 )RAW"
 
 // ---------------------------------------------------------------------
