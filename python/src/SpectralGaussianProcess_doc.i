@@ -55,9 +55,6 @@ Create a *SpectralGaussianProcess* from a spectral model and a time grid:
 >>> mySpectralModel = ot.CauchyModel(scale, amplitude, spatialCorrelation)
 >>> mySpectNormProc1 = ot.SpectralGaussianProcess(mySpectralModel, myTimeGrid)
 
-
-Notes
------
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *SpectralGaussianProcess-CholeskyCacheSize* (:raw:`UnsignedInteger`, default: `16384`)
