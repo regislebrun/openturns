@@ -971,7 +971,7 @@ xMax : float, optional, *xMax > xMin*
     `Distribution-QMax` from the :class:`~openturns.ResourceMap`.
 pointNumber : int
     The number of points that is used for meshing each axis.
-    Defaults uses `DistributionImplementation-DefaultPointNumber` from the
+    Defaults uses `Distribution-DefaultPointNumber` from the
     :class:`~openturns.ResourceMap`.
 logScale : bool
     Flag to tell if the plot is done on a logarithmic scale. Default is *False*.
@@ -1715,7 +1715,7 @@ xMax : float, optional, *xMax > xMin*
     `Distribution-QMax` from the :class:`~openturns.ResourceMap`.
 pointNumber : int
     The number of points that is used for meshing each axis.
-    Defaults uses `DistributionImplementation-DefaultPointNumber` from the
+    Defaults uses `Distribution-DefaultPointNumber` from the
     :class:`~openturns.ResourceMap`.
 logScale : bool
     Flag to tell if the plot is done on a logarithmic scale. Default is *False*.
@@ -1788,7 +1788,7 @@ xMax : float, optional, *xMax > xMin*
     `Distribution-QMax` from the :class:`~openturns.ResourceMap`.
 pointNumber : int
     The number of points that is used for meshing each axis.
-    Defaults uses `DistributionImplementation-DefaultPointNumber` from the
+    Defaults uses `Distribution-DefaultPointNumber` from the
     :class:`~openturns.ResourceMap`.
 logScale : bool
     Flag to tell if the plot is done on a logarithmic scale. Default is *False*.
@@ -1852,7 +1852,7 @@ qmax : float, in :math:`[0,1]`
     The max value of the mesh of the x-axis.
 nPoints : int, optional
     The number of points that is used for meshing the quantile curve.
-    Defaults uses `DistributionImplementation-DefaultPointNumber` from the
+    Defaults uses `Distribution-DefaultPointNumber` from the
     :class:`~openturns.ResourceMap`.
 logScale : bool
     Flag to tell if the plot is done on a logarithmic scale. Default is *False*.
@@ -3287,7 +3287,7 @@ xMax : float, optional, *xMax > xMin*
     `Distribution-QMax` from the :class:`~openturns.ResourceMap`.
 pointNumber : int
     The number of points that is used for meshing each axis.
-    Defaults uses `DistributionImplementation-DefaultPointNumber` from the
+    Defaults uses `Distribution-DefaultPointNumber` from the
     :class:`~openturns.ResourceMap`.
 logScale : bool
     Flag to tell if the plot is done on a logarithmic scale. Default is *False*.

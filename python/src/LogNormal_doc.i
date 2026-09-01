@@ -76,16 +76,16 @@ Create it from :math:`(\mu, \sigma/\mu, \gamma)` and keep that parametrization f
 >>> myParam = ot.LogNormalMuSigmaOverMu(4.5, 1.3, 0.0)
 >>> myDist5 = ot.ParametrizedDistribution(myParam)
 
-Draw a sample:
-
->>> sample = myDist.getSample(5)
-
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *LogNormal-CharacteristicFunctionIntegrationNodes* (:raw:`UnsignedInteger`, default: `256`)
 - *LogNormal-CharacteristicFunctionSmallSigmaThreshold* (:raw:`Scalar`, default: `0.2`)
+
+Draw a sample:
+
+>>> sample = myDist.getSample(5)
 )RAW"
 
 // ---------------------------------------------------------------------

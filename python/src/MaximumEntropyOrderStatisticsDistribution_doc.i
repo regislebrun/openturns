@@ -92,16 +92,16 @@ Create a distribution which components are ordered almost surely:
 >>> coll = [ot.Uniform(-1.0, 1.0), ot.LogUniform(1.0, 1.2), ot.Triangular(3.0, 4.0, 5.0)]
 >>> distribution = ot.MaximumEntropyOrderStatisticsDistribution(coll)
 
-Draw a sample:
-
->>> sample = distribution.getSample(5)
-
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *MaximumEntropyOrderStatisticsDistribution-CDFIntegrationNodesNumber* (:raw:`UnsignedInteger`, default: `16`)
 - *MaximumEntropyOrderStatisticsDistribution-MaximumQuantileIteration* (:raw:`UnsignedInteger`, default: `10`)
+
+Draw a sample:
+
+>>> sample = distribution.getSample(5)
 
 )RAW"
 

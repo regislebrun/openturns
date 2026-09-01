@@ -40,16 +40,16 @@ Create the test checker:
 >>> coll = [ot.Uniform(-1.0, 1.0), ot.Uniform(-0.5, 1.5)]
 >>> testChecker = ot.OrderStatisticsMarginalChecker(coll)
 
-Check the compatibility:
-
->>> compatibilityResult = testChecker.isCompatible()
-
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *OrderStatisticsMarginalChecker-OptimizationEpsilon* (:raw:`Scalar`, default: `1e-07`)
 - *OrderStatisticsMarginalChecker-QuantileIteration* (:raw:`UnsignedInteger`, default: `100`)
+
+Check the compatibility:
+
+>>> compatibilityResult = testChecker.isCompatible()
 )RAW"
 
 // ---------------------------------------------------------------------

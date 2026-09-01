@@ -37,10 +37,6 @@ Create a distribution:
 >>> dist = ot.Normal([0] * 2, [2] * 2)
 >>> distribution = ot.TruncatedOverMesh(dist, mesh)
 
-Draw a sample:
-
->>> sample = distribution.getSample(5)
-
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:
@@ -49,6 +45,10 @@ This class uses the following entries of :class:`~openturns.ResourceMap`:
 - *TruncatedOverMesh-MaximumIntegrationNodesNumber* (:raw:`UnsignedInteger`, default: `262144`)
 - *TruncatedOverMesh-OptimizationAlgorithm* (:raw:`String`, default: `TNC`)
 - *TruncatedOverMesh-UseRejection* (:raw:`Bool`, default: `false`)
+
+Draw a sample:
+
+>>> sample = distribution.getSample(5)
 )RAW"
 
 // ---------------------------------------------------------------------

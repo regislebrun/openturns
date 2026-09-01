@@ -69,8 +69,6 @@ Notes
 If the bin number :math:`m` is specified and does not divide the sample size :math:`\sampleSize`, then a part of the sample is
 removed for the result to be a copula. See :class:`~openturns.EmpiricalBernsteinCopula`.
 
-Notes
------
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *BernsteinCopulaFactory-BinNumberSelectionMethod* (:raw:`String`, default: `LogLikelihood`)

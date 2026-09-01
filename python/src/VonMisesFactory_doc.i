@@ -48,6 +48,8 @@ This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 // ---------------------------------------------------------------------
 
+// ---------------------------------------------------------------------
+
 %feature("docstring") OT::VonMisesFactory::buildAsVonMises
 "Estimate the distribution as native distribution.
 

@@ -46,15 +46,15 @@ Create a distribution:
 >>> distY = ot.Uniform(-1.0, 1.0)
 >>> distZ = ot.ProductDistribution(distX, distY)
 
-Draw a sample:
-
->>> sample = distZ.getSample(5)
-
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *ProductDistribution-LargeCharacteristicFunctionArgument* (:raw:`Scalar`, default: `10`)
+
+Draw a sample:
+
+>>> sample = distZ.getSample(5)
 )RAW"
 
 // ---------------------------------------------------------------------

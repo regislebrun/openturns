@@ -91,12 +91,6 @@ flag : bool
 %feature("docstring") OT::MarginalDistribution::getUsePDF
 "Accessor to the flag telling how the PDF is computed.
 
-Returns
--------
-flag : bool
-    Flag telling if the marginal PDF is computed using an integration
-    of the PDF of the underlying distribution or if it is computed
-
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:
@@ -106,6 +100,11 @@ This class uses the following entries of :class:`~openturns.ResourceMap`:
 - *MarginalDistribution-Rule* (:raw:`String`, default: `G15K31`)
 - *MarginalDistribution-UsePDF* (:raw:`Bool`, default: `true`)
 
+Returns
+-------
+flag : bool
+    Flag telling if the marginal PDF is computed using an integration
+    of the PDF of the underlying distribution or if it is computed
     using finite differences of the underlying CDF."
 
 

@@ -74,15 +74,15 @@ Create a  Dirac covariance function specifying the amplitude vector:
 
 >>> covModel2 = ot.DiracCovarianceModel(2, [1.5, 2.5])
 
-Create a  Dirac covariance function specifying the amplitude vector and the correlation matrix:
-
->>> corrMat = ot.CorrelationMatrix(2)
->>> corrMat[1,0] = 0.1
->>> covModel3 =  ot.DiracCovarianceModel(2, [1.5, 2.5], corrMat)
-
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *DiracCovarianceModel-CheckUnique* (:raw:`Bool`, default: `true`)
+
+Create a  Dirac covariance function specifying the amplitude vector and the correlation matrix:
+
+>>> corrMat = ot.CorrelationMatrix(2)
+>>> corrMat[1,0] = 0.1
+>>> covModel3 =  ot.DiracCovarianceModel(2, [1.5, 2.5], corrMat)
 )RAW"

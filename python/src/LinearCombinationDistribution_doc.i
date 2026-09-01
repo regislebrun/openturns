@@ -93,20 +93,6 @@ constant : sequence of float
 weightsMatrix :  2-d sequence of float
     Weights of the affine combination.
 
-Examples
---------
-Create a distribution:
-
->>> import openturns as ot
->>> coll = [ot.Triangular(0.0, 1.0, 5.0), ot.Uniform(-2.0, 2.0)]
->>> weights = [3.0, 2.0]
->>> cst = 3.0
->>> distribution = ot.LinearCombinationDistribution(coll, weights, cst)
-
-Draw a sample:
-
->>> sample = distribution.getSample(5)
-
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:
@@ -122,6 +108,20 @@ This class uses the following entries of :class:`~openturns.ResourceMap`:
 - *LinearCombinationDistribution-MaximumSupportSize*: maximum support size for exact computation.
 - *LinearCombinationDistribution-ProjectionDefaultSize*: default projection size.
 - *LinearCombinationDistribution-SmallSize*: threshold for using small-size algorithms.
+
+Examples
+--------
+Create a distribution:
+
+>>> import openturns as ot
+>>> coll = [ot.Triangular(0.0, 1.0, 5.0), ot.Uniform(-2.0, 2.0)]
+>>> weights = [3.0, 2.0]
+>>> cst = 3.0
+>>> distribution = ot.LinearCombinationDistribution(coll, weights, cst)
+
+Draw a sample:
+
+>>> sample = distribution.getSample(5)
 )RAW"
 
 // ---------------------------------------------------------------------

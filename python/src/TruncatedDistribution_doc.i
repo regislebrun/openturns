@@ -60,6 +60,12 @@ threshold : float, :math:`\tau \in [0, 1]`
 
     If :math:`F(upperBound)-F(lowerBound)>\tau`: rejection.
 
+Notes
+-----
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *TruncatedDistribution-DefaultThresholdRealization* (:raw:`Scalar`, default: `0.5`)
+
 Examples
 --------
 >>> import openturns as ot
@@ -68,12 +74,6 @@ Examples
 Draw a sample:
 
 >>> sample = distribution.getSample(5)
-
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *TruncatedDistribution-DefaultThresholdRealization* (:raw:`Scalar`, default: `0.5`)
 )RAW"
 
 // ---------------------------------------------------------------------

@@ -49,12 +49,12 @@ Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
-- *TNC-DefaultAccuracy*: accuracy for the L-BFGS-B algorithm,
-- *TNC-DefaultEta*: direction finding accuracy,
-- *TNC-DefaultFmin*: function value for gradient check,
-- *TNC-DefaultRescale*: rescale factor for the gradient,
-- *TNC-DefaultStepmx*: maximum step length,
-- *TNC-DefaultMaxCGit*: maximum number of conjugate gradient iterations."
+- *TNC-DefaultAccuracy* (:raw:`Scalar`, default: `1e-4`): accuracy for the TNC algorithm,
+- *TNC-DefaultEta* (:raw:`Scalar`, default: `0.25`): severity of the line search,
+- *TNC-DefaultFmin* (:raw:`Scalar`, default: `1.0`): minimum function value estimate,
+- *TNC-DefaultRescale* (:raw:`Scalar`, default: `1.3`): scaling factor (in log10) used to trigger f value rescaling,
+- *TNC-DefaultStepmx* (:raw:`Scalar`, default: `10.0`): maximum step for the line search,
+- *TNC-DefaultMaxCGit* (:raw:`UnsignedInteger`, default: `50`): maximum number of conjugate gradient iterations."
 
 // ---------------------------------------------------------------------
 
