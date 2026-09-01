@@ -368,7 +368,7 @@ Bool TruncatedDistribution::hasSimplifiedVersion(Distribution & simplified) cons
       Point xNew;
       Point yNew;
       // Interpolate at alpha if it falls inside the original support
-      if (alpha > xLow)
+      if (alpha >= xLow)
       {
         // Find the segment containing alpha
         for (UnsignedInteger i = 0; i < xOld.getSize() - 1; ++i)
@@ -394,7 +394,7 @@ Bool TruncatedDistribution::hasSimplifiedVersion(Distribution & simplified) cons
         }
       }
       // Interpolate at beta if it falls inside the original support
-      if (beta < xUp)
+      if (beta <= xUp)
       {
         for (UnsignedInteger i = 0; i < xOld.getSize() - 1; ++i)
         {
