@@ -14,7 +14,9 @@ Sparse Gaussian Process Regression : cantilever beam model
 # inducing points. It is a good alternative to the exact
 # :class:`~openturns.GaussianProcessRegression` when the training sample is large, since the
 # cost of the exact method scales with the cube of the sample size while the complexity of the
-# sparse model depends on the number of inducing points only. Unlike the exact GPR, the sparse
+# sparse model depends on the number of inducing points only, with a complexity scaling
+# as :math:`n \times m^2` where :math:`n` is the sample size and :math:`m` the number of
+# inducing points. Unlike the exact GPR, the sparse
 # model explicitly takes into account an independent Gaussian noise on the observations, with
 # variance estimated during the fitting.
 from openturns.usecases import cantilever_beam
@@ -98,9 +100,9 @@ fitter_result = fitter_algo.getResult()
 
 # %%
 # We can print the hyperparameters of the covariance model, which have been estimated by maximizing the ELBO,
-# as well as the estimated noise variance and the optimal value of the ELBO.
+# as well as the estimated noise standard deviation and the optimal value of the ELBO.
 print(fitter_result.getCovarianceModel())
-print(fitter_result.getNoiseVariance())
+print(fitter_result.getNoiseStdDev())
 print(fitter_result.getOptimalELBO())
 
 # %%

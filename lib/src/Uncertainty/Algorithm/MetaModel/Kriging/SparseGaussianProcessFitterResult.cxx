@@ -42,7 +42,7 @@ SparseGaussianProcessFitterResult::SparseGaussianProcessFitterResult(const Sampl
     const TriangularMatrix & whiteningFactor,
     const Point & posteriorMean,
     const CovarianceMatrix & posteriorCovariance,
-    const Scalar noiseVariance,
+    const Scalar noiseStdDev,
     const Scalar optimalELBO,
     const Function & metaModel,
     const LinearAlgebra linearAlgebraMethod)
@@ -53,7 +53,7 @@ SparseGaussianProcessFitterResult::SparseGaussianProcessFitterResult(const Sampl
   , linearAlgebraMethod_(linearAlgebraMethod)
   , posteriorMean_(posteriorMean)
   , posteriorCovariance_(posteriorCovariance)
-  , noiseVariance_(noiseVariance)
+  , noiseStdDev_(noiseStdDev)
   , optimalELBO_(optimalELBO)
 {
   const UnsignedInteger size = inputSample.getSize();
@@ -73,7 +73,7 @@ String SparseGaussianProcessFitterResult::__repr__() const
   return OSS(true) << "class=" << getClassName()
          << ", covariance model=" << covarianceModel_
          << ", inducing points=" << inducingPoints_
-         << ", noise variance=" << noiseVariance_
+         << ", noiseStdDev=" << noiseStdDev_
          << ", optimal ELBO=" << optimalELBO_;
 }
 
@@ -83,7 +83,7 @@ String SparseGaussianProcessFitterResult::__str__(const String & offset) const
   oss << getClassName() << "("
       << "covariance model=" << covarianceModel_.__str__(offset)
       << ", inducing points=" << inducingPoints_.__str__(offset)
-      << ", noise variance=" << noiseVariance_
+      << ", noise variance=" << noiseStdDev_
       << ", optimal ELBO=" << optimalELBO_ << ")";
   return oss;
 }
@@ -137,9 +137,9 @@ CovarianceMatrix SparseGaussianProcessFitterResult::getPosteriorCovariance() con
 }
 
 /* Noise variance accessor */
-Scalar SparseGaussianProcessFitterResult::getNoiseVariance() const
+Scalar SparseGaussianProcessFitterResult::getNoiseStdDev() const
 {
-  return noiseVariance_;
+  return noiseStdDev_;
 }
 
 /* optimal ELBO accessor */
@@ -194,7 +194,7 @@ void SparseGaussianProcessFitterResult::save(Advocate & adv) const
   adv.saveAttribute("linearAlgebraMethod_", linearAlgebraMethod);
   adv.saveAttribute("posteriorMean_", posteriorMean_);
   adv.saveAttribute("posteriorCovariance_", posteriorCovariance_);
-  adv.saveAttribute("noiseVariance_", noiseVariance_);
+  adv.saveAttribute("noiseStdDev_", noiseStdDev_);
   adv.saveAttribute("optimalELBO_", optimalELBO_);
 }
 
@@ -216,7 +216,7 @@ void SparseGaussianProcessFitterResult::load(Advocate & adv)
   }
   adv.loadAttribute("posteriorMean_", posteriorMean_);
   adv.loadAttribute("posteriorCovariance_", posteriorCovariance_);
-  adv.loadAttribute("noiseVariance_", noiseVariance_);
+  adv.loadAttribute("noiseStdDev_", noiseStdDev_);
   adv.loadAttribute("optimalELBO_", optimalELBO_);
 }
 
