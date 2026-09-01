@@ -100,3 +100,96 @@ Returns
 -------
 singularities : :class:`~openturns.Point`
     Interior knots where the piecewise linear PDF changes slope."
+
+// ---------------------------------------------------------------------
+
+%feature("docstring") OT::PiecewiseLinearDistribution::computeEntropy
+"Compute the entropy of the distribution.
+
+The entropy is computed analytically from the normalized PDF using
+the formula for the integral of :math:`f \log f` over each linear segment.
+
+Returns
+-------
+entropy : float
+    The entropy of the distribution."
+
+// ---------------------------------------------------------------------
+
+%feature("docstring") OT::PiecewiseLinearDistribution::getRoughness
+"Compute the roughness, i.e. the L2-norm of the PDF.
+
+The roughness is the integral of the squared PDF over the support.
+
+Returns
+-------
+roughness : float
+    The L2-norm of the PDF."
+
+// ---------------------------------------------------------------------
+
+%feature("docstring") OT::PiecewiseLinearDistribution::getParameter
+"Accessor to the full parameter vector.
+
+The parameter vector is the concatenation of the abscissae :math:`\\vect{x}`
+and the ordinates :math:`\\vect{y}`.
+
+Returns
+-------
+parameter : :class:`~openturns.Point`
+    The parameter vector of size :math:`2n`."
+
+// ---------------------------------------------------------------------
+
+%feature("docstring") OT::PiecewiseLinearDistribution::setParameter
+"Accessor to the full parameter vector.
+
+The parameter vector is the concatenation of the abscissae :math:`\\vect{x}`
+and the ordinates :math:`\\vect{y}`.
+
+Parameters
+----------
+parameter : :class:`~openturns.Point`
+    The parameter vector of size :math:`2n`."
+
+// ---------------------------------------------------------------------
+
+%feature("docstring") OT::PiecewiseLinearDistribution::getParameterDescription
+"Accessor to the parameter description.
+
+Returns
+-------
+description : :class:`~openturns.Description`
+    The names of the parameters: :math:`x_0, \\dots, x_{n-1}, y_0, \\dots, y_{n-1}`."
+
+// ---------------------------------------------------------------------
+
+%feature("docstring") OT::PiecewiseLinearDistribution::computeScalarQuantile
+"Compute the quantile of the distribution.
+
+Parameters
+----------
+p : float, :math:`p \\in [0, 1]`
+    The probability level.
+tail : bool, optional
+    Whether the tail probability is used (default: False).
+
+Returns
+-------
+x : float
+    The quantile corresponding to the probability :math:`p`."
+
+// ---------------------------------------------------------------------
+
+%feature("docstring") OT::PiecewiseLinearDistribution::computeProbability
+"Compute the probability content of an interval.
+
+Parameters
+----------
+interval : :class:`~openturns.Interval`
+    The interval of dimension 1.
+
+Returns
+-------
+probability : float
+    The probability :math:`P(X \\in \\text{interval})`."

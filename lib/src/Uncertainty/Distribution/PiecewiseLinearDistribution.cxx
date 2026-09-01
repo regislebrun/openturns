@@ -605,6 +605,20 @@ void PiecewiseLinearDistribution::load(Advocate & adv)
     throw InvalidArgumentException(HERE) << "Error: x must have at least 2 elements, here x.getSize()=" << x_.getSize();
   if (y_.getSize() != x_.getSize())
     throw InvalidArgumentException(HERE) << "Error: y must have the same size as x, here x.getSize()=" << x_.getSize() << " and y.getSize()=" << y_.getSize();
+  for (UnsignedInteger i = 1; i < x_.getSize(); ++i)
+  {
+    if (x_[i] <= x_[i - 1])
+      throw InvalidArgumentException(HERE) << "Error: x must be strictly increasing, here x[" << i - 1 << "]=" << x_[i - 1] << " and x[" << i << "]=" << x_[i];
+  }
+  Scalar maxY = 0.0;
+  for (UnsignedInteger i = 0; i < y_.getSize(); ++i)
+  {
+    if (y_[i] < 0.0)
+      throw InvalidArgumentException(HERE) << "Error: y must be nonnegative, here y[" << i << "]=" << y_[i];
+    if (y_[i] > maxY) maxY = y_[i];
+  }
+  if (maxY <= 0.0)
+    throw InvalidArgumentException(HERE) << "Error: at least one y value must be strictly positive";
   yNorm_ = y_;
   probabilities_ = Point(x_.getSize() - 1);
   update();
