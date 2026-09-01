@@ -207,7 +207,7 @@ Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
-- *Collection-size-visible-in-str-from* (:raw:`UnsignedInteger`, default: `10`)
+- *Collection-size-visible-in-str-from* (``UnsignedInteger``, default: `10`)
 
     Sub-collection of values at the selection indices."
 

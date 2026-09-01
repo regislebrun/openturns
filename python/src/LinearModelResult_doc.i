@@ -40,7 +40,7 @@ Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
-- *LinearModelResult-DecompositionMethod* (:raw:`String`, default: `QR`)
+- *LinearModelResult-DecompositionMethod* (``String``, default: `QR`)
 )RAW"
 
 // ---------------------------------------------------------------------

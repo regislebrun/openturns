@@ -4,9 +4,9 @@
 
 Parameters
 ----------
-lambda : :class:`~openturns.NumericalPoint`
+lambda : :class:`~openturns.Point`
     The lambda parameter.
-mu : :class:`~openturns.NumericalPoint`
+mu : :class:`~openturns.Point`
     The shift parameter."
 
 
@@ -16,7 +16,7 @@ mu : :class:`~openturns.NumericalPoint`
 
 Returns
 -------
-lambda : :class:`~openturns.NumericalPoint`
+lambda : :class:`~openturns.Point`
     The lambda parameter"
 
 
@@ -26,6 +26,6 @@ lambda : :class:`~openturns.NumericalPoint`
 
 Returns
 -------
-mu : :class:`~openturns.NumericalPoint`
+mu : :class:`~openturns.Point`
     The shift parameter"
 

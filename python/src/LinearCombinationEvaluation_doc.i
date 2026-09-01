@@ -4,9 +4,9 @@
 
 Parameters
 ----------
-functionsCollection : list of :class:`~openturns.NumericalMathFunction`
+functionsCollection : list of :class:`~openturns.Function`
     The collection of functions.
-coefficients : :class:`~openturns.NumericalPoint`
+coefficients : :class:`~openturns.Point`
     The coefficients."
 
 
@@ -16,7 +16,7 @@ coefficients : :class:`~openturns.NumericalPoint`
 
 Returns
 -------
-coefficients : :class:`~openturns.NumericalPoint`
+coefficients : :class:`~openturns.Point`
     The coefficients."
 
 
@@ -26,7 +26,7 @@ coefficients : :class:`~openturns.NumericalPoint`
 
 Returns
 -------
-functions : list of :class:`~openturns.NumericalMathFunction`
+functions : list of :class:`~openturns.Function`
     The collection of functions."
 
 
@@ -36,7 +36,7 @@ functions : list of :class:`~openturns.NumericalMathFunction`
 
 Parameters
 ----------
-functionsCollection : list of :class:`~openturns.NumericalMathFunction`
+functionsCollection : list of :class:`~openturns.Function`
     The collection of functions.
-coefficients : :class:`~openturns.NumericalPoint`
+coefficients : :class:`~openturns.Point`
     The coefficients."

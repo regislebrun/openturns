@@ -6,7 +6,7 @@
 
 Returns
 -------
-center : :class:`~openturns.NumericalPoint`
+center : :class:`~openturns.Point`
     The center point"
 
 
@@ -16,7 +16,7 @@ center : :class:`~openturns.NumericalPoint`
 
 Returns
 -------
-constant : :class:`~openturns.NumericalPoint`
+constant : :class:`~openturns.Point`
     The constant term of the gradient"
 
 

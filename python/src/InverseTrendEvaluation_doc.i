@@ -4,7 +4,7 @@
 
 Parameters
 ----------
-trend : :class:`~openturns.NumericalMathFunction`
+trend : :class:`~openturns.Function`
     The trend function"
 
 
@@ -14,6 +14,6 @@ trend : :class:`~openturns.NumericalMathFunction`
 
 Returns
 -------
-trend : :class:`~openturns.NumericalMathFunction`
+trend : :class:`~openturns.Function`
     The trend function"
 

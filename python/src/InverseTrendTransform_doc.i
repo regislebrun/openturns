@@ -53,6 +53,6 @@ myTrendTransform : :class:`~openturns.TrendTransform`
 
 Returns
 -------
-trend : :class:`~openturns.NumericalMathFunction`
+trend : :class:`~openturns.Function`
     The trend function"
 

@@ -53,7 +53,7 @@ enumerateFunction : :class:`~openturns.EnumerateFunction`
 
 Returns
 -------
-coll : :class:`~openturns.UniVariateFunctionFamilyCollection`
+coll : sequence of :class:`~openturns.UniVariateFunctionFamily`
     The collection of function families"
 
 
@@ -73,6 +73,6 @@ enumerateFunction : :class:`~openturns.EnumerateFunction`
 
 Parameters
 ----------
-coll : :class:`~openturns.UniVariateFunctionFamilyCollection`
+coll : sequence of :class:`~openturns.UniVariateFunctionFamily`
     The collection of function families"
 

@@ -4,7 +4,7 @@
 
 Parameters
 ----------
-gradient : :class:`~openturns.NumericalMathGradientImplementation`
+gradient : :class:`~openturns.Gradient`
     The gradient.
 inputPositions : :class:`~openturns.Indices`
     The positions of the parameters in the input vector."

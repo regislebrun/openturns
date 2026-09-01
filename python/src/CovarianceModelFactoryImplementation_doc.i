@@ -7,7 +7,7 @@ This class is an interface class for all the classes that build covariance model
 
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
-- *CovarianceModel-DefaultNuggetFactor* (:raw:`Scalar`, default: `1e-12`)"
+- *CovarianceModel-DefaultNuggetFactor* (``Scalar``, default: `1e-12`)"
 
 %enddef
 %feature("docstring") OT::CovarianceModelFactoryImplementation
@@ -25,9 +25,9 @@ Available usages:
 
 Parameters
 ----------
-sample : :class:`~openturns.NumericalSample`
+sample : :class:`~openturns.Sample`
     The sample of a stochastic process.
-center : :class:`~openturns.NumericalPoint`
+center : :class:`~openturns.Point`
     The center of the process.
 
 Returns

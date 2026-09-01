@@ -14,9 +14,9 @@ Available usages:
 
 Parameters
 ----------
-sample : :class:`~openturns.NumericalSample`
+sample : :class:`~openturns.Sample`
     The sample of a stochastic process.
-center : :class:`~openturns.NumericalPoint`
+center : :class:`~openturns.Point`
     The center of the process.
 
 Returns

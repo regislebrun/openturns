@@ -198,7 +198,7 @@ To get the surrogate model :math:`\metaModel` defined in :eq:`QuadraticLeastSqua
 
 Returns
 -------
-dataIn : :class:`~openturns.NumericalSample`
+dataIn : :class:`~openturns.Sample`
     The input sample"
 
 
@@ -208,6 +208,6 @@ dataIn : :class:`~openturns.NumericalSample`
 
 Returns
 -------
-dataOut : :class:`~openturns.NumericalSample`
+dataOut : :class:`~openturns.Sample`
     The output sample"
 

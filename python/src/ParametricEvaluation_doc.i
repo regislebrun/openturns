@@ -4,11 +4,11 @@
 
 Parameters
 ----------
-evaluation : :class:`~openturns.NumericalMathEvaluationImplementation`
+evaluation : :class:`~openturns.Evaluation`
     The evaluation.
 inputPositions : :class:`~openturns.Indices`
     The positions of the parameters in the input vector.
-parameters : :class:`~openturns.NumericalPoint`
+parameters : :class:`~openturns.Point`
     The parameter values."
 
 
@@ -18,7 +18,7 @@ parameters : :class:`~openturns.NumericalPoint`
 
 Returns
 -------
-evaluation : :class:`~openturns.NumericalMathEvaluationImplementation`
+evaluation : :class:`~openturns.Evaluation`
     The underlying evaluation"
 
 

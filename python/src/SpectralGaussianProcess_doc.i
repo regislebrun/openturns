@@ -57,9 +57,9 @@ Create a *SpectralGaussianProcess* from a spectral model and a time grid:
 
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
-- *SpectralGaussianProcess-CholeskyCacheSize* (:raw:`UnsignedInteger`, default: `16384`)
-- *SpectralGaussianProcess-MaximalScaling* (:raw:`Scalar`, default: `1e-05`)
-- *SpectralGaussianProcess-StartingScaling* (:raw:`Scalar`, default: `1e-13`)
+- *SpectralGaussianProcess-CholeskyCacheSize* (``UnsignedInteger``, default: `16384`)
+- *SpectralGaussianProcess-MaximalScaling* (``Scalar``, default: `1e-05`)
+- *SpectralGaussianProcess-StartingScaling* (``Scalar``, default: `1e-13`)
 )RAW"
 // ---------------------------------------------------------------------
 

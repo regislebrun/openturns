@@ -182,7 +182,7 @@ as a :class:`~openturns.Function`, use the :meth:`~openturns.MetaModelResult.get
 
 Returns
 -------
-dataIn : :class:`~openturns.NumericalSample`
+dataIn : :class:`~openturns.Sample`
     The input sample"
 
 
@@ -192,6 +192,6 @@ dataIn : :class:`~openturns.NumericalSample`
 
 Returns
 -------
-dataOut : :class:`~openturns.NumericalSample`
+dataOut : :class:`~openturns.Sample`
     The output sample"
 

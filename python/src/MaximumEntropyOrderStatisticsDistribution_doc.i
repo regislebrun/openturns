@@ -98,8 +98,8 @@ Draw a sample:
 
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
-- *MaximumEntropyOrderStatisticsDistribution-CDFIntegrationNodesNumber* (:raw:`UnsignedInteger`, default: `16`)
-- *MaximumEntropyOrderStatisticsDistribution-MaximumQuantileIteration* (:raw:`UnsignedInteger`, default: `10`)
+- *MaximumEntropyOrderStatisticsDistribution-CDFIntegrationNodesNumber* (``UnsignedInteger``, default: `16`)
+- *MaximumEntropyOrderStatisticsDistribution-MaximumQuantileIteration* (``UnsignedInteger``, default: `10`)
 
 )RAW"
 

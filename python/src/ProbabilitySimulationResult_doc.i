@@ -51,8 +51,8 @@ Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
-- *ProbabilitySimulationResult-CheckPositiveVariance* (:raw:`Bool`, default: `false`)
-- *ProbabilitySimulationResult-DefaultConfidenceLevel* (:raw:`Scalar`, default: `0.95`)
+- *ProbabilitySimulationResult-CheckPositiveVariance* (``Bool``, default: `false`)
+- *ProbabilitySimulationResult-DefaultConfidenceLevel* (``Scalar``, default: `0.95`)
 )RAW"
 %enddef
 %feature("docstring") OT::ProbabilitySimulationResult::setBlockSize
