@@ -55,6 +55,10 @@ See Also
 --------
 CovarianceModel
 
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *DiracCovarianceModel-CheckUnique* (:raw:`Bool`, default: `true`)
+
 Examples
 --------
 Create a standard Dirac covariance function:
@@ -73,12 +77,6 @@ Create a standard Dirac covariance function:
 Create a  Dirac covariance function specifying the amplitude vector:
 
 >>> covModel2 = ot.DiracCovarianceModel(2, [1.5, 2.5])
-
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *DiracCovarianceModel-CheckUnique* (:raw:`Bool`, default: `true`)
 
 Create a  Dirac covariance function specifying the amplitude vector and the correlation matrix:
 

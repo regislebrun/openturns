@@ -22,8 +22,7 @@ parameters :math:`(\Hat{\nu}, \Hat{\mu}, \hat{\sigma}(\Hat{\nu}), \Hat{\mat{R}})
 See also
 --------
 DistributionFactory, Student
-Notes
------
+
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *StudentFactory-NuMax* (:raw:`Scalar`, default: `1000`)

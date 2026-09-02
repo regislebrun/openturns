@@ -39,8 +39,7 @@ In both cases, the resolution of this equation defininig :math:`\Hat{\kappa}_n` 
 See also
 --------
 DistributionFactory, VonMises
-Notes
------
+
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *VonMisesFactory-AbsolutePrecision* (:raw:`Scalar`, default: `1e-12`)

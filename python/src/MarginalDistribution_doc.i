@@ -10,6 +10,13 @@ distribution : :class:`~openturns.Distribution`
     The underlying distribution.
 indices : sequence of int
     Marginal indices.
+
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *MarginalDistribution-MaximumError* (:raw:`Scalar`, default: `1e-07`)
+- *MarginalDistribution-MaximumSubIntervals* (:raw:`UnsignedInteger`, default: `128`)
+- *MarginalDistribution-Rule* (:raw:`String`, default: `G15K31`)
+- *MarginalDistribution-UsePDF* (:raw:`Bool`, default: `true`)
 "
 
 // ---------------------------------------------------------------------
@@ -90,15 +97,6 @@ flag : bool
 
 %feature("docstring") OT::MarginalDistribution::getUsePDF
 "Accessor to the flag telling how the PDF is computed.
-
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *MarginalDistribution-MaximumError* (:raw:`Scalar`, default: `1e-07`)
-- *MarginalDistribution-MaximumSubIntervals* (:raw:`UnsignedInteger`, default: `128`)
-- *MarginalDistribution-Rule* (:raw:`String`, default: `G15K31`)
-- *MarginalDistribution-UsePDF* (:raw:`Bool`, default: `true`)
 
 Returns
 -------

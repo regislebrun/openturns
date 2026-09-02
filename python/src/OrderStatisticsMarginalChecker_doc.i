@@ -32,6 +32,11 @@ Three tests are performed. We note :math:`[a_i,b_i]` the range of :math:`X_i`. T
   using the TNC algorithm.
 
 
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *OrderStatisticsMarginalChecker-OptimizationEpsilon* (:raw:`Scalar`, default: `1e-07`)
+- *OrderStatisticsMarginalChecker-QuantileIteration* (:raw:`UnsignedInteger`, default: `100`)
+
 Examples
 --------
 Create the test checker:
@@ -39,13 +44,6 @@ Create the test checker:
 >>> import openturns as ot
 >>> coll = [ot.Uniform(-1.0, 1.0), ot.Uniform(-0.5, 1.5)]
 >>> testChecker = ot.OrderStatisticsMarginalChecker(coll)
-
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *OrderStatisticsMarginalChecker-OptimizationEpsilon* (:raw:`Scalar`, default: `1e-07`)
-- *OrderStatisticsMarginalChecker-QuantileIteration* (:raw:`UnsignedInteger`, default: `100`)
 
 Check the compatibility:
 

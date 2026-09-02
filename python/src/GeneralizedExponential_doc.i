@@ -47,8 +47,6 @@ See Also
 --------
 CovarianceModel
 
-Notes
------
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *GeneralizedExponential-DefaultTheta* (:raw:`Scalar`, default: `1`)

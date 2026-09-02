@@ -37,6 +37,10 @@ distZ : :class:`~openturns.Distribution`, univariate
     when :math:`(X,Y)` is a random vector with independent copula
     and respective marginal distributions `distX` and `distY`.
 
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *ProductDistribution-LargeCharacteristicFunctionArgument* (:raw:`Scalar`, default: `10`)
+
 Examples
 --------
 Create a distribution:
@@ -45,12 +49,6 @@ Create a distribution:
 >>> distX = ot.Normal(-1.0, 1.0)
 >>> distY = ot.Uniform(-1.0, 1.0)
 >>> distZ = ot.ProductDistribution(distX, distY)
-
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *ProductDistribution-LargeCharacteristicFunctionArgument* (:raw:`Scalar`, default: `10`)
 
 Draw a sample:
 

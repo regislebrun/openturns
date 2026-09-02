@@ -97,7 +97,7 @@ n_points : int, optional
     The number of points that is used for interpolating the empirical CDF of
     the two samples (with possibly different sizes).
 
-    It will default to *DistributionImplementation-DefaultPointNumber* from
+        It will default to *Distribution-DefaultPointNumber* from
     the :class:`~openturns.ResourceMap`.
 
 Returns
@@ -107,6 +107,8 @@ graph : :class:`~openturns.Graph`
 
 Notes
 -----
+
+
 The QQ-plot is a visual fitting test for univariate distributions. It
 opposes the sample quantiles to those of the tested quantity (either a
 distribution or another sample) by plotting the following points cloud:
@@ -176,7 +178,7 @@ n_points : int, optional
     The number of points that is used for interpolating the empirical CDF of
     the two samples (with possibly different sizes).
 
-    It will default to *DistributionImplementation-DefaultPointNumber* from
+        It will default to *Distribution-DefaultPointNumber* from
     the :class:`~openturns.ResourceMap`.
 
 Returns
@@ -186,6 +188,8 @@ graph : :class:`~openturns.Graph`
 
 Notes
 -----
+
+
 The PP-plot is a visual fitting test for univariate distributions. It
 opposes the sample quantiles to those of the tested quantity (either a
 distribution or another sample) by plotting the following points cloud:

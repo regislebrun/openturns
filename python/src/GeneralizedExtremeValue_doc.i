@@ -113,8 +113,6 @@ When the constructor from a :class:`~openturns.Gumbel`:math:`(\beta, \gamma)` di
        \xi & = & 0.0
     \end{eqnarray*}
 
-Notes
------
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *GeneralizedExtremeValue-XiThreshold* (:raw:`Scalar`, default: `1e-06`)

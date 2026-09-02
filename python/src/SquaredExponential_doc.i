@@ -45,6 +45,10 @@ See Also
 --------
 CovarianceModel
 
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *SquaredExponential-DefaultTheta* (:raw:`Scalar`, default: `1`)
+
 Examples
 --------
 Create a standard squared exponential covariance function:
@@ -63,12 +67,6 @@ Create a squared exponential covariance function specifying the scale vector (am
 
 >>> covModel2 = ot.SquaredExponential([1.5, 2.5])
 >>> covModel2bis = ot.SquaredExponential([1.5] * 3)
-
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *SquaredExponential-DefaultTheta* (:raw:`Scalar`, default: `1`)
 
 Create a  squared exponential covariance function specifying the scale vector and the amplitude :
 

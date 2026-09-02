@@ -69,15 +69,13 @@ Examples
 >>> margTransEvalComposed = ot.MarginalTransformationEvaluation(distCol, outputDistCol)
 >>> print(margTransEvalComposed([1, 3]))
 [1.84102,1.99533]
+)RAW"
 
-Notes
------
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *MarginalTransformationEvaluation-DefaultTailThreshold* (:raw:`Scalar`, default: `0.99`)
 - *MarginalTransformationEvaluation-ParametersEpsilon* (:raw:`Scalar`, default: `1e-14`)
 - *MarginalTransformationEvaluation-Simplify* (:raw:`Bool`, default: `true`)
-)RAW"
 
 // ---------------------------------------------------------------------
 

@@ -15,6 +15,11 @@ n : int
 indices : sequence of int
     Marginal indices, must be strictly increasing.
 
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *MarginalUniformOrderStatistics-LargeCaseCDF* (:raw:`UnsignedInteger`, default: `1000`)
+- *MarginalUniformOrderStatistics-MaximumCallsNumber* (:raw:`UnsignedInteger`, default: `1000000`)
+
 See also
 --------
 openturns.UniformOrderStatistics
@@ -112,13 +117,6 @@ flag : bool
 
 %feature("docstring") OT::MarginalUniformOrderStatistics::getUsePDF
 "Accessor to the flag telling how the PDF is computed.
-
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *MarginalUniformOrderStatistics-LargeCaseCDF* (:raw:`UnsignedInteger`, default: `1000`)
-- *MarginalUniformOrderStatistics-MaximumCallsNumber* (:raw:`UnsignedInteger`, default: `1000000`)
 
 Returns
 -------

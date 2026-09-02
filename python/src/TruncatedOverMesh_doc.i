@@ -25,6 +25,13 @@ Notes
 The sampling can be done using either a global rejection method or a local rejection method simplex by simplex. This is controlled by the entry *TtuncatedOverMesh-UseRejection* of :class:`~openturns.ResourceMap`. If it is set to *True*, the global rejection is used, otherwise the local rejection is used.
 If the mesh is significantly smaller than the support of the distribution, the second method is more efficient but it needs an offline computation of cost proportionnal to the number of simplices in the mesh.
 
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *TruncatedOverMesh-MarginalIntegrationNodesNumber* (:raw:`UnsignedInteger`, default: `64`)
+- *TruncatedOverMesh-MaximumIntegrationNodesNumber* (:raw:`UnsignedInteger`, default: `262144`)
+- *TruncatedOverMesh-OptimizationAlgorithm* (:raw:`String`, default: `TNC`)
+- *TruncatedOverMesh-UseRejection* (:raw:`Bool`, default: `false`)
+
 Examples
 --------
 Create a distribution:
@@ -36,15 +43,6 @@ Create a distribution:
 >>> mesh = ot.LevelSetMesher([50]*2).build(levelSet, box, False)
 >>> dist = ot.Normal([0] * 2, [2] * 2)
 >>> distribution = ot.TruncatedOverMesh(dist, mesh)
-
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *TruncatedOverMesh-MarginalIntegrationNodesNumber* (:raw:`UnsignedInteger`, default: `64`)
-- *TruncatedOverMesh-MaximumIntegrationNodesNumber* (:raw:`UnsignedInteger`, default: `262144`)
-- *TruncatedOverMesh-OptimizationAlgorithm* (:raw:`String`, default: `TNC`)
-- *TruncatedOverMesh-UseRejection* (:raw:`Bool`, default: `false`)
 
 Draw a sample:
 
