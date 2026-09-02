@@ -57,12 +57,6 @@ Scalar truncatedNormalDraw(const Scalar lower, const Scalar upper, const Scalar 
   return DistFunc::qNormal(ei + (fi - ei) * u);
 }
 
-// Draw from N(0,1) truncated to [lower, upper] using inverse CDF
-Scalar truncatedNormalDraw(const Scalar lower, const Scalar upper)
-{
-  return truncatedNormalDraw(lower, upper, RandomGenerator::Generate());
-}
-
 // Systematic resampling (Algorithm 4 in the paper)
 // Given normalized weights (summing to 1), returns ancestor indices
 void systematicResampling(const Point& normWeights,
@@ -131,20 +125,6 @@ void gibbsMove(Point& eta,
     if (lower < upper)
       eta[i] = truncatedNormalDraw(lower, upper, u[offset++]);
   }
-}
-
-// Overload without pre-generated numbers (for non-TBB contexts)
-void gibbsMove(Point& eta,
-               const TriangularMatrix& L,
-               const Point& a,
-               const Point& b,
-               const UnsignedInteger t)
-{
-  UnsignedInteger offset = 0;
-  Point u(t);
-  for (UnsignedInteger i = 0; i < t; ++i)
-    u[i] = RandomGenerator::Generate();
-  gibbsMove(eta, L, a, b, t, u, offset);
 }
 
 // Compute log(sum_i exp(logWeights[i])) with the log-sum-exp trick
