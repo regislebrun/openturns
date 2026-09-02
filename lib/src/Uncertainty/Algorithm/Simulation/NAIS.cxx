@@ -67,6 +67,11 @@ void NAIS::setKeepSample(const Bool keepSample)
   keepSample_ = keepSample;
 }
 
+/* Setter for MaximumCoefficientOfVariation. */
+void NAIS::setMaximumCoefficientOfVariation(const Scalar)
+{
+  throw InvalidArgumentException(HERE) << "The maximum coefficient cannot be used as termination criterion in this algorithm.";
+}
 
 // Get quantileLevel
 Scalar NAIS::getQuantileLevel() const
