@@ -62,6 +62,13 @@ Notes
 -----
 In the first usage, a scalar centered and unit-variance normal distribution is built.
 
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *Normal-MarginalIntegrationNodesNumber* (:raw:`UnsignedInteger`, default: `16`)
+- *Normal-MaximumNumberOfPoints* (:raw:`UnsignedInteger`, default: `10000000`)
+- *Normal-MinimumCDFEpsilon* (:raw:`Scalar`, default: `0.05`)
+- *Normal-MinimumNumberOfPoints* (:raw:`UnsignedInteger`, default: `100000`)
+
 Examples
 --------
 Create a distribution:
@@ -102,13 +109,6 @@ distribution= Normal(mu = [0,0,0,0,0], sigma = [1,1.73205,1,1,1], R = 5x5
  [ -0.5  0    1    0    0   ]
  [  0    0    0    1   -0.2 ]
  [  0    0    0   -0.2  1   ]])
-
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *Normal-MarginalIntegrationNodesNumber* (:raw:`UnsignedInteger`, default: `16`)
-- *Normal-MaximumNumberOfPoints* (:raw:`UnsignedInteger`, default: `10000000`)
-- *Normal-MinimumCDFEpsilon* (:raw:`Scalar`, default: `0.05`)
-- *Normal-MinimumNumberOfPoints* (:raw:`UnsignedInteger`, default: `100000`)
 )RAW"
 
 // ---------------------------------------------------------------------

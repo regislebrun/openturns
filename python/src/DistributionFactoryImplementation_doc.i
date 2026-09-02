@@ -10,6 +10,7 @@ estimators used for each distribution.
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *DistributionFactory-BootstrapErrorTolerance* (:raw:`Scalar`, default: `0.1`)
+- *DistributionFactory-DefaultBootstrapSize* (:raw:`UnsignedInteger`, default: `100`)
 "
 %enddef
 %feature("docstring") OT::DistributionFactoryImplementation

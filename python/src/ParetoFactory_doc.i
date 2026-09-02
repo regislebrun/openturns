@@ -196,8 +196,6 @@ See also
 --------
 Pareto, DistributionFactory
 
-Notes
------
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *ParetoFactory-AlphaUpperBound* (:raw:`Scalar`, default: `1000`)

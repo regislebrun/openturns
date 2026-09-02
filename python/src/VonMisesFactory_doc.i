@@ -36,13 +36,13 @@ In both cases, the resolution of this equation defininig :math:`\Hat{\kappa}_n` 
 `VonMisesFactory-RelativePrecision`, `VonMisesFactory-ResidualPrecision`,
 `VonMisesFactory-MaximumIteration` in :class:`~openturns.ResourceMap`
 
-See also
---------
-DistributionFactory, VonMises
-
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *VonMisesFactory-AbsolutePrecision* (:raw:`Scalar`, default: `1e-12`)
+
+See also
+--------
+DistributionFactory, VonMises
 )RAW"
 
 // ---------------------------------------------------------------------
