@@ -54,6 +54,7 @@ Basic linear algebra operations (provided the dimensions are compatible)
 [[ 0 1 ]
  [ 2 3 ]
  [ 4 5 ]]
+
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:

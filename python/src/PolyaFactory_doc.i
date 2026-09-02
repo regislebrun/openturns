@@ -18,6 +18,7 @@ We use the following estimator:
 See also
 --------
 DistributionFactory, Polya
+
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:

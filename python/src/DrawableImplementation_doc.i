@@ -39,10 +39,14 @@ Notes
 This class uses the following entries of :class:`~openturns.ResourceMap`:
 
 - *Drawable-AlternativePattern* (:raw:`String`, default: `S`)
+- *Drawable-DefaultColor* (:raw:`String`, default: `blue`)
 - *Drawable-DefaultFillStyle* (:raw:`String`, default: `solid`)
 - *Drawable-DefaultLineStyle* (:raw:`String`, default: `solid`)
 - *Drawable-DefaultLineWidth* (:raw:`Scalar`, default: `1`)
-- *Drawable-DefaultPattern* (:raw:`String`, default: `s`)"
+- *Drawable-DefaultPaletteName* (:raw:`String`, default: `Tableau10`)
+- *Drawable-DefaultPalettePhase* (:raw:`UnsignedInteger`, default: `0`)
+- *Drawable-DefaultPattern* (:raw:`String`, default: `s`)
+- *Drawable-DefaultPointStyle* (:raw:`String`, default: `circle`)"
 
 %enddef
 %feature("docstring") OT::DrawableImplementation

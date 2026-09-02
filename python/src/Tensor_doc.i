@@ -66,6 +66,7 @@ sheet #1
 sheet #2
 [[  3  6 ]
  [  9 12 ]]
+
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:

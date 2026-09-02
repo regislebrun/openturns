@@ -81,6 +81,7 @@ experiments:
 0 : [ 0 1 ]
 1 : [ 2 3 ]
 2 : [ 4 5 ]
+
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:

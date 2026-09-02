@@ -228,7 +228,7 @@ Returns
 residual : float
     Residual value needed in the projection strategy. 
 
-    Default value is :math:`0`."
+    Default value is :math:`1e-06`."
 
 // ---------------------------------------------------------------------
 
@@ -284,7 +284,7 @@ Parameters
 residual : float
     Residual value needed in the projection strategy. 
 
-    Default value is :math:`0`."
+    Default value is :math:`1e-06`."
 
 // ---------------------------------------------------------------------
 

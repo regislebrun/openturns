@@ -86,6 +86,7 @@ This class uses the following entries of :class:`~openturns.ResourceMap`:
 - *RandomWalkMetropolisHastings-DefaultAdaptationPeriod* (:raw:`UnsignedInteger`, default: `30`)
 - *RandomWalkMetropolisHastings-DefaultAdaptationShrinkFactor* (:raw:`Scalar`, default: `0.8`)
 - *RandomWalkMetropolisHastings-DefaultAdaptationUpperBound* (:raw:`Scalar`, default: `0.468`)
+- *RandomWalkMetropolisHastings-DefaultBurnIn* (:raw:`UnsignedInteger`, default: `1000`)
 )RAW"
 
 // ---------------------------------------------------------------------
