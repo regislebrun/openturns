@@ -55,6 +55,13 @@ In least squares and trust region methods, the optimization process continues
 until the user criteria on absolute, relative and residual errors are satisfied,
 or until no significant improvement can be achieved.
 
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *Dlib-DefaultInitialTrustRegionRadius* (:raw:`Scalar`, default: `1`)
+- *Dlib-DefaultMaxLineSearchIterations* (:raw:`UnsignedInteger`, default: `100`)
+- *Dlib-DefaultWolfeRho* (:raw:`Scalar`, default: `0.01`)
+- *Dlib-DefaultWolfeSigma* (:raw:`Scalar`, default: `0.9`)
+
 See also
 --------
 AbdoRackwitz, Cobyla, NLopt
@@ -230,15 +237,5 @@ algoName : str
 Returns
 -------
 algoName : str
-
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *Dlib-DefaultInitialTrustRegionRadius* (:raw:`Scalar`, default: `1`)
-- *Dlib-DefaultMaxLineSearchIterations* (:raw:`UnsignedInteger`, default: `100`)
-- *Dlib-DefaultWolfeRho* (:raw:`Scalar`, default: `0.01`)
-- *Dlib-DefaultWolfeSigma* (:raw:`Scalar`, default: `0.9`)
-
     The identifier of the algorithm."
 

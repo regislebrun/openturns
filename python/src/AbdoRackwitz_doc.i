@@ -19,6 +19,14 @@ omega : float
 smooth : float
     Growing factor in penalization term.
 
+Notes
+-----
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *AbdoRackwitz-DefaultOmega* (:raw:`Scalar`, default: `0.0001`)
+- *AbdoRackwitz-DefaultSmooth* (:raw:`Scalar`, default: `1.2`)
+- *AbdoRackwitz-DefaultTau* (:raw:`Scalar`, default: `0.5`)
+
 See also
 --------
 Cobyla, SQP, TNC, NLopt
@@ -91,15 +99,6 @@ smooth : float
 Parameters
 ----------
 smooth : float
-
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *AbdoRackwitz-DefaultOmega* (:raw:`Scalar`, default: `0.0001`)
-- *AbdoRackwitz-DefaultSmooth* (:raw:`Scalar`, default: `1.2`)
-- *AbdoRackwitz-DefaultTau* (:raw:`Scalar`, default: `0.5`)
-
     Growing factor in penalization term."
 
 

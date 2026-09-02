@@ -43,13 +43,18 @@ corresponding method.
 
 **Table 1.** Sobol' indices and the corresponding methods.
 
-By default, printing the object will print the Sobol’ indices and the
+By default, printing the object will print the Sobol' indices and the
 multi-indices ordered by decreasing part of variance.
 If a multi-index accounts for a smaller part of the variance than some
 threshold, it is not printed.
 This threshold can be customized using the
 `FunctionalChaosSobolIndices-VariancePartThreshold` key of the
 :class:`~openturns.ResourceMap`.
+
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *FunctionalChaosSobolIndices-MaximumNumberOfOutput* (:raw:`UnsignedInteger`, default: `1000`)
+- *FunctionalChaosSobolIndices-PrintColumnWidth* (:raw:`UnsignedInteger`, default: `15`)
 
 Examples
 --------
@@ -128,13 +133,6 @@ STG([0, 1]) =  0.99...
 Get the part of variance of first multi-indices:
 
 >>> partOfVariance = chaosSI.getPartOfVariance()
-
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *FunctionalChaosSobolIndices-MaximumNumberOfOutput* (:raw:`UnsignedInteger`, default: `1000`)
-- *FunctionalChaosSobolIndices-PrintColumnWidth* (:raw:`UnsignedInteger`, default: `15`)
 )RAW"
 
 // ---------------------------------------------------------------------

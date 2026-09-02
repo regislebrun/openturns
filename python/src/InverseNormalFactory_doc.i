@@ -16,6 +16,7 @@ The parameters are estimated by method of moments:
 See also
 --------
 DistributionFactory, InverseNormal
+
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:

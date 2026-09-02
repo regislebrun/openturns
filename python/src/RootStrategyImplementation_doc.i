@@ -9,6 +9,13 @@
 
 - :class:`~openturns.MediumSafe`
 
+Notes
+-----
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *RootStrategy-DefaultMaximumDistance* (:raw:`Scalar`, default: `8`)
+- *RootStrategy-DefaultStepSize* (:raw:`Scalar`, default: `1`)
+
 See also
 --------
 DirectionalSampling"
@@ -163,13 +170,6 @@ roots : :class:`~openturns.ScalarCollection`
       the real value :math:`x` such as *function(x) = value* researched the
       first segment of length *stepSize*, within *[origin, maximumDistance]*
       where a sign changement of function has been detected.
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *RootStrategy-DefaultMaximumDistance* (:raw:`Scalar`, default: `8`)
-- *RootStrategy-DefaultStepSize* (:raw:`Scalar`, default: `1`)
-
 )RAW"
 %enddef
 %feature("docstring") OT::RootStrategyImplementation::solve

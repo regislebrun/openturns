@@ -6,6 +6,11 @@ Notes
 Structure created by the method run() of the :class:`~openturns.Analytical`
 class and obtained thanks to its method getAnalyticalResult().
 
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *AnalyticalResult-DefaultWidth* (:raw:`Scalar`, default: `1`)
+- *AnalyticalResult-MeanPointIntegrationNodesNumber* (:raw:`UnsignedInteger`, default: `255`)
+
 Parameters
 ----------
 designPoint : sequence of float
@@ -125,14 +130,7 @@ Returns
 -------
 factors : :class:`~openturns.PointWithDescription`
     Sequence containing the importance factors with a description for each
-    component.
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *AnalyticalResult-DefaultWidth* (:raw:`Scalar`, default: `1`)
-- *AnalyticalResult-MeanPointIntegrationNodesNumber* (:raw:`UnsignedInteger`, default: `255`)
-)RAW"
+    component.)RAW"
 
 // ---------------------------------------------------------------------
 

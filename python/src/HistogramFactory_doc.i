@@ -59,6 +59,7 @@ Compute bandwidth with optimal estimator:
 See also
 --------
 DistributionFactory, Histogram
+
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:

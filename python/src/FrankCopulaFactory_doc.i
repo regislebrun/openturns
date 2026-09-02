@@ -20,6 +20,7 @@ where :math:`D` is the Debye function defined as
 See also
 --------
 DistributionFactory, FrankCopula
+
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:

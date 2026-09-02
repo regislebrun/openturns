@@ -25,6 +25,7 @@ Then
 See also
 --------
 DistributionFactory, Burr
+
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:

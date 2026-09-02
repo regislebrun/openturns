@@ -19,6 +19,7 @@ with :math:`\gamma \simeq 0.57721` as Euler's constant (not to be confused with 
 See also
 --------
 DistributionFactory, Frechet
+
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:

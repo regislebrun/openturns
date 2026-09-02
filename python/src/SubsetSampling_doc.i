@@ -64,6 +64,7 @@ expresses as the classic Monte Carlo c.o.v.
 See also
 --------
 EventSimulation
+
 Notes
 -----
 This class uses the following entries of :class:`~openturns.ResourceMap`:

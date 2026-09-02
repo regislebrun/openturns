@@ -20,6 +20,10 @@ constraints via a simplex of :math:`d+1` points, and optimizes these
 approximations in a trust region at each step.
 This solver use no derivative information and supports all types of constraints.
 
+This class uses the following entries of :class:`~openturns.ResourceMap`:
+
+- *Cobyla-DefaultRhoBeg* (:raw:`Scalar`, default: `0.1`)
+
 See also
 --------
 AbdoRackwitz, SQP, TNC, NLopt
@@ -53,12 +57,5 @@ rhoBeg : float
 Parameters
 ----------
 rhoBeg : float
-
-Notes
------
-This class uses the following entries of :class:`~openturns.ResourceMap`:
-
-- *Cobyla-DefaultRhoBeg* (:raw:`Scalar`, default: `0.1`)
-
     A reasonable initial change to the variables."
 
