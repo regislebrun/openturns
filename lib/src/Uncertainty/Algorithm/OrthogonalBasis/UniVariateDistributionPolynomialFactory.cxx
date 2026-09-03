@@ -77,6 +77,18 @@ UniVariateDistributionPolynomialFactory * UniVariateDistributionPolynomialFactor
 }
 
 
+/* Comparison operator */
+Bool UniVariateDistributionPolynomialFactory::equals(const OrthogonalUniVariatePolynomialFactory & other) const
+{
+  const UniVariateDistributionPolynomialFactory * p_other = dynamic_cast<const UniVariateDistributionPolynomialFactory *>(&other);
+  if (!p_other) return false;
+  if (!hasEqualBase(other)) return false;
+  if (hasSpecificFamily_ != p_other->hasSpecificFamily_) return false;
+  if (hasSpecificFamily_ && !(specificFamily_ == p_other->specificFamily_)) return false;
+  return true;
+}
+
+
 /* Calculate the coefficients of recurrence a0n, a1n, a2n such that
    Pn+1(x) = (a0n * x + a1n) * Pn(x) + a2n * Pn-1(x) */
 UniVariateDistributionPolynomialFactory::Coefficients UniVariateDistributionPolynomialFactory::getRecurrenceCoefficients(const UnsignedInteger n) const

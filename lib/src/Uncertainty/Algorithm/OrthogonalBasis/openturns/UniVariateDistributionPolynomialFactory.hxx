@@ -76,6 +76,9 @@ public:
   /** specificFamily_ accessor */
   OrthogonalUniVariatePolynomialFamily getSpecificFamily() const;
 
+  /** Comparison operator */
+  Bool equals(const OrthogonalUniVariatePolynomialFactory & other) const override;
+
   /** String converter */
   String __repr__() const override;
 
