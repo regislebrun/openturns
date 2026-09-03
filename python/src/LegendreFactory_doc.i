@@ -12,8 +12,6 @@ b : float, optional
     Upper bound :math:`b` of the :class:`~openturns.Uniform` distribution.
     Defaults to 1.0.
 
-Notes
------
 Any sequence of orthogonal polynomials has a recurrence formula relating any
 three consecutive polynomials as follows:
 

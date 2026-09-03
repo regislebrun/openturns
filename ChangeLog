@@ -12,6 +12,7 @@
  * MultivariateUniform, MultivariateUniformFactory (openturns.experimental)
  * SquaredNormalFactory (openturns.experimental)
  * TruncatedDistributionFactory (openturns.experimental)
+ * UniVariateDistributionPolynomialFactory (openturns.experimental)
 
 ==== API changes ====
  * Removed deprecated DistributionFactory.setKnownParameter(Point, Indices)
@@ -34,6 +35,7 @@
  * LOLAVoronoi moved out of experimental
  * Deprecated GaussianProcessConditionalCovariance::operator() for getMarginalDistribution
  * Deprecated ProcessSample.setField(Field, int) in favor ProcessSample.setField(int, Field)
+ * Deprecated StandardDistributionPolynomialFactory in favor of UniVariateDistributionPolynomialFactory
 
 === Documentation ===
 

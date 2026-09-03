@@ -21,8 +21,6 @@ parameters_set : int, optional
     Integer telling which parameters set is used for defining the distribution
     (amongst `ot.JacobiFactory.ANALYSIS, ot.JacobiFactory.PROBABILITY`).
 
-Notes
------
 Any sequence of orthogonal polynomials has a recurrence formula relating any
 three consecutive polynomials as follows:
 
