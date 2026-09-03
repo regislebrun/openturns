@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import openturns as ot
+import openturns.experimental as otexp
 
 ot.TESTPREAMBLE()
 
@@ -34,9 +35,11 @@ assert ot.LegendreFactory() == ot.LegendreFactory(), "Legendre==Legendre"
 assert ot.MeixnerFactory(2.0, 0.5) == ot.MeixnerFactory(2.0, 0.5), "Meixner==Meixner"
 assert ot.MeixnerFactory(2.0, 0.5) != ot.MeixnerFactory(3.0, 0.5), "Meixner!=Meixner r"
 
-# StandardDistributionPolynomialFactory
-assert ot.StandardDistributionPolynomialFactory(ot.Normal()) == ot.StandardDistributionPolynomialFactory(ot.Normal()), "SDPF==SDPF"
-assert ot.StandardDistributionPolynomialFactory(ot.Normal()) != ot.StandardDistributionPolynomialFactory(ot.Uniform()), "SDPF!=SDPF dist"
+# StandardDistributionPolynomialFactory (deprecated, in experimental)
+sdpf1 = otexp.StandardDistributionPolynomialFactory(ot.Normal())
+sdpf2 = otexp.StandardDistributionPolynomialFactory(ot.Normal())
+assert sdpf1 == sdpf2, "SDPF==SDPF"
+assert sdpf1 != otexp.StandardDistributionPolynomialFactory(ot.Uniform()), "SDPF!=SDPF dist"
 
 # Handle equality
 f1 = ot.OrthogonalUniVariatePolynomialFamily(ot.HermiteFactory())
