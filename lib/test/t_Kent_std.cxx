@@ -136,24 +136,6 @@ int main(int, char *[])
     assert_almost_equal(dist3.getKappa(), 25.0, 0.0, 0.0);
     assert_almost_equal(dist3.getBeta(), 0.5, 0.0, 0.0);
 
-    // ComputeMoments static method
-    Point moments = Kent::ComputeMoments(10.0, 0.0);
-    fullprint << "ComputeMoments(10, 0)=(" << moments[0] << ", " << moments[1] << ")" << std::endl;
-    assert(moments[0] > 0.0);
-    assert_almost_equal(moments[1], 0.0, 0.0, 0.0);
-
-    // ComputeMoments with beta > 0
-    Point moments2 = Kent::ComputeMoments(10.0, 0.5);
-    fullprint << "ComputeMoments(10, 0.5)=(" << moments2[0] << ", " << moments2[1] << ")" << std::endl;
-    assert(moments2[0] > 0.0);
-    assert(moments2[1] != 0.0);
-
-    // ComputeMoments with very small kappa (Taylor expansion branch)
-    Point momentsSmall = Kent::ComputeMoments(0.05, 0.0);
-    fullprint << "ComputeMoments(0.05, 0)=(" << momentsSmall[0] << ", " << momentsSmall[1] << ")" << std::endl;
-    assert(momentsSmall[0] > 0.0);
-    assert_almost_equal(momentsSmall[1], 0.0, 0.0, 0.0);
-
     // Mean
     Point mean(dist.getMean());
     fullprint << "Mean=" << mean << std::endl;

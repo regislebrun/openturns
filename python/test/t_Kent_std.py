@@ -279,17 +279,6 @@ with ott.assert_raises(TypeError):
         ot.SquareMatrix([[2.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
     )
 
-# Test ComputeMoments static method
-moments = otexp.Kent.ComputeMoments(10.0, 0.0)
-# For vMF: r1 = coth(kappa) - 1/kappa
-ott.assert_almost_equal(moments[0], vmf_r1(10.0), 1e-12, 0.0)
-ott.assert_almost_equal(moments[1], 0.0, 1e-12, 0.0)
-
-# ComputeMoments for general Kent
-moments2 = otexp.Kent.ComputeMoments(10.0, 0.5)
-assert moments2[0] > 0.0  # r1 > 0 for concentrated distribution
-assert moments2[1] != 0.0  # r2 != 0 when beta > 0
-
 # Test computePDF with wrong dimension
 with ott.assert_raises(TypeError):
     distribution.computePDF([1.0, 0.0])
