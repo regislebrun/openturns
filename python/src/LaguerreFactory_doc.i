@@ -14,8 +14,6 @@ gamma : float, optional
     Location parameter :math:`\gamma` of the :class:`~openturns.Gamma`
     distribution. Defaults to 0.0.
 
-Notes
------
 Any sequence of orthogonal polynomials has a recurrence formula relating any
 three consecutive polynomials as follows:
 
