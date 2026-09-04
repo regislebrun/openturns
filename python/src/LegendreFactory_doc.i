@@ -25,11 +25,9 @@ read:
 .. math::
 
     \begin{array}{rcl}
-        a_i & = & \displaystyle \frac{\sqrt{(2 i + 1) (2 i + 3)}}
-                                     {i + 1} \\
+        a_i & = & \displaystyle \frac{\sqrt{(2 i + 1) (2 i + 3)}}{i + 1} \\
         b_i & = & 0 \\
-        c_i & = & \displaystyle - \frac{i \sqrt{2 i + 3}}
-                                       {(i + 1) \sqrt{2 i - 1}}
+        c_i & = & \displaystyle - \frac{i \sqrt{2 i + 3}}{(i + 1) \sqrt{2 i - 1}}
     \end{array}, \quad 1 < i
 
 The nodes and weights of the associated Gauss-Legendre quadrature rule are
