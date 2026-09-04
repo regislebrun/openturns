@@ -20,7 +20,9 @@ for i in range(uc.distribution.getDimension()):
     polyColl[i] = otexp.StandardDistributionPolynomialFactory(
         uc.distribution.getMarginal(i)
     )
-productBasis = ot.OrthogonalProductPolynomialFactory(polyColl, enumerateFunction)
+productBasis = ot.OrthogonalProductPolynomialFactory(
+    polyColl, enumerateFunction
+)
 adaptiveStrategy = ot.FixedStrategy(productBasis, indexMax)
 projectionStrategy = ot.LeastSquaresStrategy()
 r2 = {}

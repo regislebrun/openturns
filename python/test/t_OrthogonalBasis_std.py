@@ -6,7 +6,11 @@ import openturns.testing as ott
 ot.TESTPREAMBLE()
 
 # Polynomial factories
-factoryCollection = [ot.LaguerreFactory(2.5), ot.LegendreFactory(), ot.HermiteFactory()]
+factoryCollection = [
+    ot.LaguerreFactory(2.5),
+    ot.LegendreFactory(),
+    ot.HermiteFactory(),
+]
 dim = len(factoryCollection)
 basisFactory = ot.OrthogonalProductPolynomialFactory(factoryCollection)
 print("basisFactory=")
