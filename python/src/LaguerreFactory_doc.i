@@ -27,9 +27,9 @@ read:
 .. math::
 
     \begin{array}{rcl}
-        a_i & = & \omega_i \\
-        b_i & = & - (2 i + k_a + 1) \omega_i \\
-        c_i & = & - \sqrt{(i + k_a) i} \omega_i
+    a_i & = & \omega_i \\
+    b_i & = & - (2 i + k_a + 1) \omega_i \\
+    c_i & = & - \sqrt{(i + k_a) i} \omega_i
     \end{array}, \quad 1 < i
 
 where :math:`k_a` is the alternative shape parameter of the
