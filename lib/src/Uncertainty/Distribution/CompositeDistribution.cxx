@@ -132,6 +132,11 @@ void CompositeDistribution::setFunctionAndAntecedent(const Function & function,
   }
   function_ = function;
   antecedent_ = antecedent;
+  // When the antecedent is a composite distribution, it has been flattened
+  // above: the range of the actual antecedent may differ a lot from the range
+  // used to initialize the solver, so restart the solver on this range, see #1479
+  const Scalar rangeLength = antecedent.getRange().getUpperBound()[0] - antecedent.getRange().getLowerBound()[0];
+  solver_ = Brent(ResourceMap::GetAsScalar("CompositeDistribution-SolverEpsilon") * rangeLength, ResourceMap::GetAsScalar("CompositeDistribution-SolverEpsilon"), ResourceMap::GetAsScalar("CompositeDistribution-SolverEpsilon"));
   isAlreadyComputedMean_ = false;
   isAlreadyComputedCovariance_ = false;
   setParallel(function.getImplementation()->isParallel() && antecedent.getImplementation()->isParallel());
