@@ -258,6 +258,7 @@ void AbdoRackwitz::run()
 
   if (!stop && (result_.getStatus() == OptimizationResult::SUCCESS))
   {
+    result_.setStatus(OptimizationResult::FAILURE);
     result_.setStatusMessage(OSS() << "AbdoRackwitz reached the maximum iteration number " << getMaximumIterationNumber() << " without meeting any stopping criterion");
   }
 
