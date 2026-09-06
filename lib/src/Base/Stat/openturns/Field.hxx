@@ -108,11 +108,11 @@ public:
   /** Size accessor */
   UnsignedInteger getSize() const;
 
-  /** Dimension accessor */
-  UnsignedInteger getInputDimension() const;
+  /** Dimension accessor @deprecated use getDimension instead */
+  UnsignedInteger getInputDimension() const; // @deprecated
 
-  /** Dimension accessor */
-  UnsignedInteger getOutputDimension() const;
+  /** Dimension accessor @deprecated use getDimension instead */
+  UnsignedInteger getOutputDimension() const; // @deprecated
 
   /** Dimension accessor of the values */
   UnsignedInteger getDimension() const;
