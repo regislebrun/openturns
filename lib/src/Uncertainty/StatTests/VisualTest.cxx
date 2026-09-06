@@ -88,7 +88,7 @@ Graph VisualTest::DrawQQplot(const Sample & sample,
   const Sample sortedSample(sample.sortUnique());
   if (!(sortedSample.getSize() >= 2)) throw InvalidArgumentException(HERE) << "Sample must have at least 2 distinct points";
   // The largest observation is kept by capping its probability to 1 minus
-  // the machine precision, see #2498
+  // the Precision tolerance from the ResourceMap, see #2498
   const Scalar pMax = 1.0 - SpecFunc::Precision;
   const UnsignedInteger size = sortedSample.getSize();
   Sample data(size, 2);
@@ -96,7 +96,7 @@ Graph VisualTest::DrawQQplot(const Sample & sample,
   {
     data(i, 0) = sortedSample(i, 0);
     Scalar p = sample.computeEmpiricalCDF(sortedSample[i]);
-    if (p >= 1.0) p = pMax;
+    p = std::min(p, pMax);
     data(i, 1) = dist.computeScalarQuantile(p);
   }
   Cloud cloudQQplot(data);
