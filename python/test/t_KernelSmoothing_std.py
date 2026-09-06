@@ -301,8 +301,19 @@ fittedZero = ks.buildWeighted(twoPoints, [0.0, 1.0])
 ott.assert_almost_equal(fittedZero.getMean()[0], 10.0, 1e-10, 0.0)
 # invalid calls raise
 for bad in ([1.0], [-1.0, 2.0], [0.0, 0.0]):
-    try:
+    with ott.assert_raises(TypeError):
         ks.buildWeighted(twoPoints, bad)
-        assert False, "should have raised for %s" % bad
-    except Exception:
-        pass
+
+# buildWeighted applies the configured log transform and binning, see #1554
+sample = ot.LogNormal(2.0, 0.5).getSample(500)
+equalWeights = [1.0 / 500.0] * 500
+ks.setUseLogTransform(True)
+fittedLog = ks.buildWeighted(sample, equalWeights)
+ks.setUseLogTransform(False)
+fittedPlain = ks.build(sample)
+# the log-transform fit matches the plain one on the sample quantiles
+for prob in (0.25, 0.5, 0.75):
+    quantile = sample.computeQuantile(prob)[0]
+    ott.assert_almost_equal(
+        fittedLog.computeCDF([quantile]), fittedPlain.computeCDF([quantile]), 1e-3, 2e-2
+    )
