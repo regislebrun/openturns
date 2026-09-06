@@ -142,8 +142,8 @@ Scalar & SymmetricMatrix::operator() (const UnsignedInteger i,
 {
   // Check the user facing indices before they get swapped below, see #2502
   const UnsignedInteger dimension = getDimension();
-  if (!(i < dimension)) throw OutOfBoundException(HERE) << "i (" << i << ") must be less than row dim (" << dimension << ")";
-  if (!(j < dimension)) throw OutOfBoundException(HERE) << "j (" << j << ") must be less than column dim (" << dimension << ")";
+  if (i >= dimension) throw OutOfBoundException(HERE) << "i (" << i << ") must be less than row dim (" << dimension << ")";
+  if (j >= dimension) throw OutOfBoundException(HERE) << "j (" << j << ") must be less than column dim (" << dimension << ")";
   copyOnWrite();
   hasBeenSymmetrized_ = false;
 
@@ -157,8 +157,8 @@ const Scalar & SymmetricMatrix::operator() (const UnsignedInteger i,
 {
   // Check the user facing indices before they get swapped below, see #2502
   const UnsignedInteger dimension = getDimension();
-  if (!(i < dimension)) throw OutOfBoundException(HERE) << "i (" << i << ") must be less than row dim (" << dimension << ")";
-  if (!(j < dimension)) throw OutOfBoundException(HERE) << "j (" << j << ") must be less than column dim (" << dimension << ")";
+  if (i >= dimension) throw OutOfBoundException(HERE) << "i (" << i << ") must be less than row dim (" << dimension << ")";
+  if (j >= dimension) throw OutOfBoundException(HERE) << "j (" << j << ") must be less than column dim (" << dimension << ")";
   return (i > j) ? (*getImplementation())(i, j) : (*getImplementation())(j, i) ;
 }
 
