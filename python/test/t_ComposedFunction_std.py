@@ -74,3 +74,18 @@ for j in range(2):
     fd[j] = (composed(xp)[0] - composed(xm)[0]) / (2.0 * eps)
 for j in range(2):
     ott.assert_almost_equal(grad[j, 0], fd[j], 1e-4, 1e-4)
+
+# replacing a function by one without a derivative must not leak a stale
+# gradient/hessian from the previous composition
+plainLeft = ot.SymbolicFunction(["x1", "x2"], ["sin(x1) + x2"])
+plainLeft.setGradient(ot.NoGradient())
+plainLeft.setHessian(ot.NoHessian())
+composed = ot.ComposedFunction(f2, h1)
+composed.setLeftFunction(plainLeft)
+# the analytic derivative of the new composition falls back on finite
+# differences, it must not reuse the derivative of the previous composition
+x = [1.0, 2.0]
+gradFD = ot.CenteredFiniteDifferenceGradient(1e-5, composed.getEvaluation()).gradient(x)
+ott.assert_almost_equal(composed.gradient(x), gradFD, 1e-4, 1e-4)
+hessFD = ot.CenteredFiniteDifferenceHessian(1e-5, composed.getEvaluation()).hessian(x)
+ott.assert_almost_equal(composed.hessian(x), hessFD, 1e-3, 1e-4)

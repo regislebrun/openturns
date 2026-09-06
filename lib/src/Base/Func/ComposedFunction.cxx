@@ -86,6 +86,11 @@ void ComposedFunction::rebuild(const Function & left, const Function & right)
   p_leftFunction_ = left.getImplementation();
   p_rightFunction_ = right.getImplementation();
   setEvaluation(new ComposedEvaluation(left.getEvaluation(), right.getEvaluation()));
+  // Reset the differentiation state before attempting to build the derivatives
+  // so that a failed construction cannot keep implementations from the previous
+  // composition
+  setGradient(new NoGradient());
+  setHessian(new NoHessian());
   try
   {
     setGradient(new ComposedGradient(left.getGradient(), right.getEvaluation(), right.getGradient()));
