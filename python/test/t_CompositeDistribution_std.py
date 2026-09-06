@@ -186,3 +186,18 @@ expected = ot.CompositeDistribution(
 )
 ott.assert_almost_equal(distZ.computeCDF([1.2]), expected.computeCDF([1.2]))
 ott.assert_almost_equal(distZ.computePDF([1.2]), expected.computePDF([1.2]))
+
+# solver precision is rescaled to the range of the flattened, non-composite
+# antecedent, so that a large-scale inner transformation does not leave a
+# solver precision scaled to the outer composite range, see issue #1479
+smallAnt = ot.Uniform(0.0, 1e-3)
+bigAnt = ot.CompositeDistribution(ot.SymbolicFunction(["x"], ["1e6 * x"]), smallAnt)
+assert bigAnt.getRange().getUpperBound()[0] > 10.0, "a relatively large range was expected"
+scaled = ot.CompositeDistribution(ot.SymbolicFunction(["x"], ["x"]), bigAnt)
+scale = ot.ResourceMap.GetAsScalar("CompositeDistribution-SolverEpsilon")
+anteRange = scaled.getAntecedent().getRange()
+offset = scale * (anteRange.getUpperBound()[0] - anteRange.getLowerBound()[0])
+ott.assert_almost_equal(scaled.getSolver().getAbsoluteError(), offset, 1e-12, 1e-12)
+# the flattened law is Y = 1e6 * U with U uniform on [0, 1e-3]
+for y in [250.0, 500.0, 750.0]:
+    ott.assert_almost_equal(scaled.computeCDF([y]), y / 1000.0, 1e-8, 1e-4)
