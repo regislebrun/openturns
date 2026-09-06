@@ -42,10 +42,10 @@ Cobyla, SQP, TNC, NLopt
 Examples
 --------
 >>> import openturns as ot
->>> model = ot.SymbolicFunction(['E', 'F', 'L', 'I'], ['-F*L^3/(3*E*I)'])
->>> problem = ot.NearestPointProblem(model, 5.0)
+>>> model = ot.SymbolicFunction(['x1', 'x2', 'x3', 'x4'], ['x1+2*x2-3*x3+4*x4'])
+>>> problem = ot.NearestPointProblem(model, 3.0)
 >>> algo = ot.AbdoRackwitz(problem)
->>> algo.setStartingPoint([1.0] * 4)
+>>> algo.setStartingPoint([0.0] * 4)
 >>> algo.run()
 >>> result = algo.getResult()"
 
