@@ -587,7 +587,7 @@ Parameters
 ----------
 sample : 2-d sequence of float
     The sample to fit.
-weights : sequence of positive floats
+weights : sequence of non-negative floats
     The weight of each point of the sample. Zero weights are allowed,
     the corresponding points do not contribute to the density.
 
