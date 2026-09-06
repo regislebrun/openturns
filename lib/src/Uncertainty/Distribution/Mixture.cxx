@@ -28,8 +28,10 @@
 #include "openturns/RandomGenerator.hxx"
 #include "openturns/SpecFunc.hxx"
 #include "openturns/DistFunc.hxx"
+#include "openturns/GraphImplementation.hxx"
 #include "openturns/Curve.hxx"
 #include "openturns/Polygon.hxx"
+#include "openturns/Text.hxx"
 
 BEGIN_NAMESPACE_OPENTURNS
 
@@ -765,8 +767,9 @@ Graph Mixture::drawPDF(const Scalar xMin,
   const UnsignedInteger size = distributionCollection_.getSize();
   Sample data(pointNumber, 2);
   const Scalar step = (xMax - xMin) / (pointNumber - 1.0);
-  // Maximal unweighted density of the continuous components, used to scale
-  // the atoms
+  // Maximal weighted density of the continuous components, used to scale
+  // the atoms so that the tallest arrow matches the peak of the continuous
+  // part, see #1489 and #1596
   Scalar maxPdf = 0.0;
   for (UnsignedInteger i = 0; i < pointNumber; ++i)
   {
@@ -778,7 +781,7 @@ Graph Mixture::drawPDF(const Scalar xMin,
       {
         const Scalar value = distributionCollection_[j].computePDF(Point(1, x));
         pdfValue += p_[j] * value;
-        maxPdf = std::max(maxPdf, value);
+        maxPdf = std::max(maxPdf, p_[j] * value);
       }
     data(i, 1) = pdfValue;
   }
@@ -790,9 +793,9 @@ Graph Mixture::drawPDF(const Scalar xMin,
   graphPDF.add(curve);
   // Vertical arrows for the discrete components: each support point of a
   // discrete component gets an arrow with height proportional to its
-  // probability mass, the scale being normalized so that over all the
-  // discrete components the tallest arrow equals maxPdf times its weight,
-  // see #1489 and #1596
+  // weighted probability mass, the scale being normalized so that over all
+  // the discrete components the tallest arrow equals the peak of the
+  // weighted continuous density, see #1489 and #1596
   const UnsignedInteger smallSupport = ResourceMap::GetAsUnsignedInteger("Distribution-SmallSupport");
   const Interval drawingInterval(Point(1, xMin), Point(1, xMax));
   Scalar maxMass = 0.0;
@@ -808,7 +811,7 @@ Graph Mixture::drawPDF(const Scalar xMin,
       const Scalar mass = distributionCollection_[j].computePDF(support[i]);
       if (!(mass > 0.0)) continue;
       atoms.push_back(std::make_pair(j, support[i]));
-      maxMass = std::max(maxMass, mass);
+      maxMass = std::max(maxMass, p_[j] * mass);
     }
   }
   if (maxMass > 0.0 && maxPdf > 0.0)
@@ -842,10 +845,27 @@ Graph Mixture::drawPDF(const Scalar xMin,
       head.setColor(curve.getColor());
       graphPDF.add(head);
     }
+    // Text labels showing the probability of each atom above its arrow,
+    // see #1489
+    Sample atomsData(atoms.size(), 2);
+    Description texts(atoms.size());
+    for (UnsignedInteger i = 0; i < atoms.size(); ++i)
+    {
+      const Scalar atom = atoms[i].second[0];
+      const Scalar height = p_[atoms[i].first] * distributionCollection_[atoms[i].first].computePDF(atoms[i].second) * scale;
+      const Scalar headHeight = std::min(0.3 * height, 0.05 * maxPdf);
+      atomsData(i, 0) = atom;
+      atomsData(i, 1) = height + headHeight;
+      texts[i] = OSS() << p_[atoms[i].first] * distributionCollection_[atoms[i].first].computePDF(atoms[i].second);
+    }
+    Text labels(atomsData, texts);
+    labels.setColor(curve.getColor());
+    graphPDF.add(labels);
   }
   graphPDF.setXTitle(getDescription()[0]);
   graphPDF.setYTitle("PDF");
   graphPDF.setLegendPosition("topright");
+  graphPDF.setLogScale(logScale ? GraphImplementation::LOGX : GraphImplementation::NONE);
   return graphPDF;
 }
 
