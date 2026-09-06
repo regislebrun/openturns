@@ -234,7 +234,7 @@ OT_LeastSquaresMethod_getGramInverseTrace_doc
 // ---------------------------------------------------------------------
 
 %define OT_LeastSquaresMethod_getH_doc
-R"RAW(Get the projection matrix H.
+R"RAW(Get the symmetric WLS kernel H.
 
 .. math::
 
@@ -243,7 +243,8 @@ R"RAW(Get the projection matrix H.
 Returns
 -------
 h : :class:`~openturns.SymmetricMatrix`
-    The projection matrix H.)RAW"
+    The symmetric WLS kernel H. For non-unit weights, the fitted values
+    are :math:`\mat{H}\mat{W}\vect{b}`.)RAW"
 %enddef
 %feature("docstring") OT::LeastSquaresMethodImplementation::getH
 OT_LeastSquaresMethod_getH_doc
@@ -251,7 +252,7 @@ OT_LeastSquaresMethod_getH_doc
 // ---------------------------------------------------------------------
 
 %define OT_LeastSquaresMethod_getHDiag_doc
-R"RAW(Get the diagonal of the projection matrix H.
+R"RAW(Get the diagonal of the symmetric WLS kernel H.
 
 .. math::
 
@@ -260,7 +261,8 @@ R"RAW(Get the diagonal of the projection matrix H.
 Returns
 -------
 diagH : :class:`~openturns.Point`
-    The diagonal of the projection matrix H.)RAW"
+    The diagonal of the symmetric WLS kernel H. For non-unit weights, the
+    fitted values are :math:`\mat{H}\mat{W}\vect{b}`.)RAW"
 %enddef
 %feature("docstring") OT::LeastSquaresMethodImplementation::getHDiag
 OT_LeastSquaresMethod_getHDiag_doc

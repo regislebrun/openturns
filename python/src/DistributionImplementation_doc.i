@@ -3715,11 +3715,11 @@ thresholds.
 
 Parameters
 ----------
-alpha : sequence of float, :math:`\\alpha_i \\in [0,1]`
+alpha : sequence of float, :math:`\alpha_i \in [0,1]`
     The confidence levels.
 threshold : :class:`~openturns.Point`
-    The output thresholds :math:`p_{\\alpha_i}` such that the level set
-    is :math:`\\{\\vect{x} \\, | \\, p(\\vect{x}) \\geq p_{\\alpha_i}\\}`.
+    The output thresholds :math:`p_{\alpha_i}` such that the level set
+    is :math:`\{\vect{x} \, | \, p(\vect{x}) \geq p_{\alpha_i}\}`.
 
 Returns
 -------
