@@ -1,11 +1,16 @@
 %feature("docstring") OT::UserDefinedStationaryCovarianceModel
 R"RAW(Stationary covariance model defined by the User.
 
+Available constructors:
+    UserDefinedStationaryCovarianceModel(*mesh, covarianceCollection*)
+
+    UserDefinedStationaryCovarianceModel(*mesh, covariance*)
+
 Parameters
 ----------
 mesh : :class:`~openturns.RegularGrid`
     Time grid of size :math:`N` associated with the process. Negative vertices are ignored.
-sample : :class:`~openturns.SquareMatrixCollection`
+covarianceCollection : :class:`~openturns.SquareMatrixCollection`
     A collection of :math:`N` :class:`~openturns.SquareMatrix` objects with the same dimension.
 covariance : :class:`~openturns.SquareMatrix`
     A single covariance matrix used at every vertex of the mesh.

@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import openturns as ot
+import openturns.testing as ott
 
 ot.TESTPREAMBLE()
 
@@ -79,5 +80,5 @@ modelCollection = ot.UserDefinedStationaryCovarianceModel(
 for i in range(0, timeGrid.getN(), 7):
     tau = timeGrid.getValue(i)
     diff = modelSingle(tau) - modelCollection(tau)
-    assert abs(diff[0, 0]) < 1e-12, "single vs collection (0, 0)"
-    assert abs(diff[1, 1]) < 1e-12, "single vs collection (1, 1)"
+    ott.assert_almost_equal(diff[0, 0], 0.0, 1e-12, 1e-12)
+    ott.assert_almost_equal(diff[1, 1], 0.0, 1e-12, 1e-12)
