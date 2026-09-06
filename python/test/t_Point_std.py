@@ -151,18 +151,18 @@ except Exception:
 x = ot.Point([1, 2, 3])
 print(-x)
 
-# dimension mismatch message, see issue #2432
+# dimension mismatch raises with an informative message, see issue #2432
 x = ot.Point(2)
 y = ot.Point(3)
+with ott.assert_raises(ValueError):
+    z = x + y
+with ott.assert_raises(ValueError):
+    z = x - y
+message = ""
 try:
     z = x + y
-    assert False, "dimension mismatch should raise"
 except ValueError as e:
-    assert "different dimensions" in str(e), "informative message"
-try:
-    z = x - y
-    assert False, "dimension mismatch should raise"
-except ValueError as e:
-    assert "different dimensions" in str(e), "informative message"
+    message = str(e)
+assert "different dimensions" in message, "informative message"
 # valid operations keep working
 ott.assert_almost_equal(x + ot.Point([1.0, 2.0]), [1.0, 2.0])
