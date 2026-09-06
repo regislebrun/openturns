@@ -27,7 +27,7 @@ namespace OT {
   convert< _PyObject_, OT::LevelSet >(PyObject * pyObj)
   {
     void * ptr = 0;
-    if (SWIG_IsOK(SWIG_ConvertPtr(pyObj, &ptr, SWIG_TypeQuery("OT::LevelSet *"), 0)))
+    if (SWIG_IsOK(SWIG_ConvertPtr(pyObj, &ptr, SWIG_TypeQuery("OT::LevelSet *"), SWIG_POINTER_NO_NULL)))
     {
       OT::LevelSet * p_levelSet = reinterpret_cast< OT::LevelSet * >(ptr);
       return *p_levelSet;

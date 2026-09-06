@@ -616,7 +616,7 @@ OT_ProcessSample_getSampleAtVertex_doc
 // ---------------------------------------------------------------------
 
 %define OT_ProcessSample_erase_doc
-R"RAW(Erase point(s), at or between index(es), or given by their indices (in-place).
+R"RAW(Erase field(s), at or between index(es), or given by their indices (in-place).
 
 Available usages:
     erase(*f*)
@@ -627,9 +627,9 @@ Available usages:
 
 Parameters
 ----------
-f : int, :math:`0 \leq f < m`
+f : int, :math:`0 \leq f < K`
     The index of the first field to erase.
-l : int, :math:`f < l \leq m`, optional
+l : int, :math:`f < l \leq K`, optional
     The index after the last field to erase.
     Default uses `l = f + 1` and only removes `processSample[f]`.
 indices : sequence of int

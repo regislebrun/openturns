@@ -26,7 +26,8 @@ Piecewise linear interpolation
     y_{k+1}
 
 | Equivalently, it can be written as a linear combination of *hat
-  basis functions* :math:`\lambda_k`:
+  basis functions* :math:`\lambda_k`. For the interior nodes
+  :math:`1 \le k \le N-2`:
 
   .. math::
 
@@ -35,6 +36,22 @@ Piecewise linear interpolation
     \begin{cases}
       \dfrac{x - t_{k-1}}{t_k - t_{k-1}} & \text{if } x \in [t_{k-1}, t_k], \\
       \dfrac{t_{k+1} - x}{t_{k+1} - t_k} & \text{if } x \in [t_k, t_{k+1}], \\
+      0 & \text{otherwise},
+    \end{cases}
+
+  and only one-sided at the boundary nodes:
+
+  .. math::
+
+    \lambda_0(x) =
+    \begin{cases}
+      \dfrac{t_1 - x}{t_1 - t_0} & \text{if } x \in [t_0, t_1], \\
+      0 & \text{otherwise},
+    \end{cases}
+    \qquad
+    \lambda_{N-1}(x) =
+    \begin{cases}
+      \dfrac{x - t_{N-2}}{t_{N-1} - t_{N-2}} & \text{if } x \in [t_{N-2}, t_{N-1}], \\
       0 & \text{otherwise}.
     \end{cases}
 

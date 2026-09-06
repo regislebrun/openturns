@@ -24,39 +24,39 @@ Examples
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::ComposedFunction::getLeftFunction
-"Left function accessor.
+R"RAW(Left function accessor.
 
 Returns
 -------
 leftFunction : :class:`~openturns.Function`
-    The outer function :math:`f` of the composition :math:`f \\circ g`."
+    The outer function :math:`f` of the composition :math:`f \\circ g`.)RAW"
 
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::ComposedFunction::setLeftFunction
-"Set the left function, ie the outer function of the composition.
+R"RAW(Set the left function, ie the outer function of the composition.
 
 Parameters
 ----------
 leftFunction : :class:`~openturns.Function`
-    The outer function of the composition."
+    The outer function of the composition.)RAW"
 
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::ComposedFunction::getRightFunction
-"Right function accessor.
+R"RAW(Right function accessor.
 
 Returns
 -------
 rightFunction : :class:`~openturns.Function`
-    The inner function :math:`g` of the composition :math:`f \\circ g`."
+    The inner function :math:`g` of the composition :math:`f \\circ g`.)RAW"
 
 // ---------------------------------------------------------------------
 
 %feature("docstring") OT::ComposedFunction::setRightFunction
-"Set the right function, ie the inner function of the composition.
+R"RAW(Set the right function, ie the inner function of the composition.
 
 Parameters
 ----------
 rightFunction : :class:`~openturns.Function`
-    The inner function of the composition."
+    The inner function of the composition.)RAW"
