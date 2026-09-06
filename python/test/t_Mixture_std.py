@@ -214,11 +214,15 @@ headData = head.getData()
 assert headData.getSize() == 3, "triangle head"
 assert headData[0][0] == -3.0, "apex abscissa"
 assert headData[0][1] > shaft[1][1], "head points up"
-# the arrow height is proportional to the weight of the atom
+# the arrow height matches the peak of the weighted continuous density
+peak = ot.Normal().computePDF([0.0])
 half = ot.Mixture([ot.Dirac(-3.0), ot.Normal()], [0.25, 0.75])
 h1 = mixed.drawPDF(-6.0, 6.0).getDrawable(1).getData()[1, 1]
 h2 = half.drawPDF(-6.0, 6.0).getDrawable(1).getData()[1, 1]
-ott.assert_almost_equal(h2, 0.5 * h1)
+ott.assert_almost_equal(h1, 0.5 * peak, 1e-6, 1e-6)
+ott.assert_almost_equal(h2, 0.75 * peak, 1e-6, 1e-6)
+# log scale is applied to the mixed drawing as well, see #1489
+assert mixed.drawPDF(-6.0, 6.0, 129, True).getLogScale() == ot.GraphImplementation.LOGX
 # several atoms
 mixed3 = ot.Mixture(
     [ot.Dirac(-3.0), ot.Dirac(3.0), ot.Normal()], [0.25, 0.25, 0.5]
