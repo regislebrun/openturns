@@ -567,6 +567,14 @@ ot_add_python_module(experimental experimental_module.i
                      FiniteOrthogonalFunctionFactory.i FiniteOrthogonalFunctionFactory_doc.i
                      VonMisesFisher.i VonMisesFisher_doc.i
                      VonMisesFisherFactory.i VonMisesFisherFactory_doc.i
+                     Bingham.i Bingham_doc.i
+                     BinghamFactory.i BinghamFactory_doc.i
+                     MatrixFisher.i MatrixFisher_doc.i
+                     MatrixFisherFactory.i MatrixFisherFactory_doc.i
+                     RiemannianGaussian.i RiemannianGaussian_doc.i
+                     RiemannianGaussianFactory.i RiemannianGaussianFactory_doc.i
+                     WrappedNormal.i WrappedNormal_doc.i
+                     WrappedNormalFactory.i WrappedNormalFactory_doc.i
                     )
 ot_add_python_module(model_process model_process_module.i
                       WhiteNoise.i WhiteNoise_doc.i

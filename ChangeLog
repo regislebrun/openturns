@@ -7,11 +7,15 @@
 ==== Major changes ====
 
 ==== New classes ====
+ * Bingham, BinghamFactory (openturns.experimental)
  * InverseGammaFactory (openturns.experimental)
  * Kent, KentFactory (openturns.experimental)
+ * MatrixFisher, MatrixFisherFactory (openturns.experimental)
  * MultivariateUniform, MultivariateUniformFactory (openturns.experimental)
+ * RiemannianGaussian, RiemannianGaussianFactory (openturns.experimental)
  * SquaredNormalFactory (openturns.experimental)
  * TruncatedDistributionFactory (openturns.experimental)
+ * WrappedNormal, WrappedNormalFactory (openturns.experimental)
 
 ==== API changes ====
  * Removed deprecated DistributionFactory.setKnownParameter(Point, Indices)
