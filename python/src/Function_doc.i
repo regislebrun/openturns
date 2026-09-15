@@ -12,8 +12,6 @@ OT_Function_getGradientCallsNumber_doc
 OT_Function_getHessianCallsNumber_doc
 %feature("docstring") OT::Function::getMarginal
 OT_Function_getMarginal_doc
-%feature("docstring") OT::Function::getImplementation
-OT_Function_getImplementation_doc
 %feature("docstring") OT::Function::getEvaluation
 OT_Function_getEvaluation_doc
 %feature("docstring") OT::Function::getGradient

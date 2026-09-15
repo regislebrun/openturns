@@ -465,6 +465,42 @@ OT_RandomVector_isEvent_doc
 
 // ---------------------------------------------------------------------
 
+%define OT_RandomVector_intersect_doc
+"Intersection of two events.
+
+Parameters
+----------
+event : :class:`~openturns.RandomVector`
+    A composite event
+
+Returns
+-------
+event : :class:`~openturns.RandomVector`
+    Intersection event"
+%enddef
+%feature("docstring") OT::RandomVector::intersect
+OT_RandomVector_intersect_doc
+
+// ---------------------------------------------------------------------
+
+%define OT_RandomVector_join_doc
+"Union of two events.
+
+Parameters
+----------
+event : :class:`~openturns.RandomVector`
+    A composite event
+
+Returns
+-------
+event : :class:`~openturns.RandomVector`
+    Union event"
+%enddef
+%feature("docstring") OT::RandomVector::join
+OT_RandomVector_join_doc
+
+// ---------------------------------------------------------------------
+
 %define OT_RandomVector_asComposedEvent_doc
 "If the random vector can be viewed as the composition of several :class:`~openturns.ThresholdEvent` objects,
 this method builds and returns the composition.
