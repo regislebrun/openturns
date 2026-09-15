@@ -571,6 +571,7 @@ ot_add_python_module(experimental experimental_module.i
                      BinghamFactory.i BinghamFactory_doc.i
                      MatrixFisher.i MatrixFisher_doc.i
                      MatrixFisherFactory.i MatrixFisherFactory_doc.i
+                     UniformOverMeshFactory.i UniformOverMeshFactory_doc.i
                      RiemannianGaussian.i RiemannianGaussian_doc.i
                      RiemannianGaussianFactory.i RiemannianGaussianFactory_doc.i
                      WrappedNormal.i WrappedNormal_doc.i
