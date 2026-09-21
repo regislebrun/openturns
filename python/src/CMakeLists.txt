@@ -581,6 +581,7 @@ ot_add_python_module(experimental experimental_module.i
                      CirculantEmbeddingGaussianProcess.i CirculantEmbeddingGaussianProcess_doc.i
                      P1InterpolatedProcess.i P1InterpolatedProcess_doc.i
                      PushForwardDistribution.i PushForwardDistribution_doc.i
+                     PushForwardOverMesh.i PushForwardOverMesh_doc.i
                      WrappedNormal.i WrappedNormal_doc.i
                      WrappedNormalFactory.i WrappedNormalFactory_doc.i
                     )
