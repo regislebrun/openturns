@@ -25,6 +25,7 @@
  * CirculantEmbeddingGaussianProcess (openturns.experimental)
  * P1InterpolatedProcess (openturns.experimental)
  * SquaredNormalFactory (openturns.experimental)
+ * PushForwardDistribution (openturns.experimental)
  * TruncatedDistributionFactory (openturns.experimental)
  * UniVariateDistributionPolynomialFactory
  * VonMisesFisher(Factory) (openturns.experimental)

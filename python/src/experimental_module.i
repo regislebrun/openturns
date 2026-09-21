@@ -78,6 +78,7 @@
 %include BinghamFactory.i
 %include MatrixFisher.i
 %include MatrixFisherFactory.i
+%include PushForwardDistribution.i
 %include UniformOverMeshFactory.i
 %include RiemannianGaussian.i
 %include RiemannianGaussianFactory.i
