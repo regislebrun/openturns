@@ -62,7 +62,7 @@ namespace FastHermite
    *  @param weights output array of length n, positive and normalized to sum
    *         to 1
    */
-  void ComputeNodesAndWeights(const UnsignedInteger n,
+  OT_API void ComputeNodesAndWeights(const UnsignedInteger n,
                               Scalar * nodes,
                               Scalar * weights);
 } // namespace FastHermite

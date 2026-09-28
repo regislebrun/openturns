@@ -79,7 +79,7 @@ namespace FastGaussQuadrature
    *  @param weights output: quadrature weights (length n), positive and
    *                 normalized to sum to 1
    */
-  void PolishedSolve(const Scalar * gamma,
+  OT_API void PolishedSolve(const Scalar * gamma,
                      const Scalar * b,
                      const UnsignedInteger n,
                      Scalar * nodes,

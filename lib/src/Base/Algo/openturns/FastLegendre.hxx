@@ -52,7 +52,7 @@ namespace FastLegendre
    *  @param nodes output array of length n, in strictly increasing order
    *  @param weights output array of length n, positive and summing to 2
    */
-  void ComputeNodesAndWeights(const UnsignedInteger n,
+  OT_API void ComputeNodesAndWeights(const UnsignedInteger n,
                               Scalar * nodes,
                               Scalar * weights);
 } // namespace FastLegendre
