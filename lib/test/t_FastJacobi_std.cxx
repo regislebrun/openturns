@@ -151,6 +151,28 @@ int main(int, char *[])
         }
       }
     }
+    // Asymptotic path check (n above the default threshold 100): low-degree
+    // exactness with stable closed-form moments. High degrees would overflow
+    // the binomial moment formula itself, not the rule, so only m <= 12.
+    {
+      const UnsignedInteger n = 150;
+      const Scalar abValues[][2] = {{0.0, 0.0}, {0.5, 1.5}, {2.0, 3.0}};
+      for (UnsignedInteger r = 0; r < 3; ++r)
+      {
+        const Scalar alpha = abValues[r][0];
+        const Scalar beta = abValues[r][1];
+        Point nodes(n);
+        Point weights(n);
+        FastJacobi::ComputeNodesAndWeights(n, alpha, beta, &nodes[0], &weights[0]);
+        for (UnsignedInteger m = 0; m <= 12; ++m)
+        {
+          Scalar integral = 0.0;
+          for (UnsignedInteger i = 0; i < n; ++i)
+            integral += weights[i] * std::pow(nodes[i], static_cast<Scalar>(m));
+          assert_almost_equal(integral, jacobiMoment(alpha, beta, m), 1.0e-10, 1.0e-12, OSS() << ", asymptotic a=" << alpha << " b=" << beta << " degree " << m);
+        }
+      }
+    }
     // Structural properties: nodes in [-1, 1], strictly increasing,
     // positive weights summing to one
     {

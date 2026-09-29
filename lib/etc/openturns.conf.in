@@ -331,6 +331,9 @@
   <!-- OT::GaussLegendre parameters -->
   <GaussLegendre-DefaultMarginalIntegrationPointsNumber value_int="64" />
 
+  <!-- OT::FastJacobi parameters -->
+  <FastJacobi-AsymptoticThreshold value_int="100" />
+
   <!-- OT::Genz parameters -->
   <Genz-DefaultSampleSize value_int="1048576" />
   <Genz-LowDiscrepancySequence value_str="SobolSequence" />

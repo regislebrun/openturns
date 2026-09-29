@@ -975,6 +975,9 @@ void ResourceMap::loadDefaultConfiguration()
   // GaussLegendre parameters //
   addAsUnsignedInteger("GaussLegendre-DefaultMarginalIntegrationPointsNumber", 64);
 
+  // FastJacobi parameters //
+  addAsUnsignedInteger("FastJacobi-AsymptoticThreshold", 100);
+
   // FejerExperiment parameters //
   addAsUnsignedInteger("FejerExperiment-DefaultMarginalNodesNumber", 64);
 
