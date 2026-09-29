@@ -196,9 +196,9 @@ static Scalar BesselTaylor(const Scalar t,
   {
     Scalar column = 0.0;
     Scalar sign = 1.0;
-    for (UnsignedInteger l = 0; l <= k; ++l)
+    for (UnsignedInteger ell = 0; ell <= k; ++ell)
     {
-      column += sign * SmallBinomial(k, l) * SpecFunc::BesselJ(a + 2.0 * static_cast<Scalar>(l) - static_cast<Scalar>(k), z);
+      column += sign * SmallBinomial(k, ell) * SpecFunc::BesselJ(a + 2.0 * static_cast<Scalar>(ell) - static_cast<Scalar>(k), z);
       sign = -sign;
     }
     factorial *= k;
@@ -500,19 +500,19 @@ static void EvaluateInteriorAsymptotics(const UnsignedInteger n,
     Matrix P2(M, M);
     for (UnsignedInteger i = 0; i < M; ++i)
       P2(i, i) = 1.0;
-    for (UnsignedInteger l = 0; l < M; ++l)
+    for (UnsignedInteger ell = 0; ell < M; ++ell)
     {
       cum = 1.0;
-      for (UnsignedInteger j = 0; j + l + 1 < M; ++j)
+      for (UnsignedInteger j = 0; j + ell + 1 < M; ++j)
       {
-        cum *= (0.5 + beta + j) * (0.5 - beta + j) / ((j + 1.0) * (2.0 * nn + alpha + beta + j + l + 2.0));
-        P2(l + 1 + j, l) = cum;
+        cum *= (0.5 + beta + j) * (0.5 - beta + j) / ((j + 1.0) * (2.0 * nn + alpha + beta + j + ell + 2.0));
+        P2(ell + 1 + j, ell) = cum;
       }
     }
     Matrix & PHItarget = (pass == 0) ? PHI : PHI2;
     for (UnsignedInteger m = 0; m < M; ++m)
-      for (UnsignedInteger l = 0; l < M; ++l)
-        PHItarget(m, l) = P1[l] * P2(m, l);
+      for (UnsignedInteger ell = 0; ell < M; ++ell)
+        PHItarget(m, ell) = P1[ell] * P2(m, ell);
   }
   vals = Point(nt, 0.0);
   Point S2vals(nt, 0.0);
@@ -524,15 +524,15 @@ static void EvaluateInteriorAsymptotics(const UnsignedInteger n,
       Scalar dS2odd = 0.0;
       Scalar dS12 = 0.0;
       Scalar dS22odd = 0.0;
-      for (UnsignedInteger l = 0; l <= m; l += 2)
+      for (UnsignedInteger ell = 0; ell <= m; ell += 2)
       {
-        dS1 += PHI(m, l) * SC(l, i) * cosA(m, i);
-        dS12 += PHI2(m, l) * SC(l, i) * cosA2(m, i);
+        dS1 += PHI(m, ell) * SC(ell, i) * cosA(m, i);
+        dS12 += PHI2(m, ell) * SC(ell, i) * cosA2(m, i);
       }
-      for (UnsignedInteger l = 1; l <= m; l += 2)
+      for (UnsignedInteger ell = 1; ell <= m; ell += 2)
       {
-        dS2odd += PHI(m, l) * SC(l, i) * sinA(m, i);
-        dS22odd += PHI2(m, l) * SC(l, i) * sinA2(m, i);
+        dS2odd += PHI(m, ell) * SC(ell, i) * sinA(m, i);
+        dS22odd += PHI2(m, ell) * SC(ell, i) * sinA2(m, i);
       }
       vals[i] += dS1 + dS2odd;
       S2vals[i] += dS12 + dS22odd;
