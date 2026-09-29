@@ -138,6 +138,8 @@ void SparseGaussianProcessFitter::run()
 
   SparseGaussianProcessEvaluation evaluation(reducedCovarianceModelCopy, inducingPoints_, whiteningFactor_, posteriorMean_, posteriorCovariance_, whiteningFactorHMatrix_, method_);
   Function metaModel(evaluation);
+  metaModel.setInputDescription(inputSample_.getDescription());
+  metaModel.setOutputDescription(outputSample_.getDescription());
 
   result_ = SparseGaussianProcessFitterResult(inputSample_, outputSample_, reducedCovarianceModelCopy, inducingPoints_, whiteningFactor_, posteriorMean_, posteriorCovariance_, noiseStdDev_, optimalELBO, metaModel, method_);
   result_.setWhiteningFactorHMatrix(whiteningFactorHMatrix_);

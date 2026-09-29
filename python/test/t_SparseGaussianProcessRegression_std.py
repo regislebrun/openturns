@@ -250,6 +250,24 @@ def test_save_load():
     os.remove(filename)
 
 
+# The metamodel must retain the input/output descriptions (see #3307)
+def test_descriptions():
+    ot.RandomGenerator.SetSeed(0)
+    f = ot.SymbolicFunction(["x"], ["x + x * sin(x)"])
+    X = ot.Sample([[1.0], [3.0], [5.0], [6.0], [7.0], [8.0]])
+    X.setDescription(["X0"])
+    Y = f(X)
+    Y.setDescription(["Y0"])
+    covarianceModel = ot.SquaredExponential([1.0])
+    covarianceModel.setActiveParameter([])
+    Z = ot.Sample([[1.0], [3.0], [5.0]])
+    algo = SparseGaussianProcessRegression(X, Y, covarianceModel, Z)
+    algo.run()
+    metaModel = algo.getResult().getMetaModel()
+    assert metaModel.getInputDescription() == ["X0"]
+    assert metaModel.getOutputDescription() == ["Y0"]
+
+
 if __name__ == "__main__":
     test_interpolation()
     test_prediction()
@@ -257,6 +275,7 @@ if __name__ == "__main__":
     test_hessian()
     test_gradient()
     test_save_load()
+    test_descriptions()
     test_method_accessor()
     test_regression_repr_str()
     test_metamodel_wrong_input_dim()

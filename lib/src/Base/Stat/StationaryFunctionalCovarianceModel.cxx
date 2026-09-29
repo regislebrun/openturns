@@ -174,7 +174,7 @@ Matrix StationaryFunctionalCovarianceModel::parameterGradient(const Point & s,
   if (outputDimension_ != 1) return CovarianceModelImplementation::parameterGradient(s, t);
   const Point tau(s - t);
   Point tauOverTheta(inputDimension_);
-  for (UnsignedInteger i = 0; i < inputDimension_; ++i) tauOverTheta[i] = tau[i] / scale_[i];
+  for (UnsignedInteger i = 0; i < inputDimension_; ++i) tauOverTheta[i] = std::abs(tau[i]) / scale_[i];
   const Scalar tauOverThetaNorm = tauOverTheta.norm();
   const Bool isZero = (tauOverThetaNorm <= SpecFunc::ScalarEpsilon);
   const Scalar k = computeAsScalar(s, t);
@@ -182,10 +182,10 @@ Matrix StationaryFunctionalCovarianceModel::parameterGradient(const Point & s,
   Point fullGradient(inputDimension_ + 1 + outputDimension_ + rhoParameterSize, 0.0);
   if (!isZero)
   {
-    // Gradient wrt the scale parameters: x = tau/scale, dk/dscale_i = amplitude^2 drho/dx_i dx_i/dscale_i
+    // Gradient wrt the scale parameters: u = |tau|/scale, dk/dscale_i = amplitude^2 drho/du_i du_i/dscale_i
     const Matrix rhoGradient(rho_.gradient(tauOverTheta));
     for (UnsignedInteger i = 0; i < inputDimension_; ++i)
-      fullGradient[i] = amplitude_[0] * amplitude_[0] * rhoGradient(i, 0) * (-tau[i] / (scale_[i] * scale_[i]));
+      fullGradient[i] = amplitude_[0] * amplitude_[0] * rhoGradient(i, 0) * (-std::abs(tau[i]) / (scale_[i] * scale_[i]));
     // Gradient wrt the parameters of the correlation function
     const Matrix rhoParameterGradient(rho_.parameterGradient(tauOverTheta));
     for (UnsignedInteger i = 0; i < rhoParameterSize; ++i)

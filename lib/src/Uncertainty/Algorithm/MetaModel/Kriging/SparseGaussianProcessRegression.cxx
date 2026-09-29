@@ -123,6 +123,8 @@ void SparseGaussianProcessRegression::buildMetaModel()
   metaModel.setEvaluation(new SparseGaussianProcessEvaluation(covarianceModel, inducingPoints, whiteningFactor, posteriorMean, posteriorCovariance, whiteningFactorHMatrix, linearAlgebraMethod));
   metaModel.setGradient(new SparseGaussianProcessGradient(covarianceModel, inducingPoints, whiteningFactor, posteriorMean, whiteningFactorHMatrix, linearAlgebraMethod));
   metaModel.setHessian(new SparseGaussianProcessHessian(covarianceModel, inducingPoints, whiteningFactor, posteriorMean, whiteningFactorHMatrix, linearAlgebraMethod));
+  metaModel.setInputDescription(inputSample_.getDescription());
+  metaModel.setOutputDescription(outputSample_.getDescription());
 
   result_ = sparseGaussianProcessFitterResult_;
   result_.setMetaModel(metaModel);
