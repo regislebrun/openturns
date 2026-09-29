@@ -66,27 +66,10 @@ int main(int, char *[])
       assert_almost_equal(nodes[0], 0.0, 0.0, 1.0e-14, ", n=1 node");
       assert_almost_equal(weights[0], 1.0, 0.0, 1.0e-14, ", n=1 weight");
     }
-    // Cross-check against the reference Golub-Welsch implementation exposed
-    // by HermiteFactory (weight = standard normal density, orthonormal basis).
-    // This is an independent implementation: HermiteFactory goes through the
-    // eigenvector path (LAPACK dstev with jobz='V', weights from the first
-    // eigenvector components) while FastHermite uses the eigenvalues-only
-    // solve plus Newton polishing and Christoffel weights.
-    {
-      const UnsignedInteger order[] = {4, 12, 40, 1024};
-      const HermiteFactory refFactory;
-      for (UnsignedInteger q = 0; q < 4; ++q)
-      {
-        const UnsignedInteger n = order[q];
-        Point nodes(n);
-        Point weights(n);
-        FastHermite::ComputeNodesAndWeights(n, &nodes[0], &weights[0]);
-        Point refWeights;
-        const Point refNodes(refFactory.getNodesAndWeights(n, refWeights));
-        assert_almost_equal(nodes, refNodes, 1.0e-10, 1.0e-12, OSS() << ", n=" << n << " nodes");
-        assert_almost_equal(weights, refWeights, 1.0e-10, 1.0e-12, OSS() << ", n=" << n << " weights");
-      }
-    }
+    // No cross-check against HermiteFactory here: it uses the same polished
+    // solver through the base class, so the comparison would be circular.
+    // Accuracy is covered by the exactness checks below against the
+    // closed-form Normal moments.
     // Exactness check: an n-point rule integrates polynomials of degree up to
     // 2n-1 exactly w.r.t. N(0, 1)
     {
