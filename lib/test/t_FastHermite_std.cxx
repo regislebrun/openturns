@@ -89,6 +89,22 @@ int main(int, char *[])
         }
       }
     }
+    // Asymptotic path check (n above the threshold 200): low-degree
+    // exactness with stable closed-form moments. High degrees would
+    // overflow the double-factorial moment formula itself, not the rule.
+    {
+      const UnsignedInteger n = 256;
+      Point nodes(n);
+      Point weights(n);
+      FastHermite::ComputeNodesAndWeights(n, &nodes[0], &weights[0]);
+      for (UnsignedInteger m = 0; m <= 12; ++m)
+      {
+        Scalar integral = 0.0;
+        for (UnsignedInteger i = 0; i < n; ++i)
+          integral += weights[i] * std::pow(nodes[i], static_cast<Scalar>(m));
+        assert_almost_equal(integral, normalEvenMoment(m), 1.0e-7, 1.0e-9, OSS() << ", asymptotic degree " << m);
+      }
+    }
     // Structural properties for a moderate n
     {
       const UnsignedInteger n = 16;
