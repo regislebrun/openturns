@@ -978,6 +978,9 @@ void ResourceMap::loadDefaultConfiguration()
   // FastJacobi parameters //
   addAsUnsignedInteger("FastJacobi-AsymptoticThreshold", 100);
 
+  // FastLaguerre parameters //
+  addAsUnsignedInteger("FastLaguerre-IterativeThreshold", 8);
+
   // FejerExperiment parameters //
   addAsUnsignedInteger("FejerExperiment-DefaultMarginalNodesNumber", 64);
 

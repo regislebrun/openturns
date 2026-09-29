@@ -86,14 +86,16 @@ int main(int, char *[])
     // Accuracy is covered by the exactness checks below against the
     // closed-form Gamma moments.
     // Exactness check: an n-point rule integrates polynomials of degree up to
-    // 2n-1 exactly w.r.t. Gamma(k, 1)
+    // 2n-1 exactly w.r.t. Gamma(k, 1). n = 8 and above exercise the
+    // iterative path (threshold 8 by default); Gamma moments are products,
+    // stable at any degree.
     {
-      const UnsignedInteger order[] = {2, 4, 8};
+      const UnsignedInteger order[] = {2, 4, 8, 64};
       const Scalar kValues[] = {0.5, 2.5};
       for (UnsignedInteger r = 0; r < 2; ++r)
       {
         const Scalar k = kValues[r];
-        for (UnsignedInteger q = 0; q < 3; ++q)
+        for (UnsignedInteger q = 0; q < 4; ++q)
         {
           const UnsignedInteger n = order[q];
           Point nodes(n);
