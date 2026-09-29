@@ -32,7 +32,8 @@ BEGIN_NAMESPACE_OPENTURNS
  *
  * Computes the n-point Gauss-Jacobi rule for the weight function
  * (1-x)^alpha (1+x)^beta on [-1, 1], where alpha > -1 and beta > -1, i.e.
- * the ANALYSIS parameterization of JacobiFactory. The special case
+ * the rule of JacobiFactory(beta + 1, alpha + 1), which takes the Beta
+ * shape parameters. The special case
  * alpha + beta == -1 is handled by a canceled form of the b coefficients.
  *
  * The weights are positive, sum to one and the nodes are in strictly

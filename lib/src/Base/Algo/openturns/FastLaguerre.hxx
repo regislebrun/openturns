@@ -32,8 +32,8 @@ BEGIN_NAMESPACE_OPENTURNS
  *
  * Computes the n-point Gauss-Laguerre rule for the weight function
  * x^{k-1} exp(-x) / Gamma(k) on [0, inf), i.e. the Gamma(k, 1, 0) density,
- * where k > 0 is the shape parameter. This is the rule associated with the
- * ANALYSIS parameterization of LaguerreFactory(k-1).
+ * where k > 0 is the shape parameter. This is the rule associated with
+ * LaguerreFactory(k), whose measure is Gamma(k, 1, 0).
  *
  * The weights are positive, sum to one and the nodes are in strictly
  * increasing order in [0, inf). The magnitudes p_{n-1}(x) p'_n(x) may
