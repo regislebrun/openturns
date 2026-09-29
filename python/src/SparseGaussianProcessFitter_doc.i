@@ -68,10 +68,14 @@ standard deviation and the inducing inputs:
 
     \cL = -\frac{1}{2}\left(n\ln(2\pi) + (n - m)\ln(\sigma^2) + \ln\det(\mat{B})
     + \frac{\Vert \vect{y}\Vert^2 - \Vert \vect{c}\Vert^2}{\sigma^2}\right)
-    - \frac{\operatorname{tr}(\mat{K}_{ff}) - \operatorname{tr}(\mat{A}^t\mat{A})}{2\sigma^2}
+    - \frac{1}{2}\sum_{i=1}^n \ln\left(1 +
+    \frac{k(\vect{x}_i, \vect{x}_i) - \vect{a}_i^t \vect{a}_i}{\sigma^2}\right)
 
-where :math:`\vect{c} = \mat{L}_B^{-1} \mat{A}^t \vect{y}` and
-:math:`\mat{L}_B` is the Cholesky factor of :math:`\mat{B}`.
+where :math:`\vect{c} = \mat{L}_B^{-1} \mat{A}^t \vect{y}`,
+:math:`\mat{L}_B` is the Cholesky factor of :math:`\mat{B}` and
+:math:`\vect{a}_i^t` is the :math:`i`-th row of :math:`\mat{A}\).
+The last sum is the tighter regularization of Titsias [titsias2025]_,
+which replaces the trace term of the original bound.
 
 The behaviour of the algorithm is controlled by the following flags:
 

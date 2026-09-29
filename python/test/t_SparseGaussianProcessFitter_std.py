@@ -38,13 +38,15 @@ def _numpy_elbo(X, Y, Z, sigma, cov):
     u = np.linalg.solve(Lb, w)
     yperp = Y - A.dot(w)
     quadratic = w.dot(w) - sigma2 * u.dot(u) + yperp.dot(yperp) / sigma2
-    trace_term = (np.trace(Kff) - np.linalg.norm(A, "fro") ** 2) / (2.0 * sigma2)
+    # tighter regularization of Titsias (2025)
+    resid = np.maximum(np.diag(Kff) - np.sum(A * A, axis=1), 0.0)
+    log_term = 0.5 * np.sum(np.log1p(resid / sigma2))
     elbo = -0.5 * (
         N * np.log(2.0 * np.pi)
         + (N - M) * math.log(sigma2)
         + logdetB
         + quadratic
-    ) - trace_term
+    ) - log_term
     return elbo
 
 
@@ -92,7 +94,7 @@ def test_elbo_matches_exact_log_likelihood():
         ott.assert_almost_equal(elbo, exact, 1e-6, 1e-9)
 
 
-# The collapsed ELBO for M<N must match the reference formula (with the trace term)
+# The collapsed ELBO for M<N must match the reference formula (tighter log regularization)
 def test_elbo_matches_reference_for_sparse():
     X, Y = _sample()
     covarianceModel = ot.SquaredExponential([1.0])

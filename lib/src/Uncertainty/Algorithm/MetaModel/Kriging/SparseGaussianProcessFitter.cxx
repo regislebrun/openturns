@@ -529,6 +529,23 @@ Point SparseGaussianProcessFitter::computeELBOGradient(const Point & parameters)
   const Point w(Lg.transpose().solveLinearSystem(Lg.solveLinearSystem(Aty)));
   const Point u(Lb.solveLinearSystem(w));
   const Point yperp(y - A * w);
+  // Tighter-bound weights w_i = 1 / (sigma^2 + r_i) with r_i = k_ii - q_ii >= 0,
+  // q_ii the squared norm of row i of A. Only needed when M < N.
+  Point tightWeights(N, 0.0);
+  Point tightResiduals(N, 0.0);
+  if (hasTrace)
+  {
+    const CovarianceMatrix KffTight(reducedCovarianceModel_.discretize(inputSample_));
+    for (UnsignedInteger i = 0; i < N; ++i)
+    {
+      Scalar qii = 0.0;
+      for (UnsignedInteger j = 0; j < M; ++j)
+        qii += A(i, j) * A(i, j);
+      const Scalar residual = std::max(KffTight(i, i) - qii, 0.0);
+      tightResiduals[i] = residual;
+      tightWeights[i] = 1.0 / (sigma2 + residual);
+    }
+  }
 
   // Reverse sweep
   // wBar = -w + A^T yperp / sigma^2 + sigma^2 * Lb^{-T} u
@@ -563,19 +580,19 @@ Point SparseGaussianProcessFitter::computeELBOGradient(const Point & parameters)
     sigma2Bar += BBar(i, i);
   // ABar += A (GBar + GBar^T)
   ABar = ABar + A * (GBar + GBar.transpose());
-  // Trace term, only when M < N
+  // Tighter regularization term, only when M < N: ABar(i, :) += w_i * A(i, :)
   if (hasTrace)
-    ABar = ABar + A / sigma2;
-  // sigma2Bar from the quadratic and the trace terms
+    for (UnsignedInteger i = 0; i < N; ++i)
+      for (UnsignedInteger j = 0; j < M; ++j)
+        ABar(i, j) += tightWeights[i] * A(i, j);
+  // sigma2Bar from the quadratic and the tighter regularization terms
   sigma2Bar += 0.5 * u.normSquare() + 0.5 * yperp.normSquare() / (sigma2 * sigma2);
   if (hasTrace)
   {
-    const CovarianceMatrix Kff(reducedCovarianceModel_.discretize(inputSample_));
-    Scalar trKff = 0.0;
+    Scalar tightSigma2Bar = 0.0;
     for (UnsignedInteger i = 0; i < N; ++i)
-      trKff += Kff(i, i);
-    const Scalar trAtA = A.frobeniusNorm() * A.frobeniusNorm();
-    sigma2Bar += (trKff - trAtA) / (2.0 * sigma2 * sigma2);
+      tightSigma2Bar += tightWeights[i] * tightResiduals[i];
+    sigma2Bar += 0.5 * tightSigma2Bar / sigma2;
   }
   sigma2Bar -= (SignedInteger(N) - SignedInteger(M)) / (2.0 * sigma2);
   // KfuBar = ABar Luu^{-1}, LuuBar = -Luu^{-T} (ABar^T Kfu) Luu^{-T}
@@ -584,7 +601,7 @@ Point SparseGaussianProcessFitter::computeELBOGradient(const Point & parameters)
   const Matrix LuuInvT(Luu.transpose().solveLinearSystem(IdentityMatrix(M)));
   const Matrix LuuBar(-1.0 * (LuuInvT * (ABar.transpose() * Kfu)) * LuuInvT);
   const Matrix KuuBar(cholAdjoint(Luu, LuuBar));
-  const Scalar KffBar = hasTrace ? -1.0 / (2.0 * sigma2) : 0.0;
+  // Tighter regularization: per-point coefficient -w_i / 2 on k_ii, only when M < N
 
   // Gradient wrt the active covariance parameters
   Point covarianceGradient(covarianceParameterSize, 0.0);
@@ -618,9 +635,13 @@ Point SparseGaussianProcessFitter::computeELBOGradient(const Point & parameters)
   {
     for (UnsignedInteger i = 0; i < N; ++i)
     {
-      const Matrix dk(reducedCovarianceModel_.parameterGradient(inputSample_[i], inputSample_[i]));
-      for (UnsignedInteger k = 0; k < covarianceParameterSize; ++k)
-        covarianceGradient[k] += KffBar * dk(k, 0);
+      const Scalar coefficient = -0.5 * tightWeights[i];
+      if (coefficient != 0.0)
+      {
+        const Matrix dk(reducedCovarianceModel_.parameterGradient(inputSample_[i], inputSample_[i]));
+        for (UnsignedInteger k = 0; k < covarianceParameterSize; ++k)
+          covarianceGradient[k] += coefficient * dk(k, 0);
+      }
     }
   }
 
@@ -784,20 +805,27 @@ Scalar SparseGaussianProcessFitter::computeELBOValue(const Sample & inducingPoin
   const Point yperp(y - A * w);
   const Scalar quadratic = w.normSquare() - sigma2 * u.normSquare() + yperp.normSquare() / sigma2;
   const CovarianceMatrix Kff(reducedCovarianceModel_.discretize(inputSample_));
-  Scalar trKff = 0.0;
-  for (UnsignedInteger i = 0; i < N; ++i)
-    trKff += Kff(i, i);
-  const Scalar trAtA = A.frobeniusNorm() * A.frobeniusNorm();
-  // Collapsed ELBO, see e.g. Titsias (2009), arXiv:2012.13962
+  // Tighter collapsed bound of Titsias (2025): replace tr(K_ff - Q_ff)/(2 sigma^2)
+  // with 1/2 sum_i log(1 + (k_ii - q_ii)/sigma^2), q_ii = squared norm of row i of A
+  // Collapsed ELBO, see Titsias (2009) with the tighter regularization of
+  // Titsias (2025), arXiv:2012.13962 for the whitened formulation
   // When M == N the cross covariance Q_ff = K_fu K_uu^{-1} K_uf equals K_ff, hence
-  // tr(K_ff) - tr(A^T A) = tr(K_ff - Q_ff) = 0 exactly. Skipping the term avoids the
-  // catastrophic cancellation residue of two O(N) numbers divided by the noise variance
-  // sigma^2 for vanishing noise.
-  Scalar traceTerm = 0.0;
+  // all residuals k_ii - q_ii are zero exactly. Skipping the term avoids amplifying
+  // the cancellation residue by 1 / sigma^2 for vanishing noise.
+  Scalar regularizationTerm = 0.0;
   if (M < N)
-    traceTerm = (trKff - trAtA) / (2.0 * sigma2);
+  {
+    for (UnsignedInteger i = 0; i < N; ++i)
+    {
+      Scalar qii = 0.0;
+      for (UnsignedInteger j = 0; j < M; ++j)
+        qii += A(i, j) * A(i, j);
+      const Scalar residual = std::max(Kff(i, i) - qii, 0.0);
+      regularizationTerm += 0.5 * std::log1p(residual / sigma2);
+    }
+  }
   const Scalar value = -0.5 * (2.0 * N * SpecFunc::LOGSQRT2PI + (N - M) * std::log(sigma2) + logDetB + quadratic)
-                       - traceTerm;
+                       - regularizationTerm;
 
   // Store the by-products of the ELBO evaluation
   if (method_ == SparseGaussianProcessFitterResult::HMAT)
