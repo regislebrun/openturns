@@ -22,6 +22,7 @@
 #include "openturns/FastGaussQuadrature.hxx"
 #include "openturns/Point.hxx"
 #include "openturns/Exception.hxx"
+#include "openturns/ResourceMap.hxx"
 #include "openturns/SpecFunc.hxx"
 #include <cmath>
 #include <boost/math/special_functions/airy.hpp>
@@ -40,8 +41,8 @@ BEGIN_NAMESPACE_OPENTURNS
  * they move to SpecFunc if the path is kept.
  */
 
-// Switch threshold to the asymptotic path (follows Chebfun's choice)
-static const UnsignedInteger HermiteAsymptoticThreshold = 200;
+    // Large rules use the Townsend-Trogdon-Olver Airy path, small ones the
+    // polished eigensolver; threshold from the ResourceMap
 
 // Exact first 10 Airy Ai roots (used by the Gatteschi initial guesses)
 static const Scalar AiryRootsExact[10] = {-2.338107410459762, -4.087949444130970, -5.520559828095555, -6.786708090071765, -7.944133587120863, -9.022650853340979, -10.040174341558084, -11.008524303733260, -11.936015563236262, -12.828776752865757};
@@ -276,8 +277,11 @@ namespace FastHermite
       b[j] = std::sqrt(static_cast<Scalar>(j));
 
     // Large rules use the Townsend-Trogdon-Olver Airy path, small ones the
-    // polished eigensolver
-    if (n >= HermiteAsymptoticThreshold)
+    // polished eigensolver; threshold from the ResourceMap. Benchmark origin:
+    // above the threshold the relative accuracy is better than 5e-13 and
+    // the asymptotic path is faster (see doc/fast_gauss_benchmark.tex).
+    const UnsignedInteger asymptoticThreshold = ResourceMap::GetAsUnsignedInteger("FastHermite-AsymptoticThreshold");
+    if (n >= asymptoticThreshold)
     {
       ComputeNodesAndWeightsAsymptotic(n, nodes, weights);
       return;

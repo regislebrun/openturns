@@ -975,6 +975,9 @@ void ResourceMap::loadDefaultConfiguration()
   // GaussLegendre parameters //
   addAsUnsignedInteger("GaussLegendre-DefaultMarginalIntegrationPointsNumber", 64);
 
+  // FastHermite parameters //
+  addAsUnsignedInteger("FastHermite-AsymptoticThreshold", 256);
+
   // FastJacobi parameters //
   addAsUnsignedInteger("FastJacobi-AsymptoticThreshold", 100);
 

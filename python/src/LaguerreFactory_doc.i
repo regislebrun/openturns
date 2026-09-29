@@ -43,6 +43,22 @@ See also
 --------
 UniVariateDistributionPolynomialFactory
 
+Notes
+-----
+The nodes and weights of the associated Gauss-Laguerre quadrature rule
+are computed by the fast Laguerre rule mapped to the measure:
+polished eigensolver below 8 nodes, Gil-Segura-Temme iterative sweeps
+above. Above 8 nodes the rule reaches a relative accuracy better than
+``5e-13`` and is faster than the generic solver; the switch threshold
+comes from the ``fast_gauss`` benchmark. The following
+:class:`~openturns.ResourceMap` key is used:
+
+- ``FastLaguerre-IterativeThreshold`` (``UnsignedInteger``, default:
+  ``8``): number of nodes from which the iterative sweeps are used.
+  Set it to a large number to force the generic polished eigensolver:
+  improved accuracy beyond ``5e-13`` at the price of a much larger CPU
+  effort.
+
 Examples
 --------
 >>> import openturns as ot

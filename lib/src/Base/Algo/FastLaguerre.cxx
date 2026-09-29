@@ -398,9 +398,11 @@ namespace FastLaguerre
 
     // Large rules use the Gil-Segura-Temme iterative path, small ones the
     // polished eigensolver; threshold from the ResourceMap (minimum 5,
-    // the iterative sweeps assume at least 3 found nodes). A failed
-    // iterative sweep (incomplete node count or invalid rule) falls back
-    // to the polished eigensolver.
+    // the iterative sweeps assume at least 3 found nodes). Benchmark origin:
+    // above the threshold the relative accuracy is better than 5e-13 and
+    // the iterative path is faster (see doc/fast_gauss_benchmark.tex).
+    // A failed iterative sweep (incomplete node count or invalid rule)
+    // falls back to the polished eigensolver.
     const UnsignedInteger iterativeThreshold = ResourceMap::GetAsUnsignedInteger("FastLaguerre-IterativeThreshold");
     if ((n >= iterativeThreshold) && (n >= 5))
     {

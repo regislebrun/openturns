@@ -22,12 +22,25 @@ read:
     \end{array}, \quad 1 < i
 
 The nodes and weights of the associated Gauss-Hermite quadrature rule are
-computed using the Golub-Welsch algorithm via the symmetric
-tridiagonal Jacobi matrix.
+computed by the fast Hermite rule mapped to the measure: polished
+eigensolver below 256 nodes, Townsend-Trogdon-Olver Airy expansion above.
 
 See also
 --------
 UniVariateDistributionPolynomialFactory
+
+Notes
+-----
+Above 256 nodes the rule reaches a relative accuracy better than
+``5e-13`` and is faster than the generic solver; the switch threshold
+comes from the ``fast_gauss`` benchmark. The following
+:class:`~openturns.ResourceMap` key is used:
+
+- ``FastHermite-AsymptoticThreshold`` (``UnsignedInteger``, default:
+  ``256``): number of nodes from which the asymptotic expansion is used.
+  Set it to a large number to force the generic polished eigensolver:
+  improved accuracy beyond ``5e-13`` at the price of a much larger CPU
+  effort.
 
 Examples
 --------

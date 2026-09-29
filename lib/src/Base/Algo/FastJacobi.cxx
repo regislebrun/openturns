@@ -977,7 +977,9 @@ namespace FastJacobi
     }
 
     // Large rules use the Hale-Townsend asymptotic path, small ones the
-    // polished eigensolver; threshold from the ResourceMap
+    // polished eigensolver; threshold from the ResourceMap. Benchmark origin:
+    // above the threshold the relative accuracy is better than 5e-13 and
+    // the asymptotic path is faster (see doc/fast_gauss_benchmark.tex).
     const UnsignedInteger asymptoticThreshold = ResourceMap::GetAsUnsignedInteger("FastJacobi-AsymptoticThreshold");
     if (n >= asymptoticThreshold)
     {
