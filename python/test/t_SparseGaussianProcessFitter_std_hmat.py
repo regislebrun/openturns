@@ -81,6 +81,22 @@ def test_hmat_regression():
     assert result.getMetaModel().hessian(Xtest[0]).getNbSheets() > 0
 
 
+def test_hmat_whitening_factor():
+    X, Y, covarianceModel = _data()
+    algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X)
+    algo.setNoiseStdDev(1e-2)
+    algo.setOptimizeNoiseStdDev(False)
+    algo.setMethod(SparseGaussianProcessFitterResult.HMAT)
+    algo.run()
+    result = algo.getResult()
+    # the H-matrix whitening factor must cover all inducing points
+    assert result.getWhiteningFactorHMatrix().getNbRows() == X.getSize()
+    # set/get roundtrip must preserve it
+    result.setWhiteningFactorHMatrix(result.getWhiteningFactorHMatrix())
+    assert result.getWhiteningFactorHMatrix().getNbRows() == X.getSize()
+
+
 test_hmat_elbo()
 test_hmat_prediction()
 test_hmat_regression()
+test_hmat_whitening_factor()

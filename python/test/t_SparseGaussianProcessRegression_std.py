@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+import os
+
 import openturns as ot
 import openturns.testing as ott
 
@@ -181,11 +183,80 @@ def test_conditional_variance_wrong_input_dim():
         result.getConditionalVariance(ot.Point([1.0, 2.0]))
 
 
+# The metamodel gradient must be consistent with the finite-difference reference
+def test_gradient():
+    ot.RandomGenerator.SetSeed(0)
+    f = ot.SymbolicFunction(
+        ["x0", "x1", "x2"], ["x0 * sin(x1) + x2^2 + 0.3 * x0 * x1"]
+    )
+    X = ot.Sample(
+        [
+            [1.0, 2.0, 0.5],
+            [3.0, 1.0, 1.5],
+            [5.0, 0.5, 2.5],
+            [2.0, 3.0, 0.3],
+            [4.0, 1.8, 1.2],
+            [1.5, 2.5, 2.0],
+        ]
+    )
+    Y = f(X)
+    covarianceModel = ot.SquaredExponential([1.0, 1.0, 1.0])
+    fit_algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X)
+    fit_algo.setNoiseStdDev(1e-3)
+    fit_algo.setOptimizeNoiseStdDev(False)
+    fit_algo.run()
+    algo = SparseGaussianProcessRegression(fit_algo.getResult())
+    algo.run()
+    metaModel = algo.getResult().getMetaModel()
+    x = ot.Point([2.3, 1.4, 1.7])
+    gradient = metaModel.gradient(x)
+    reference = ot.CenteredFiniteDifferenceGradient(
+        1e-4, metaModel.getEvaluation()
+    ).gradient(x)
+    ott.assert_almost_equal(gradient, reference, 1e-5, 1e-5)
+
+
+# Save / load must preserve the regression result through a Study
+def test_save_load():
+    X, Y, covarianceModel = _data()
+    fit_algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X)
+    fit_algo.setNoiseStdDev(1e-2)
+    fit_algo.setOptimizeNoiseStdDev(False)
+    fit_algo.run()
+    algo = SparseGaussianProcessRegression(fit_algo.getResult())
+    algo.run()
+    result = algo.getResult()
+    filename = "test_sparse_gp_regression.xml"
+    study = ot.Study(filename)
+    study.add("algo", algo)
+    study.save()
+    study2 = ot.Study(filename)
+    study2.load()
+    algo2 = SparseGaussianProcessRegression()
+    study2.fillObject("algo", algo2)
+    result2 = algo2.getResult()
+    ott.assert_almost_equal(
+        result.getMetaModel()(ot.Point([1.5])),
+        result2.getMetaModel()(ot.Point([1.5])),
+        1e-10,
+        1e-10,
+    )
+    ott.assert_almost_equal(
+        result.getConditionalVariance(ot.Point([1.5])),
+        result2.getConditionalVariance(ot.Point([1.5])),
+        1e-10,
+        1e-10,
+    )
+    os.remove(filename)
+
+
 if __name__ == "__main__":
     test_interpolation()
     test_prediction()
     test_sparse_regression()
     test_hessian()
+    test_gradient()
+    test_save_load()
     test_method_accessor()
     test_regression_repr_str()
     test_metamodel_wrong_input_dim()

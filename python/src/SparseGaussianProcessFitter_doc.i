@@ -6,7 +6,8 @@ R"RAW(Fit sparse Gaussian process models.
     To use it, import the ``openturns.experimental`` submodule.
 
 Refer to the theory of the sparse Gaussian process, based on the variational inference of
-Titsias [titsias2009]_ (see also [wenliang2021]_ for the whitened parametrisation).
+Titsias [titsias2009]_ (see also [gal2014]_ for the full derivations as implemented in code
+and [leibfried2020]_ for the whitened parametrisation).
 
 We consider a Gaussian process :math:`Y` with covariance model :math:`k` and an independent
 centered Gaussian noise of variance :math:`\sigma^2` on the observations
@@ -65,7 +66,7 @@ standard deviation and the inducing inputs:
 
 .. math::
 
-    \cL = -\frac{1}{2}\left(n\ln(2\pi) + (2n - m)\ln(\sigma^2) + \ln\det(\mat{B})
+    \cL = -\frac{1}{2}\left(n\ln(2\pi) + (n - m)\ln(\sigma^2) + \ln\det(\mat{B})
     + \frac{\Vert \vect{y}\Vert^2 - \Vert \vect{c}\Vert^2}{\sigma^2}\right)
     - \frac{\operatorname{tr}(\mat{K}_{ff}) - \operatorname{tr}(\mat{A}^t\mat{A})}{2\sigma^2}
 
@@ -108,18 +109,18 @@ inducingPoints : :class:`~openturns.Sample` or int
 
 Notes
 -----
-This class is controlled by the following :class:`~openturns.ResourceMap` entries:
+The following :class:`~openturns.ResourceMap` keys are used:
 
-- `SparseGaussianProcessFitter-DefaultOptimizationAlgorithm` (default ``"TNC"``): the default optimization algorithm,
-- `SparseGaussianProcessFitter-DefaultOptimizationLowerBound` (default 1.0e-2): the default lower bound for the covariance model parameters,
-- `SparseGaussianProcessFitter-DefaultOptimizationUpperBound` (default 1.0e2): the default upper bound for the covariance model parameters,
-- `SparseGaussianProcessFitter-OptimizationLowerBoundScaleFactor` (default 1.0e-3): the lower bound scale factor for the covariance model parameters,
-- `SparseGaussianProcessFitter-OptimizationUpperBoundScaleFactor` (default 2.0): the upper bound scale factor for the covariance model parameters,
-- `SparseGaussianProcessFitter-DefaultNoiseStdDev` (default 1.0e-3): the default noise standard deviation,
-- `SparseGaussianProcessFitter-DefaultNoiseStdDevLowerBound` (default 1.0e-12): the default lower bound for the noise standard deviation,
-- `SparseGaussianProcessFitter-DefaultNoiseStdDevUpperBound` (default 1.0e8): the default upper bound for the noise standard deviation,
-- `SparseGaussianProcessFitter-OptimizationNormalization` (default ``True``): whether to internally scale the hyperparameters during the optimization using a min-max transformation,
-- `SparseGaussianProcessFitter-LinearAlgebra` (default ``"LAPACK"``): the default linear algebra method.
+- ``SparseGaussianProcessFitter-DefaultOptimizationAlgorithm`` (``String``, default: ``"TNC"``): the default optimization algorithm.
+- ``SparseGaussianProcessFitter-DefaultOptimizationLowerBound`` (``Scalar``, default: ``1.0e-2``): the default lower bound for the covariance model parameters.
+- ``SparseGaussianProcessFitter-DefaultOptimizationUpperBound`` (``Scalar``, default: ``1.0e2``): the default upper bound for the covariance model parameters.
+- ``SparseGaussianProcessFitter-OptimizationLowerBoundScaleFactor`` (``Scalar``, default: ``1.0e-3``): the lower bound scale factor for the covariance model parameters.
+- ``SparseGaussianProcessFitter-OptimizationUpperBoundScaleFactor`` (``Scalar``, default: ``2.0``): the upper bound scale factor for the covariance model parameters.
+- ``SparseGaussianProcessFitter-DefaultNoiseStdDev`` (``Scalar``, default: ``1.0e-3``): the default noise standard deviation.
+- ``SparseGaussianProcessFitter-DefaultNoiseStdDevLowerBound`` (``Scalar``, default: ``1.0e-12``): the default lower bound for the noise standard deviation.
+- ``SparseGaussianProcessFitter-DefaultNoiseStdDevUpperBound`` (``Scalar``, default: ``1.0e8``): the default upper bound for the noise standard deviation.
+- ``SparseGaussianProcessFitter-OptimizationNormalization`` (``Bool``, default: ``True``): whether to internally scale the hyperparameters during the optimization using a min-max transformation.
+- ``SparseGaussianProcessFitter-LinearAlgebra`` (``String``, default: ``"LAPACK"``): the default linear algebra method, either ``"LAPACK"`` or ``"HMAT"``.
 
 Examples
 --------
@@ -314,9 +315,9 @@ Returns
 linAlgMethod : int
     The used linear algebra method to fit the model:
 
-    - ot.SparseGaussianProcessFitterResult.LAPACK or 0: using `LAPACK` to fit the model,
+    - ot.experimental.SparseGaussianProcessFitterResult.LAPACK or 0: using ``LAPACK`` to fit the model,
 
-    - ot.SparseGaussianProcessFitterResult.HMAT or 1: using `HMAT` to fit the model."
+    - ot.experimental.SparseGaussianProcessFitterResult.HMAT or 1: using ``HMAT`` to fit the model."
 
 // ---------------------------------------------------------------------
 
@@ -328,6 +329,6 @@ Parameters
 linAlgMethod : int
     The used linear algebra method to fit the model:
 
-    - ot.SparseGaussianProcessFitterResult.LAPACK or 0: using `LAPACK` to fit the model,
+    - ot.experimental.SparseGaussianProcessFitterResult.LAPACK or 0: using ``LAPACK`` to fit the model,
 
-    - ot.SparseGaussianProcessFitterResult.HMAT or 1: using `HMAT` to fit the model."
+    - ot.experimental.SparseGaussianProcessFitterResult.HMAT or 1: using ``HMAT`` to fit the model."

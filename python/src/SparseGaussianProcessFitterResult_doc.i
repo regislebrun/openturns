@@ -129,9 +129,9 @@ Returns
 linAlgMethod : int
     The used linear algebra method to fit the model:
 
-    - ot.SparseGaussianProcessFitterResult.LAPACK or 0: using `LAPACK` to fit the model,
+    - ot.experimental.SparseGaussianProcessFitterResult.LAPACK or 0: using ``LAPACK`` to fit the model,
 
-    - ot.SparseGaussianProcessFitterResult.HMAT or 1: using `HMAT` to fit the model."
+    - ot.experimental.SparseGaussianProcessFitterResult.HMAT or 1: using ``HMAT`` to fit the model."
 
 // ---------------------------------------------------------------------
 
@@ -142,7 +142,7 @@ Returns
 -------
 whiteningFactor : :class:`~openturns.HMatrix`
     The Cholesky factor of the inducing points covariance matrix, when the
-    `HMAT` linear algebra method is used."
+    ``HMAT`` linear algebra method is used."
 
 // ---------------------------------------------------------------------
 
@@ -153,4 +153,4 @@ Parameters
 ----------
 whiteningFactor : :class:`~openturns.HMatrix`
     The Cholesky factor of the inducing points covariance matrix, when the
-    `HMAT` linear algebra method is used."
+    ``HMAT`` linear algebra method is used."

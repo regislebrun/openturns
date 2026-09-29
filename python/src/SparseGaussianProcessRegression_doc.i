@@ -26,10 +26,6 @@ The conditional variance of the prediction at any point can be obtained thanks t
 method of the resulting
 :class:`~openturns.experimental.SparseGaussianProcessFitterResult`.
 
-See also
---------
-openturns.experimental.SparseGaussianProcessFitter, openturns.GaussianProcessRegression
-
 Parameters
 ----------
 result : :class:`~openturns.experimental.SparseGaussianProcessFitterResult`
@@ -46,6 +42,10 @@ covarianceModel : :class:`~openturns.CovarianceModel`
 
 inducingPoints : :class:`~openturns.Sample`
     The inducing points :math:`(\vect{z}_j)_{1 \leq j \leq m}`.
+
+See also
+--------
+openturns.experimental.SparseGaussianProcessFitter, openturns.GaussianProcessRegression
 
 Examples
 --------
@@ -93,9 +93,9 @@ Returns
 linAlgMethod : int
     The used linear algebra method to fit the model:
 
-    - ot.experimental.SparseGaussianProcessFitterResult.LAPACK or 0: using `LAPACK` to fit the model,
+    - ot.experimental.SparseGaussianProcessFitterResult.LAPACK or 0: using ``LAPACK`` to fit the model,
 
-    - ot.experimental.SparseGaussianProcessFitterResult.HMAT or 1: using `HMAT` to fit the model."
+    - ot.experimental.SparseGaussianProcessFitterResult.HMAT or 1: using ``HMAT`` to fit the model."
 
 // ---------------------------------------------------------------------
 
@@ -107,6 +107,6 @@ Parameters
 linAlgMethod : int
     The used linear algebra method to fit the model:
 
-    - ot.experimental.SparseGaussianProcessFitterResult.LAPACK or 0: using `LAPACK` to fit the model,
+    - ot.experimental.SparseGaussianProcessFitterResult.LAPACK or 0: using ``LAPACK`` to fit the model,
 
-    - ot.experimental.SparseGaussianProcessFitterResult.HMAT or 1: using `HMAT` to fit the model."
+    - ot.experimental.SparseGaussianProcessFitterResult.HMAT or 1: using ``HMAT`` to fit the model."

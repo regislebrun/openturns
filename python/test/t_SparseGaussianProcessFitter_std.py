@@ -747,6 +747,83 @@ def test_resource_map_noise_bounds_nonpositive():
         )
 
 
+# The Sample overload of getConditionalVariance must match the Point overload
+def test_conditional_variance_sample():
+    X, Y = _sample()
+    covarianceModel = ot.SquaredExponential([1.0])
+    covarianceModel.setActiveParameter([])
+    Z = X[0:4]
+    sigma = 0.1
+    algo = SparseGaussianProcessFitter(X, Y, covarianceModel, Z)
+    algo.setNoiseStdDev(sigma)
+    algo.setOptimizeNoiseStdDev(False)
+    algo.run()
+    result = algo.getResult()
+    sample = ot.Sample([[1.5], [4.0], [7.5]])
+    varianceSample = result.getConditionalVariance(sample)
+    assert len(varianceSample) == 3
+    for i in range(3):
+        ott.assert_almost_equal(
+            varianceSample[i], result.getConditionalVariance(sample[i]), 1e-14, 1e-14
+        )
+        assert varianceSample[i] > 0.0
+
+
+def test_resource_map_default_optimization_algorithm_invalid():
+    X, Y = _sample()
+    cov = ot.MaternModel([1.0], 1.5)
+    original = ot.ResourceMap.GetAsString(
+        "SparseGaussianProcessFitter-DefaultOptimizationAlgorithm"
+    )
+    ot.ResourceMap.SetAsString(
+        "SparseGaussianProcessFitter-DefaultOptimizationAlgorithm", "InvalidAlgo"
+    )
+    try:
+        with ott.assert_raises((TypeError, RuntimeError)):
+            SparseGaussianProcessFitter(X, Y, cov, 4)
+    finally:
+        ot.ResourceMap.SetAsString(
+            "SparseGaussianProcessFitter-DefaultOptimizationAlgorithm", original
+        )
+
+
+def test_resource_map_optimization_normalization_disabled():
+    X, Y = _sample()
+    covarianceModel = ot.SquaredExponential([1.0])
+    covarianceModel.setActiveParameter([])
+    original = ot.ResourceMap.GetAsBool(
+        "SparseGaussianProcessFitter-OptimizationNormalization"
+    )
+    ot.ResourceMap.SetAsBool(
+        "SparseGaussianProcessFitter-OptimizationNormalization", False
+    )
+    try:
+        algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:4])
+        algo.setNoiseStdDev(0.5)
+        algo.run()
+        assert algo.getResult().getOptimalELBO() < 0.0
+    finally:
+        ot.ResourceMap.SetAsBool(
+            "SparseGaussianProcessFitter-OptimizationNormalization", original
+        )
+
+
+def test_resource_map_linear_algebra_hmat():
+    X, Y = _sample()
+    covarianceModel = ot.SquaredExponential([1.0])
+    original = ot.ResourceMap.GetAsString(
+        "SparseGaussianProcessFitter-LinearAlgebra"
+    )
+    ot.ResourceMap.SetAsString("SparseGaussianProcessFitter-LinearAlgebra", "HMAT")
+    try:
+        algo = SparseGaussianProcessFitter(X, Y, covarianceModel, X[0:3])
+        assert algo.getMethod() == SparseGaussianProcessFitterResult.HMAT
+    finally:
+        ot.ResourceMap.SetAsString(
+            "SparseGaussianProcessFitter-LinearAlgebra", original
+        )
+
+
 if __name__ == "__main__":
     test_elbo_matches_exact_log_likelihood()
     test_elbo_matches_reference_for_sparse()
@@ -790,3 +867,7 @@ if __name__ == "__main__":
     test_resource_map_default_optimization_upper_bound_nonpositive()
     test_resource_map_scale_factor_nonpositive()
     test_resource_map_noise_bounds_nonpositive()
+    test_conditional_variance_sample()
+    test_resource_map_default_optimization_algorithm_invalid()
+    test_resource_map_optimization_normalization_disabled()
+    test_resource_map_linear_algebra_hmat()
