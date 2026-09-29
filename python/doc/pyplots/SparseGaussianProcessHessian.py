@@ -27,9 +27,19 @@ modelValues = ot.Sample(len(sampleX), 1)
 for i in range(len(sampleX)):
     modelValues[i, 0] = f.hessian(sampleX[i])[0, 0, 0]
 
+# Exact hessian on the grid for a curve-to-curve comparison
+exactHessianValues = ot.Sample(n_points, 1)
+for i in range(n_points):
+    exactHessianValues[i, 0] = f.hessian(vertices[i])[0, 0, 0]
+
 graph = ot.Graph("Sparse GP metamodel hessian", "x", r"$\partial^2 \mu / \partial x^2$")
 graph.add(ot.Curve(vertices, hessianValues))
+curveExact = ot.Curve(vertices, exactHessianValues)
+curveExact.setLineStyle("dashed")
+graph.add(curveExact)
 graph.add(ot.Cloud(sampleX, modelValues))
-graph.setLegends(["sparse GP metamodel hessian", "model"])
+graph.setLegends(
+    ["sparse GP metamodel hessian", "exact hessian", "model"]
+)
 graph.setLegendPosition("upper right")
 otv.View(graph, figure_kw={"figsize": (8, 4)})

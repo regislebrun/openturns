@@ -150,6 +150,43 @@ R2 = val.computeR2Score()[0]
 print(R2)
 
 # %%
+# Compare with the exact Gaussian process and with optimized inducing points
+# -------------------------------------------------------------------------
+#
+# To quantify the loss of accuracy introduced by the sparse approximation, we
+# fit an exact :class:`~openturns.GaussianProcessRegression` on the same
+# training sample and compare its R2 score on the same validation set.
+basis = ot.ConstantBasisFactory(cb.dim).build()
+covarianceModelExact = ot.SquaredExponential(cb.dim)
+exact_fitter = ot.GaussianProcessFitter(
+    X_train_std, Y_train, covarianceModelExact, basis
+)
+exact_fitter.run()
+exact_algo = ot.GaussianProcessRegression(exact_fitter.getResult())
+exact_algo.run()
+exactMetamodel = exact_algo.getResult().getMetaModel()
+R2_exact = ot.MetaModelValidation(Y_test, exactMetamodel(X_test_std)).computeR2Score()[0]
+print(R2_exact)
+
+# %%
+# We also fit a second sparse model with optimized inducing points. The
+# evaluation budget is capped so the comparison stays affordable: the joint
+# optimization over hyperparameters and inducing locations is the most
+# expensive step of the sparse workflow.
+fitter_opt = SparseGaussianProcessFitter(X_train_std, Y_train, covarianceModel, m)
+fitter_opt.setOptimizeInducingPoints(True)
+solver = fitter_opt.getOptimizationAlgorithm()
+solver.setMaximumEvaluationNumber(50)
+fitter_opt.setOptimizationAlgorithm(solver)
+fitter_opt.run()
+gpr_opt = SparseGaussianProcessRegression(fitter_opt.getResult())
+gpr_opt.run()
+R2_opt = ot.MetaModelValidation(
+    Y_test, gpr_opt.getResult().getMetaModel()(X_test_std)
+).computeR2Score()[0]
+print(R2, R2_exact, R2_opt)
+
+# %%
 # The residuals are the difference between the model and the metamodel.
 r = val.getResidualSample()
 graph = ot.HistogramFactory().build(r).drawPDF()
