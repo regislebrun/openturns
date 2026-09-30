@@ -6,4 +6,6 @@
 
 %include SparseGaussianProcessFitterResult_doc.i
 
+%copyctor OT::SparseGaussianProcessFitterResult;
+
 %include openturns/SparseGaussianProcessFitterResult.hxx

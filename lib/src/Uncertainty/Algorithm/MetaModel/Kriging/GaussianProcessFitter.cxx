@@ -357,8 +357,13 @@ Scalar GaussianProcessFitter::maximizeReducedLogLikelihood()
   // Early exit if the parameters are known
   if (noNumericalOptimization)
   {
-    // We only need to compute the log-likelihood function at the initial parameters in order to get the Cholesky factor and the trend coefficients
-    const Scalar initialReducedLogLikelihood = reducedLogLikelihoodFunction(initialParameters)[0];
+    // Call computeReducedLogLikelihood() directly on *this (not through the
+    // function wrapper, whose evaluation owns a clone of the algorithm) in
+    // order to get the Cholesky factor and the trend coefficients beta_:
+    // the function wrapper is bypassed because the cache provides no benefit
+    // for a single evaluation, and the direct call makes the side-effect
+    // intent explicit (defense in depth, see SparseGaussianProcessFitter).
+    const Scalar initialReducedLogLikelihood = computeReducedLogLikelihood(initialParameters)[0];
     LOGDEBUG("No covariance parameter to optimize");
     LOGDEBUG(OSS() << "initial parameters=" << initialParameters << ", log-likelihood=" << initialReducedLogLikelihood);
     return initialReducedLogLikelihood;
