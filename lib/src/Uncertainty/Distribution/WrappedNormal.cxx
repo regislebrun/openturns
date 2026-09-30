@@ -352,8 +352,17 @@ Scalar WrappedNormal::computeLogPDF(const Point & point) const
   }
 
   Scalar logSum = -SpecFunc::Infinity;
-  if (logCountDirect <= logCountFourier)
+  // Evaluate the cheapest branch first. If its enumeration is truncated
+  // (the lattice count exceeds the continuous volume estimate, eg a needle
+  // ellipsoid whose integer-point count dwarfs its volume), try the dual
+  // branch before the uniform limit below, so anisotropic covariances keep
+  // their concentrated directions instead of being flattened to uniform.
+  Bool evaluated = false;
+  for (UnsignedInteger attempt = 0; attempt < 2 && !evaluated; ++attempt)
   {
+    const Bool tryDirect = (attempt == 0) ? (logCountDirect <= logCountFourier) : (logCountDirect > logCountFourier);
+    if (tryDirect)
+    {
     // Direct sum over the k-ellipsoid
     SymmetricMatrix shapeSym(d);
     for (UnsignedInteger i = 0; i < d; ++i)
@@ -375,13 +384,7 @@ Scalar WrappedNormal::computeLogPDF(const Point & point) const
     Point current(d);
     Bool truncated = false;
     EnumerateEllipsoidLevel(lower, center, cut, maxLatticeTerms_, current, d - 1, 0.0, latticePoints, truncated);
-    if (truncated)
-    {
-      OSS oss;
-      oss << "WrappedNormal: direct lattice enumeration exceeds WrappedNormal-MaxLatticeTerms (" << maxLatticeTerms_ << "), using the uniform limit";
-      LOGWARN(oss.str());
-      return -static_cast<Scalar>(d) * std::log(period_);
-    }
+    if (truncated) continue;
     for (UnsignedInteger t = 0; t < latticePoints.size(); ++t)
     {
       const Point latticePoint(latticePoints[t]);
@@ -401,9 +404,10 @@ Scalar WrappedNormal::computeLogPDF(const Point & point) const
       else
         logSum = std::max(logSum, logTerm) + std::log1p(std::exp(-std::abs(logTerm - logSum)));
     }
-  }
-  else
-  {
+    evaluated = true;
+    }
+    else
+    {
     // Dual Fourier series over the m-ellipsoid:
     // p(x) = (1/period^d) sum_m exp(-(2*pi*m/period)^T sigma (2*pi*m/period)/2) cos(2*pi*m.(x-mu)/period)
     SymmetricMatrix shapeSym(d);
@@ -425,13 +429,7 @@ Scalar WrappedNormal::computeLogPDF(const Point & point) const
     Point current(d);
     Bool truncated = false;
     EnumerateEllipsoidLevel(lower, center, cut, maxLatticeTerms_, current, d - 1, 0.0, latticePoints, truncated);
-    if (truncated)
-    {
-      OSS oss;
-      oss << "WrappedNormal: Fourier lattice enumeration exceeds WrappedNormal-MaxLatticeTerms (" << maxLatticeTerms_ << "), using the uniform limit";
-      LOGWARN(oss.str());
-      return -static_cast<Scalar>(d) * std::log(period_);
-    }
+    if (truncated) continue;
     const Scalar omegaSquare = omega * omega;
     Scalar sum = 0.0;
     for (UnsignedInteger t = 0; t < latticePoints.size(); ++t)
@@ -456,6 +454,15 @@ Scalar WrappedNormal::computeLogPDF(const Point & point) const
       return -SpecFunc::Infinity;
     }
     logSum = std::log(sum) - static_cast<Scalar>(d) * std::log(period_);
+    evaluated = true;
+    }
+  }
+  if (!evaluated)
+  {
+    OSS oss;
+    oss << "WrappedNormal: direct and Fourier lattice enumerations exceed WrappedNormal-MaxLatticeTerms (" << maxLatticeTerms_ << "), using the uniform limit";
+    LOGWARN(oss.str());
+    return -static_cast<Scalar>(d) * std::log(period_);
   }
 
   return logSum;
@@ -670,6 +677,8 @@ void WrappedNormal::setPeriod(const Scalar period)
   if (period != period_)
   {
     period_ = period;
+    // Keep mu_ in the new fundamental domain
+    mu_ = wrap(mu_);
     isAlreadyComputedMean_ = false;
     isAlreadyComputedCovariance_ = false;
     computeRange();

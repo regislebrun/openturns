@@ -125,6 +125,10 @@ private:
   SquareMatrix sigmaInv_;
   Scalar sigmaDet_;
 
+  /** Eigendecomposition of sigma_ for sampling, refreshed by updateSampler() */
+  SquareMatrix sigmaEigVec_;
+  Point sigmaEig_;
+
 }; /* class RiemannianGaussian */
 
 END_NAMESPACE_OPENTURNS

@@ -113,21 +113,34 @@ UnsignedInteger Mesh::getIntrinsicDimension() const
   // is D+1. The intrinsic dimension is thus the position of the first
   // repeated vertex index minus 1. A full dimension mesh has D+1 pairwise
   // distinct vertex indices, in which case the intrinsic dimension is the
-  // number of vertex indices per simplex minus 1. We only need to inspect
-  // the first simplex as all the simplices share the same size (the stride
-  // of the IndicesCollection).
+  // number of vertex indices per simplex minus 1. Every simplex must share
+  // the same padding: a padded triangle followed by a padded segment would
+  // otherwise silently reuse the first simplex dimension for the whole mesh.
   const UnsignedInteger verticesPerSimplex = simplices_.getStride();
   if (verticesPerSimplex <= 1) return 0;
-  std::set< UnsignedInteger > indices;
-  indices.insert(simplices_(0, 0));
-  for (UnsignedInteger j = 1; j < verticesPerSimplex; ++j)
+  const UnsignedInteger simplicesNumber = getSimplicesNumber();
+  UnsignedInteger intrinsicDimension = verticesPerSimplex - 1;
+  for (UnsignedInteger i = 0; i < simplicesNumber; ++i)
   {
-    const UnsignedInteger vertexIndex = simplices_(0, j);
-    if (indices.find(vertexIndex) != indices.end())
-      return j - 1;
-    indices.insert(vertexIndex);
+    std::set< UnsignedInteger > indices;
+    indices.insert(simplices_(i, 0));
+    UnsignedInteger firstRepeat = verticesPerSimplex;
+    for (UnsignedInteger j = 1; j < verticesPerSimplex; ++j)
+    {
+      const UnsignedInteger vertexIndex = simplices_(i, j);
+      if (indices.find(vertexIndex) != indices.end())
+      {
+        firstRepeat = j;
+        break;
+      }
+      indices.insert(vertexIndex);
+    }
+    if (i == 0)
+      intrinsicDimension = firstRepeat - 1;
+    else if (firstRepeat - 1 != intrinsicDimension)
+      throw InvalidArgumentException(HERE) << "Error: simplex #" << i << " has intrinsic dimension " << (firstRepeat - 1) << " but simplex #0 has intrinsic dimension " << intrinsicDimension;
   }
-  return verticesPerSimplex - 1;
+  return intrinsicDimension;
 }
 
 /* Description of the vertices accessor */

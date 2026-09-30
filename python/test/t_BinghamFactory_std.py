@@ -43,6 +43,9 @@ estimate_trace = est_cov[0, 0] + est_cov[1, 1] + est_cov[2, 2]
 sample_trace = sample_cov[0, 0] + sample_cov[1, 1] + sample_cov[2, 2]
 ott.assert_almost_equal(estimate_trace, 1.0, 1e-5, 0.0)
 ott.assert_almost_equal(sample_trace, 1.0, 1e-3, 0.0)
+# Compare the full covariance matrices, not only their traces: a unit trace
+# holds for any distribution on the sphere, even with wrong concentrations
+ott.assert_almost_equal(est_cov, sample_cov, 5e-2, 0.0)
 
 # Build from parameters
 dist = otexp.Bingham([1.0, 0.5, 0.0], gamma)

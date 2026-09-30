@@ -27,6 +27,7 @@
 #include "openturns/SymmetricMatrix.hxx"
 #include "openturns/CovarianceMatrix.hxx"
 #include "openturns/TriangularMatrix.hxx"
+#include <cmath>
 
 BEGIN_NAMESPACE_OPENTURNS
 
@@ -62,10 +63,46 @@ Distribution RiemannianGaussianFactory::build() const
 
 RiemannianGaussian RiemannianGaussianFactory::buildAsRiemannianGaussian(const Point & parameters) const
 {
+  // Infer the SPD dimension n from the parameter size t + t^2 with
+  // t = n(n+1)/2 (upper triangle of the mean plus full sigma), so valid
+  // parameter vectors for any n >= 2 are accepted, not just the default
   try
   {
+    const UnsignedInteger size = parameters.getSize();
+    const Scalar root = (std::sqrt(1.0 + 4.0 * static_cast<Scalar>(size)) - 1.0) / 2.0;
+    const UnsignedInteger t = static_cast<UnsignedInteger>(std::round(root));
+    // 64-bit products: t(t+1) overflows 32 bits for large garbage sizes
+    if (static_cast<Unsigned64BitsInteger>(t) * (t + 1) != size)
+      throw InvalidArgumentException(HERE) << "Error: expected a parameter vector of size t^2 + t for some SPD dimension, got size=" << size;
+    UnsignedInteger n = 0;
+    for (UnsignedInteger k = 2; static_cast<Unsigned64BitsInteger>(k) * (k + 1) / 2 <= t; ++k)
+    {
+      if (k * (k + 1) / 2 == t)
+      {
+        n = k;
+        break;
+      }
+    }
+    if (n == 0)
+      throw InvalidArgumentException(HERE) << "Error: parameter size " << size << " does not correspond to an SPD matrix dimension";
     RiemannianGaussian distribution;
-    distribution.setParameter(parameters);
+    if (n != distribution.getMeanMatrix().getDimension())
+    {
+      // Rebuild with the inferred dimension: split the parameter vector
+      // into the upper triangle of the mean and the full sigma matrix
+      SymmetricMatrix mean(n);
+      SquareMatrix sigma(t);
+      UnsignedInteger idx = 0;
+      for (UnsignedInteger i = 0; i < n; ++i)
+        for (UnsignedInteger j = i; j < n; ++j)
+          mean(i, j) = parameters[idx++];
+      for (UnsignedInteger i = 0; i < t; ++i)
+        for (UnsignedInteger j = 0; j < t; ++j)
+          sigma(i, j) = parameters[idx++];
+      distribution = RiemannianGaussian(mean, sigma);
+    }
+    else
+      distribution.setParameter(parameters);
     return distribution;
   }
   catch (const InvalidArgumentException &)
@@ -92,18 +129,13 @@ RiemannianGaussian RiemannianGaussianFactory::buildAsRiemannianGaussian(const Sa
     throw InvalidArgumentException(HERE) << "Error: cannot build a RiemannianGaussian distribution from a sample of size < 3";
 
   const UnsignedInteger d = sample.getDimension();
-  // Find n such that n*(n+1)/2 = d
-  UnsignedInteger n = 0;
-  for (UnsignedInteger k = 2; k <= 10; ++k)
-  {
-    if (k * (k + 1) / 2 == d)
-    {
-      n = k;
-      break;
-    }
-  }
-  if (n == 0)
+  // Find n >= 2 such that n*(n+1)/2 = d, by triangular inversion
+  // (64-bit products guard against overflow on garbage dimensions)
+  const Unsigned64BitsInteger discriminant = 1 + 8 * static_cast<Unsigned64BitsInteger>(d);
+  const UnsignedInteger nCandidate = static_cast<UnsignedInteger>((std::sqrt(static_cast<Scalar>(discriminant)) - 1.0) / 2.0);
+  if (static_cast<Unsigned64BitsInteger>(nCandidate) * (nCandidate + 1) / 2 != d || nCandidate < 2)
     throw InvalidArgumentException(HERE) << "Error: sample dimension " << d << " does not correspond to a symmetric matrix dimension";
+  const UnsignedInteger n = nCandidate;
 
   // Step 1: Convert samples to symmetric matrices
   std::vector<SymmetricMatrix> samples(size, SymmetricMatrix(n));

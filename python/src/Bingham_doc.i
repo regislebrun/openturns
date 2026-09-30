@@ -10,7 +10,7 @@ with probability density function:
 
 .. math::
 
-    f(\mathbf{x}) = \frac{\exp(-\mathbf{x}^T\boldsymbol{\Gamma}\,\mathcal{Z}
+    f(\mathbf{x}) = \frac{\exp(\mathbf{x}^T\boldsymbol{\Gamma}\,\mathcal{Z}
     \,\boldsymbol{\Gamma}^T\mathbf{x})}{F(\boldsymbol{\zeta})}
 
 where :math:`\mathcal{Z} = \mathrm{diag}(\zeta_1,\dots,\zeta_n)` is the

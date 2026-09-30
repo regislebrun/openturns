@@ -46,6 +46,12 @@ sample2 = reference2.getSample(1000)
 estimated2 = factory.build(sample2)
 assert estimated2.getDimension() == 2
 
+# Build from a constant sample: the zero eigenvalues are floored above the
+# constructor threshold instead of raising
+constant = factory.buildAsWrappedNormal(ot.Sample([[0.3]] * 10))
+ott.assert_almost_equal(constant.getMu()[0], 0.3, 1e-12, 0.0)
+assert constant.getSigma()[0, 0] > 0.0
+
 # Build from parameters
 dist = otexp.WrappedNormal([mu], sigma)
 param = dist.getParameter()

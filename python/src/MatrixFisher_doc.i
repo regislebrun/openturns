@@ -14,8 +14,9 @@ The Matrix Fisher distribution is defined on the group of rotation matrices
     {a_0(\mathbf{F})}
 
 with respect to the Haar measure of :math:`SO(3)`, where
-:math:`\mathbf{F}` is a :math:`3\times 3` matrix weighted by the first three
-components of the columnwise vectorization of :math:`\mathbf{R}`. The
+:math:`\mathbf{F}` is a :math:`3\times 3` parameter matrix and
+:math:`\mathrm{tr}(\mathbf{F}^T\mathbf{R})` is the Frobenius inner product
+of :math:`\mathbf{F}` and :math:`\mathbf{R}` over all nine matrix entries. The
 resulting **mean** matrix is:
 
 .. math::
@@ -26,12 +27,15 @@ resulting **mean** matrix is:
 where :math:`\mathbf{F} = \mathbf{U}\mathrm{diag}(\sigma_1,\sigma_2,\sigma_3)
 \mathbf{V}^T` with :math:`\sigma_1 \ge \sigma_2 \ge \sigma_3`.
 
-The **covariance** matrix is:
+The **covariance** matrix is the :math:`9\times 9` covariance of the
+row-major flattened rotation:
 
 .. math::
 
-    \mathrm{Cov}(\mathbf{R}) = \mathbb{E}[\mathbf{R}\mathbf{R}^T]
-    - \mathbb{E}[\mathbf{R}]\mathbb{E}[\mathbf{R}]^T
+    \mathrm{Cov}(\mathrm{vec}(\mathbf{R})) =
+    \mathbb{E}[\mathrm{vec}(\mathbf{R})\mathrm{vec}(\mathbf{R})^T]
+    - \mathbb{E}[\mathrm{vec}(\mathbf{R})]
+    \mathbb{E}[\mathrm{vec}(\mathbf{R})]^T
 
 The normalization constant :math:`a_0(\mathbf{F})` is computed by
 Gauss-Legendre quadrature over the Euler angles
@@ -39,10 +43,19 @@ Gauss-Legendre quadrature over the Euler angles
 
 .. math::
 
-    a_0(\mathbf{F}) = 4\pi^3 \int_{[0,1]^3}
+    a_0(\mathbf{F}) = 4\pi^3 e^{m(\mathbf{F})} \int_{[0,1]^3}
     \exp\big(\mathrm{tr}(\mathbf{F}^T\mathbf{R}(\phi,\theta,\psi))
-    - \sigma_1-\sigma_2-\sigma_3\big)
+    - m(\mathbf{F})\big)
     \sin\theta\,\mathrm{d}u\,\mathrm{d}v\,\mathrm{d}w
+
+where :math:`m(\mathbf{F}) = \max_{\mathbf{R}\in SO(3)}
+\mathrm{tr}(\mathbf{F}^T\mathbf{R})` is the maximum of the trace over
+:math:`SO(3)`: with :math:`\sigma_1 \ge \sigma_2 \ge \sigma_3` the singular
+values of :math:`\mathbf{F}`, :math:`m(\mathbf{F}) = \sigma_1 + \sigma_2 +
+\sigma_3`, except :math:`\sigma_1 + \sigma_2 - \sigma_3` when
+:math:`\det\mathbf{F} < 0`. Subtracting :math:`m(\mathbf{F})` keeps the
+integrand below one for numerical stability and the implementation restores
+it through :math:`\log a_0(\mathbf{F}) = m(\mathbf{F}) + \log(\mathrm{integral})`.
 
 **Sampling** uses the acceptance-rejection method with a uniform distribution
 on :math:`SO(3)` as enveloping distribution. The latter is sampled from

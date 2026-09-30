@@ -134,7 +134,13 @@ WrappedNormal WrappedNormalFactory::buildAsWrappedNormal(const Sample & sample) 
   }
 
   // Step 2: Estimate covariance in tangent space at mean
+  // CovarianceMatrix(d) defaults to the identity matrix, so the diagonal
+  // is zeroed first and each off-diagonal product is accumulated once:
+  // SymmetricMatrix operator() aliases (r, c) and (c, r), a full r, c
+  // traversal would add every off-diagonal product twice.
   CovarianceMatrix sigma(d);
+  for (UnsignedInteger j = 0; j < d; ++j)
+    sigma(j, j) = 0.0;
   for (UnsignedInteger i = 0; i < size; ++i)
   {
     // Compute difference in tangent space (wrapped difference)
@@ -150,9 +156,9 @@ WrappedNormal WrappedNormalFactory::buildAsWrappedNormal(const Sample & sample) 
       diff[j] = dAngle;
     }
 
-    // Outer product
+    // Outer product, single triangle only
     for (UnsignedInteger r = 0; r < d; ++r)
-      for (UnsignedInteger c = 0; c < d; ++c)
+      for (UnsignedInteger c = 0; c <= r; ++c)
         sigma(r, c) += diff[r] * diff[c];
   }
   // Scale sigma element-wise to avoid SymmetricMatrix return type
@@ -161,12 +167,15 @@ WrappedNormal WrappedNormalFactory::buildAsWrappedNormal(const Sample & sample) 
     for (UnsignedInteger c = 0; c <= r; ++c)
       sigma(r, c) *= invSize;
 
-  // Ensure positive definite
+  // Ensure positive definite: a constant sample yields zero eigenvalues,
+  // which the WrappedNormal constructor rejects (it requires eigenvalues
+  // strictly above SpecFunc::ScalarEpsilon), so floor with a margin
+  const Scalar eigenvalueFloor = std::sqrt(SpecFunc::ScalarEpsilon);
   SymmetricMatrix sigma_sym(sigma);
   SquareMatrix sigmaEigVec(d);
   Point sigmaEig = sigma_sym.computeEVInPlace(sigmaEigVec);
   for (UnsignedInteger i = 0; i < d; ++i)
-    sigmaEig[i] = std::max(sigmaEig[i], SpecFunc::ScalarEpsilon);
+    sigmaEig[i] = std::max(sigmaEig[i], eigenvalueFloor);
   for (UnsignedInteger i = 0; i < d; ++i)
     for (UnsignedInteger j = 0; j < d; ++j)
     {

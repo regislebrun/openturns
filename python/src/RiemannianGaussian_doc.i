@@ -8,13 +8,17 @@ definite matrices.
 
 The Riemannian Gaussian distribution is defined on the set :math:`\mathcal{P}_n`
 of :math:`n\times n` symmetric positive definite matrices endowed with the
-affine-invariant metric. Its probability density function is:
+affine-invariant metric. It is the pushforward of the centered Gaussian
+:math:`\mathcal{N}(\mathbf{0}, \boldsymbol{\Sigma})` of the tangent space
+at the Frechet mean :math:`\overline{\mathbf{X}}` through the exponential
+map. Its probability density function with respect to the Lebesgue measure
+on the flattened symmetric-matrix coordinates is:
 
 .. math::
 
     f(\mathbf{X}) = \frac{1}{C} \exp\left(-\frac{1}{2}
     \left\|\mathrm{log}_{\overline{\mathbf{X}}}(\mathbf{X})\right\|^2_\sigma
-    \right)
+    \right) \left|\det D\mathrm{log}_{\overline{\mathbf{X}}}(\mathbf{X})\right|
 
 where :math:`\mathrm{log}_{\overline{\mathbf{X}}}(\mathbf{X})` is the
 logarithm map at the Frechet mean :math:`\overline{\mathbf{X}}`,
@@ -30,14 +34,17 @@ where :math:`\mathrm{vec}` flattens a tangent vector in Hilbert-Schmidt
 orthonormal coordinates: diagonal entries are kept as-is and
 off-diagonal entries are scaled by :math:`\sqrt{2}`.
 
-defined on the tangent space at the mean. In these coordinates the
-distribution is a standard Gaussian, hence the normalization constant is:
+defined on the tangent space at the mean. In these coordinates the tangent
+vector follows a standard Gaussian, hence the normalization constant is the
+Gaussian one:
 
 .. math::
 
     \log C = \frac{d}{2}\log(2\pi) + \frac{1}{2}\log|\boldsymbol{\Sigma}|
 
-with :math:`d = n(n+1)/2`.
+with :math:`d = n(n+1)/2`. The **entropy** is the tangent Gaussian entropy
+plus the expected log-Jacobian of the exponential map, evaluated by
+tensor Gauss-Hermite quadrature.
 
 The **mean** matrix is the Frechet mean
 :math:`\overline{\mathbf{X}}` and the **covariance** matrix is
@@ -69,6 +76,8 @@ The following :class:`~openturns.ResourceMap` keys are used:
 - ``RiemannianGaussian-LogJacobianTaylorThreshold`` (``Scalar``, default: ``1.0e-3``): threshold on the
   exponential coordinates norm below which a Taylor expansion is used to
   compute the log-Jacobian of the exponential map.
+- ``RiemannianGaussian-GaussHermiteMaximumPoints`` (``UnsignedInteger``, default: ``4096``): maximum number of
+  tensor Gauss-Hermite quadrature points for the entropy.
 
 Examples
 --------

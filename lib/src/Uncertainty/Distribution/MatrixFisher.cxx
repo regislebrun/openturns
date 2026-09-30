@@ -91,7 +91,8 @@ Bool MatrixFisher::operator ==(const MatrixFisher & other) const
   return (F_ == other.F_)
       && (U_ == other.U_)
       && (V_ == other.V_)
-      && (singularValues_ == other.singularValues_);
+      && (singularValues_ == other.singularValues_)
+      && (epsilon_ == other.epsilon_);
 }
 
 Bool MatrixFisher::equals(const DistributionImplementation & other) const
@@ -143,13 +144,20 @@ void MatrixFisher::computeMoments(const Bool withSecondMoments) const
   // (1/8 pi^2) sin(theta) dphi dtheta dpsi with phi, psi in [0, 2 pi] and
   // theta in [0, pi]. The trace cannot exceed the sum of the singular values
   // of F, so we integrate exp(tr - maxTrace) <= 1 to avoid overflows and
-  // exponentiate the maximum back at the end.
+  // exponentiate the maximum back at the end. Here maxTrace is the maximum
+  // of the trace over SO(3) (the plain sum of the singular values, except
+  // sigma_0 + sigma_1 - sigma_2 when det F < 0).
   // The integrand concentrates on a peak of width ~ 1/sqrt(maxTrace), so
   // the quadrature order grows with the trace from the base order.
   Matrix singularU, singularVT;
   Matrix singularF(F_);
   const Point singularS = singularF.computeSVDInPlace(singularU, singularVT);
-  const Scalar traceBound = singularS[0] + singularS[1] + singularS[2];
+  // Maximum of tr(F^T R) over SO(3): the sum of the singular values when
+  // det F >= 0, and sigma_0 + sigma_1 - sigma_2 otherwise (the O(3) maximum
+  // is unattainable in SO(3) in that case)
+  Scalar traceBound = singularS[0] + singularS[1] + singularS[2];
+  if (F_.computeDeterminant() < 0.0)
+    traceBound -= 2.0 * std::min(singularS[0], std::min(singularS[1], singularS[2]));
   const UnsignedInteger baseOrder = ResourceMap::GetAsUnsignedInteger("MatrixFisher-QuadratureOrder");
   const Scalar growthFactor = ResourceMap::GetAsScalar("MatrixFisher-QuadratureGrowthFactor");
   const UnsignedInteger order = std::max(baseOrder,
@@ -186,7 +194,11 @@ void MatrixFisher::computeMoments(const Bool withSecondMoments) const
   Matrix U, vT;
   Matrix F_mat(F_);
   const Point sigma = F_mat.computeSVDInPlace(U, vT);
-  const Scalar maxTrace = sigma[0] + sigma[1] + sigma[2];
+  // SO(3) maximum of the trace, see above: sigma_0 + sigma_1 - sigma_2
+  // when det F < 0
+  Scalar maxTrace = sigma[0] + sigma[1] + sigma[2];
+  if (F_.computeDeterminant() < 0.0)
+    maxTrace -= 2.0 * std::min(sigma[0], std::min(sigma[1], sigma[2]));
 
   Scalar sumWeighted = 0.0;
   Scalar sumTrWeighted = 0.0;
@@ -263,8 +275,13 @@ void MatrixFisher::updateSampler()
     }
   }
 
-  // Maximum of tr(F^T R) = sum of the singular values of F
+  // Maximum of tr(F^T R) over SO(3): the sum of the singular values,
+  // except sigma_0 + sigma_1 - sigma_2 when det F < 0, for which the O(3)
+  // maximum is unattainable. The tight bound keeps the quadrature
+  // integrand and the rejection sampler away from underflow.
   maxTrace_ = singularValues_[0] + singularValues_[1] + singularValues_[2];
+  if (F_.computeDeterminant() < 0.0)
+    maxTrace_ -= 2.0 * std::min(singularValues_[0], std::min(singularValues_[1], singularValues_[2]));
 }
 
 SquareMatrix MatrixFisher::sampleUniformRotation() const

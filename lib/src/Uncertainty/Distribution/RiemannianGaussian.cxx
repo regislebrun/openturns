@@ -37,6 +37,41 @@ CLASSNAMEINIT(RiemannianGaussian)
 
 static const Factory<RiemannianGaussian> Factory_RiemannianGaussian;
 
+namespace {
+
+// Gauss-Hermite nodes and weights for the N(0,1) expectation by Golub-Welsch:
+// the Jacobi matrix has a zero diagonal and sqrt(i) off-diagonal entries,
+// its eigenvalues are the nodes and the weights follow from the first row
+// of the eigenvector matrix
+void GaussHermiteRule(const UnsignedInteger order,
+                      Point & nodes,
+                      Point & weights)
+{
+  SymmetricMatrix jacobi(order);
+  for (UnsignedInteger i = 1; i < order; ++i)
+    jacobi(i, i - 1) = std::sqrt(static_cast<Scalar>(i));
+  SquareMatrix vectors(order);
+  const Point eigenvalues = jacobi.computeEVInPlace(vectors);
+  nodes = eigenvalues;
+  weights = Point(order);
+  for (UnsignedInteger k = 0; k < order; ++k)
+    weights[k] = std::sqrt(SpecFunc::TWOPI) * vectors(0, k) * vectors(0, k);
+}
+
+// Tensor Gauss-Hermite order from a point budget: the largest order with
+// order^dimension <= budget, at least 2, at most budget^{1/3} to keep the
+// Golub-Welsch eigendecomposition negligible
+UnsignedInteger GaussHermiteOrder(const UnsignedInteger dimension,
+                                  const UnsignedInteger budget)
+{
+  const Scalar maxOrder = std::cbrt(static_cast<Scalar>(budget));
+  const Scalar tensorOrder = std::pow(static_cast<Scalar>(budget), 1.0 / static_cast<Scalar>(dimension));
+  return std::max(static_cast<UnsignedInteger>(2),
+                  static_cast<UnsignedInteger>(std::min(maxOrder, tensorOrder)));
+}
+
+} // anonymous namespace
+
 RiemannianGaussian::RiemannianGaussian()
   : DistributionImplementation()
   , dimension_(3)
@@ -47,6 +82,8 @@ RiemannianGaussian::RiemannianGaussian()
   , logNormalization_(0.0)
   , sigmaInv_(3)
   , sigmaDet_(1.0)
+  , sigmaEigVec_(3)
+  , sigmaEig_(3)
 {
   meanMatrix_(0, 0) = 1.0;
   meanMatrix_(1, 1) = 1.0;
@@ -74,6 +111,8 @@ RiemannianGaussian::RiemannianGaussian(const SymmetricMatrix & mean,
   , logNormalization_(0.0)
   , sigmaInv_(sigma.getDimension())
   , sigmaDet_(1.0)
+  , sigmaEigVec_(sigma.getDimension())
+  , sigmaEig_(sigma.getDimension())
 {
   const UnsignedInteger n = n_;
   const UnsignedInteger d = dimension_;
@@ -418,31 +457,23 @@ void RiemannianGaussian::computeCovariance() const
 
 void RiemannianGaussian::updateSampler()
 {
-  // Cholesky decomposition of sigma for sampling in tangent space
-  // Use CovarianceMatrix for Cholesky
-  CovarianceMatrix sigma_cov(dimension_);
+  // Eigendecomposition of sigma for sampling in tangent space, cached so
+  // that getRealization() performs no factorization. The decomposition is
+  // more stable than Cholesky for near-singular matrices.
+  SymmetricMatrix sigmaSym(dimension_);
   for (UnsignedInteger i = 0; i < dimension_; ++i)
     for (UnsignedInteger j = 0; j <= i; ++j)
-      sigma_cov(i, j) = sigma_(i, j);
-  TriangularMatrix chol = sigma_cov.computeCholeskyInPlace();
-  // Note: chol is lower triangular L such that L * L^T = sigma
-  // For sampling we need to generate z ~ N(0,I) then v = L * z
-  // But we'll use eigendecomposition for correlated sampling instead
+      sigmaSym(i, j) = sigma_(i, j);
+  sigmaEigVec_ = SquareMatrix(dimension_);
+  sigmaEig_ = sigmaSym.computeEVInPlace(sigmaEigVec_);
 }
 
 Point RiemannianGaussian::getRealization() const
 {
   const UnsignedInteger d = dimension_;
 
-  // Sample from N(0, sigma) in tangent space using eigendecomposition
-  // This is more stable than Cholesky for near-singular matrices
-  SymmetricMatrix sigma_sym(d);
-  for (UnsignedInteger i = 0; i < d; ++i)
-    for (UnsignedInteger j = 0; j <= i; ++j)
-      sigma_sym(i, j) = sigma_(i, j);
-  SquareMatrix sigmaEigVec(d);
-  const Point sigmaEig = sigma_sym.computeEVInPlace(sigmaEigVec);
-
+  // Sample from N(0, sigma) in tangent space with the eigendecomposition
+  // cached by updateSampler(): no factorization here
   Point z(d);
   for (UnsignedInteger i = 0; i < d; ++i)
     z[i] = DistFunc::rNormal();
@@ -452,7 +483,7 @@ Point RiemannianGaussian::getRealization() const
   {
     v[i] = 0.0;
     for (UnsignedInteger j = 0; j < d; ++j)
-      v[i] += sigmaEigVec(i, j) * std::sqrt(sigmaEig[j]) * z[j];
+      v[i] += sigmaEigVec_(i, j) * std::sqrt(sigmaEig_[j]) * z[j];
   }
 
   // Convert the orthonormal-coordinate vector to a symmetric matrix:
@@ -716,7 +747,61 @@ void RiemannianGaussian::setEpsilon(const Scalar epsilon)
 Scalar RiemannianGaussian::computeEntropy() const
 {
   const UnsignedInteger d = dimension_;
-  return 0.5 * d * (1.0 + std::log(2.0 * M_PI)) + 0.5 * std::log(sigmaDet_);
+  // Gaussian entropy in the tangent space at the mean
+  const Scalar gaussianEntropy = 0.5 * d * (1.0 + std::log(2.0 * M_PI)) + 0.5 * std::log(sigmaDet_);
+  // Expected log-Jacobian of the exponential map: with X = exp(V) and
+  // V ~ N(0, sigma), H(X) = H(V) + E[log|det(d exp(V))|]. The expectation
+  // is evaluated by tensor Gauss-Hermite quadrature from the cached
+  // eigendecomposition, mirroring WrappedNormal::computeEntropy.
+  const UnsignedInteger budget = ResourceMap::GetAsUnsignedInteger("RiemannianGaussian-GaussHermiteMaximumPoints");
+  const UnsignedInteger order = GaussHermiteOrder(d, budget);
+  Point nodes;
+  Point weights;
+  GaussHermiteRule(order, nodes, weights);
+  Scalar expectedLogJacobian = 0.0;
+  Scalar totalWeight = 0.0;
+  std::vector<UnsignedInteger> counter(d, 0);
+  const UnsignedInteger total = static_cast<UnsignedInteger>(std::pow(static_cast<Scalar>(order), static_cast<Scalar>(d)));
+  if (total > budget)
+  {
+    // The tensor grid is unaffordable in high dimension: keep the tangent
+    // Gaussian entropy, which dominates for concentrated distributions
+    LOGWARN("RiemannianGaussian: Gauss-Hermite grid exceeds RiemannianGaussian-GaussHermiteMaximumPoints, returning the tangent Gaussian entropy");
+    return gaussianEntropy;
+  }
+  for (UnsignedInteger t = 0; t < total; ++t)
+  {
+    Scalar weight = 1.0;
+    Point vVec(d);
+    for (UnsignedInteger i = 0; i < d; ++i)
+    {
+      weight *= weights[counter[i]];
+      Scalar coordinate = 0.0;
+      for (UnsignedInteger j = 0; j < d; ++j)
+        coordinate += sigmaEigVec_(i, j) * std::sqrt(sigmaEig_[j]) * nodes[counter[j]];
+      vVec[i] = coordinate;
+    }
+    // Back to a symmetric matrix: orthonormal coordinates scale the
+    // off-diagonal entries by sqrt(2)
+    const Scalar invSqrt2 = 1.0 / std::sqrt(2.0);
+    SymmetricMatrix vMat(n_);
+    UnsignedInteger idx = 0;
+    for (UnsignedInteger i = 0; i < n_; ++i)
+      for (UnsignedInteger j = i; j < n_; ++j)
+      {
+        vMat(i, j) = vVec[idx];
+        if (j > i) vMat(i, j) *= invSqrt2;
+        ++idx;
+      }
+    expectedLogJacobian += weight * computeLogExpJacobian(vMat);
+    totalWeight += weight;
+    for (UnsignedInteger i = 0; i < d; ++i)
+    {
+      if (++counter[i] < order) break;
+      counter[i] = 0;
+    }
+  }
+  return gaussianEntropy + expectedLogJacobian / totalWeight;
 }
 
 Bool RiemannianGaussian::isContinuous() const
@@ -748,6 +833,8 @@ void RiemannianGaussian::load(Advocate & adv)
   adv.loadAttribute("sigmaDet_", sigmaDet_);
   dimension_ = n_ * (n_ + 1) / 2;
   computeRange();
+  // Regenerate the sampling cache, which is not persisted
+  updateSampler();
 }
 
 END_NAMESPACE_OPENTURNS

@@ -125,6 +125,10 @@ Bingham BinghamFactory::buildAsBingham(const Sample & sample) const
   Scalar sumEig = 0.0;
   for (UnsignedInteger i = 0; i < n; ++i)
     sumEig += eigenValues[i];
+  // A zero scatter trace means no directional information (eg an all-zero
+  // sample): the concentrations below would divide by zero
+  if (!(sumEig > 0.0))
+    throw InvalidArgumentException(HERE) << "Error: cannot build a Bingham distribution from a degenerate sample with zero scatter";
 
   // Normalize eigenvalues to sum to 1 (they should already sum to 1 for data on sphere)
   SquareMatrix sortedGamma(n);
@@ -137,7 +141,9 @@ Bingham BinghamFactory::buildAsBingham(const Sample & sample) const
   gamma = sortedGamma;
 
   // Initial guess from the small-concentration expansion
-  // E[x_i^2] = 1/n + 2*zeta_i / n + O(zeta^2)
+  // E[x_i^2] = 1/n + 2*(zeta_i - mean(zeta)) / (n*(n+2)) + O(zeta^2),
+  // linearized here as 0.5*n*(lambda_i - 1/n): it only seeds the Newton
+  // refinement of Step 4, which solves the exact moment equations
   Point zeta(n);
   for (UnsignedInteger i = 0; i < n; ++i)
     zeta[i] = 0.5 * n * (lambdaDesc[i] - 1.0 / n);

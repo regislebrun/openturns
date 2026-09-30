@@ -830,6 +830,7 @@
   <!-- OT::RiemannianGaussian parameters -->
   <RiemannianGaussian-PositiveDefiniteThreshold value_float="1e-12" />
   <RiemannianGaussian-LogJacobianTaylorThreshold value_float="1e-3" />
+  <RiemannianGaussian-GaussHermiteMaximumPoints value_int="4096" />
 
   <!-- OT::RiemannianGaussianFactory parameters -->
   <RiemannianGaussianFactory-StepSize value_float="0.1" />
