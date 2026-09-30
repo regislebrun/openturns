@@ -82,6 +82,9 @@ void SparseGaussianProcessRegression::setMethod(const LinearAlgebra method)
 {
   if (method != method_)
   {
+    if (method != SparseGaussianProcessFitterResult::LAPACK &&
+        method != SparseGaussianProcessFitterResult::HMAT)
+      throw InvalidArgumentException(HERE) << "In SparseGaussianProcessRegression::setMethod, expecting LAPACK or HMAT, got " << static_cast<UnsignedInteger>(method);
     method_ = method;
     if (needsFit_) hasRun_ = false;
   }

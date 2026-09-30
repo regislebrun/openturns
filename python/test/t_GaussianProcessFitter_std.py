@@ -294,6 +294,15 @@ def test_reduced_loglikelihood_gradient(X, Y):
     checkGradient(fitter.getReducedLogLikelihoodFunction(), [0.2])
 
 
+def test_set_method_invalid(X, Y):
+    # setMethod must reject values outside the LAPACK/HMAT enumeration
+    ot.ResourceMap.Reset()
+    covarianceModel = ot.SquaredExponential([1.0])
+    fitter = ot.GaussianProcessFitter(X, Y, covarianceModel)
+    with ott.assert_raises((TypeError, RuntimeError)):
+        fitter.setMethod(999)
+
+
 if __name__ == "__main__":
 
     ot.RandomGenerator.SetSeed(0)
@@ -323,5 +332,6 @@ if __name__ == "__main__":
     use_case_7(X, Y)
     use_case_8(X, Y)
     test_reduced_loglikelihood_gradient(X, Y)
+    test_set_method_invalid(X, Y)
     # fix https://github.com/openturns/openturns/issues/2953
     bugfix_optim_no_feasible()

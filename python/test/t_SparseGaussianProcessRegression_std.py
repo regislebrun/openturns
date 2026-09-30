@@ -268,6 +268,15 @@ def test_descriptions():
     assert metaModel.getOutputDescription() == ["Y0"]
 
 
+# setMethod must reject values outside the LAPACK/HMAT enumeration
+def test_set_method_invalid():
+    X, Y, covarianceModel = _data()
+    Z = ot.Sample([[1.0], [3.0], [5.0]])
+    algo = SparseGaussianProcessRegression(X, Y, covarianceModel, Z)
+    with ott.assert_raises((TypeError, RuntimeError)):
+        algo.setMethod(999)
+
+
 if __name__ == "__main__":
     test_interpolation()
     test_prediction()
@@ -277,6 +286,7 @@ if __name__ == "__main__":
     test_save_load()
     test_descriptions()
     test_method_accessor()
+    test_set_method_invalid()
     test_regression_repr_str()
     test_metamodel_wrong_input_dim()
     test_gradient_wrong_input_dim()

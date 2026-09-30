@@ -539,13 +539,15 @@ Point SparseGaussianProcessFitter::computeELBOGradient(const Point & parameters)
   Point tightResiduals(N, 0.0);
   if (hasTrace)
   {
-    const CovarianceMatrix KffTight(reducedCovarianceModel_.discretize(inputSample_));
+    // Only the diagonal of Kff is needed here, evaluate it pointwise
+    // instead of discretizing the full matrix
     for (UnsignedInteger i = 0; i < N; ++i)
     {
       Scalar qii = 0.0;
       for (UnsignedInteger j = 0; j < M; ++j)
         qii += A(i, j) * A(i, j);
-      const Scalar residual = std::max(KffTight(i, i) - qii, 0.0);
+      const Scalar kii = reducedCovarianceModel_.computeAsScalar(inputSample_[i], inputSample_[i]);
+      const Scalar residual = std::max(kii - qii, 0.0);
       tightResiduals[i] = residual;
       tightWeights[i] = 1.0 / (sigma2 + residual);
     }
@@ -808,7 +810,6 @@ Scalar SparseGaussianProcessFitter::computeELBOValue(const Sample & inducingPoin
   const Point u(Lb.solveLinearSystem(w));
   const Point yperp(y - A * w);
   const Scalar quadratic = w.normSquare() - sigma2 * u.normSquare() + yperp.normSquare() / sigma2;
-  const CovarianceMatrix Kff(reducedCovarianceModel_.discretize(inputSample_));
   // Tighter collapsed bound of Titsias (2025): replace tr(K_ff - Q_ff)/(2 sigma^2)
   // with 1/2 sum_i log(1 + (k_ii - q_ii)/sigma^2), q_ii = squared norm of row i of A
   // Collapsed ELBO, see Titsias (2009) with the tighter regularization of
@@ -819,12 +820,15 @@ Scalar SparseGaussianProcessFitter::computeELBOValue(const Sample & inducingPoin
   Scalar regularizationTerm = 0.0;
   if (M < N)
   {
+    // Only the diagonal of Kff is needed here, evaluate it pointwise
+    // instead of discretizing the full matrix
     for (UnsignedInteger i = 0; i < N; ++i)
     {
       Scalar qii = 0.0;
       for (UnsignedInteger j = 0; j < M; ++j)
         qii += A(i, j) * A(i, j);
-      const Scalar residual = std::max(Kff(i, i) - qii, 0.0);
+      const Scalar kii = reducedCovarianceModel_.computeAsScalar(inputSample_[i], inputSample_[i]);
+      const Scalar residual = std::max(kii - qii, 0.0);
       regularizationTerm += 0.5 * std::log1p(residual / sigma2);
     }
   }
