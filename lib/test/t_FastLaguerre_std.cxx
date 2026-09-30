@@ -111,6 +111,24 @@ int main(int, char *[])
         }
       }
     }
+    // Fallback regression check: large shape at small n loses sweep nodes
+    // (forward steps overshoot sparse nodes), the validated fallback to the
+    // polished eigensolver must return a correct rule quickly, not hang.
+    // Runs in milliseconds; a hang fails via the ctest timeout.
+    {
+      const Scalar k = 5.5;
+      const UnsignedInteger n = 16;
+      Point nodes(n);
+      Point weights(n);
+      FastLaguerre::ComputeNodesAndWeights(n, k, &nodes[0], &weights[0]);
+      for (UnsignedInteger m = 0; m <= 8; ++m)
+      {
+        Scalar integral = 0.0;
+        for (UnsignedInteger i = 0; i < n; ++i)
+          integral += weights[i] * std::pow(nodes[i], static_cast<Scalar>(m));
+        assert_almost_equal(integral, gammaMoment(k, m), 1.0e-9, 1.0e-12, OSS() << ", fallback k=" << k << " degree " << m);
+      }
+    }
     // Structural properties: strictly increasing non-negative nodes,
     // positive weights summing to one
     {
