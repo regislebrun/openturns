@@ -89,20 +89,25 @@ int main(int, char *[])
         }
       }
     }
-    // Asymptotic path check (n above the threshold 200): low-degree
+    // Asymptotic path check (n above the threshold 256): low-degree
     // exactness with stable closed-form moments. High degrees would
     // overflow the double-factorial moment formula itself, not the rule.
+    // Both parities: the odd fold differs (exact center node).
     {
-      const UnsignedInteger n = 256;
-      Point nodes(n);
-      Point weights(n);
-      FastHermite::ComputeNodesAndWeights(n, &nodes[0], &weights[0]);
-      for (UnsignedInteger m = 0; m <= 12; ++m)
+      const UnsignedInteger order[] = {256, 257};
+      for (UnsignedInteger q = 0; q < 2; ++q)
       {
-        Scalar integral = 0.0;
-        for (UnsignedInteger i = 0; i < n; ++i)
-          integral += weights[i] * std::pow(nodes[i], static_cast<Scalar>(m));
-        assert_almost_equal(integral, normalEvenMoment(m), 1.0e-7, 1.0e-9, OSS() << ", asymptotic degree " << m);
+        const UnsignedInteger n = order[q];
+        Point nodes(n);
+        Point weights(n);
+        FastHermite::ComputeNodesAndWeights(n, &nodes[0], &weights[0]);
+        for (UnsignedInteger m = 0; m <= 12; ++m)
+        {
+          Scalar integral = 0.0;
+          for (UnsignedInteger i = 0; i < n; ++i)
+            integral += weights[i] * std::pow(nodes[i], static_cast<Scalar>(m));
+          assert_almost_equal(integral, normalEvenMoment(m), 1.0e-7, 1.0e-9, OSS() << ", asymptotic n=" << n << " degree " << m);
+        }
       }
     }
     // Structural properties for a moderate n

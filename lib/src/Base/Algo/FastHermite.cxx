@@ -97,6 +97,14 @@ static void HermiteInitialGuesses(const UnsignedInteger n,
   x0 = Point(m);
   for (UnsignedInteger k = 0; k < m; ++k)
     x0[k] = (k < cut && k < m) ? xSin[k] : xAiry[std::min(k, m - 1)];
+  if (n % 2 == 1)
+  {
+    // Odd rule: prepend the exact center node, Newton keeps it in place
+    Point y0(m + 1, 0.0);
+    for (UnsignedInteger k = 0; k < m; ++k)
+      y0[k + 1] = x0[k];
+    x0 = y0;
+  }
 }
 
 // Hermite polynomial and scaled derivative by the Airy expansion in theta
@@ -201,15 +209,18 @@ static void ComputeNodesAndWeightsAsymptotic(const UnsignedInteger n,
   Point ww(n);
   if (n % 2 == 1)
   {
-    for (UnsignedInteger k = 0; k < m; ++k)
+    // Mirror of the prototype fold [-x[::-1], x[1:]]: x holds h+1 entries
+    // with x[0] the center, h = (n-1)/2; center kept once as -x[0]
+    const UnsignedInteger h = m - 1;
+    for (UnsignedInteger k = 0; k <= h; ++k)
     {
-      z[m - 1 - k] = -x[k] * std::sqrt(2.0);
-      ww[m - 1 - k] = w[k];
+      z[k] = -x[h - k] * std::sqrt(2.0);
+      ww[k] = w[h - k];
     }
-    for (UnsignedInteger k = 1; k < m; ++k)
+    for (UnsignedInteger k = 1; k <= h; ++k)
     {
-      z[m - 1 + k] = x[k] * std::sqrt(2.0);
-      ww[m - 1 + k] = w[k];
+      z[h + k] = x[k] * std::sqrt(2.0);
+      ww[h + k] = w[k];
     }
   }
   else
