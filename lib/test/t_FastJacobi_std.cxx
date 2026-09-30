@@ -73,7 +73,7 @@ int main(int, char *[])
       Bool thrown = false;
       try
       {
-        FastJacobi::ComputeNodesAndWeights(0, 0.0, 0.0, &nodes[0], &weights[0]);
+        FastJacobi::ComputeNodesAndWeights(0, 0.0, 0.0, nodes.data(), weights.data());
       }
       catch (const InvalidArgumentException & ex)
       {
@@ -88,7 +88,7 @@ int main(int, char *[])
       Bool thrown = false;
       try
       {
-        FastJacobi::ComputeNodesAndWeights(4, -1.0, 0.0, &nodes[0], &weights[0]);
+        FastJacobi::ComputeNodesAndWeights(4, -1.0, 0.0, nodes.data(), weights.data());
       }
       catch (const InvalidArgumentException & ex)
       {
@@ -103,7 +103,7 @@ int main(int, char *[])
       Bool thrown = false;
       try
       {
-        FastJacobi::ComputeNodesAndWeights(4, 0.0, -1.5, &nodes[0], &weights[0]);
+        FastJacobi::ComputeNodesAndWeights(4, 0.0, -1.5, nodes.data(), weights.data());
       }
       catch (const InvalidArgumentException & ex)
       {
@@ -118,7 +118,7 @@ int main(int, char *[])
       const Scalar beta = 1.5;
       Point nodes(1);
       Point weights(1);
-      FastJacobi::ComputeNodesAndWeights(1, alpha, beta, &nodes[0], &weights[0]);
+      FastJacobi::ComputeNodesAndWeights(1, alpha, beta, nodes.data(), weights.data());
       assert_almost_equal(nodes[0], 1.0 / 4.0, 1.0e-12, 1.0e-12, ", n=1 node");
       assert_almost_equal(weights[0], 1.0, 1.0e-12, 1.0e-12, ", n=1 weight");
     }
@@ -140,7 +140,7 @@ int main(int, char *[])
           const UnsignedInteger n = order[q];
           Point nodes(n);
           Point weights(n);
-          FastJacobi::ComputeNodesAndWeights(n, alpha, beta, &nodes[0], &weights[0]);
+          FastJacobi::ComputeNodesAndWeights(n, alpha, beta, nodes.data(), weights.data());
           for (UnsignedInteger m = 0; m < 2 * n; ++m)
           {
             Scalar integral = 0.0;
@@ -163,7 +163,7 @@ int main(int, char *[])
         const Scalar beta = abValues[r][1];
         Point nodes(n);
         Point weights(n);
-        FastJacobi::ComputeNodesAndWeights(n, alpha, beta, &nodes[0], &weights[0]);
+        FastJacobi::ComputeNodesAndWeights(n, alpha, beta, nodes.data(), weights.data());
         for (UnsignedInteger m = 0; m <= 12; ++m)
         {
           Scalar integral = 0.0;
@@ -181,7 +181,7 @@ int main(int, char *[])
       const Scalar beta = 0.5;
       Point nodes(n);
       Point weights(n);
-      FastJacobi::ComputeNodesAndWeights(n, alpha, beta, &nodes[0], &weights[0]);
+      FastJacobi::ComputeNodesAndWeights(n, alpha, beta, nodes.data(), weights.data());
       Scalar sum = 0.0;
       for (UnsignedInteger i = 0; i < n; ++i)
       {
@@ -200,7 +200,7 @@ int main(int, char *[])
       const Scalar beta = 1.5;
       Point nodes(n);
       Point weights(n);
-      FastJacobi::ComputeNodesAndWeights(n, alpha, beta, &nodes[0], &weights[0]);
+      FastJacobi::ComputeNodesAndWeights(n, alpha, beta, nodes.data(), weights.data());
       Scalar sum = 0.0;
       for (UnsignedInteger i = 0; i < n; ++i)
       {

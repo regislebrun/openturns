@@ -383,6 +383,11 @@ public:
   }
 
   inline
+  T * data()
+  {
+    return coll__.data();
+  }
+  inline
   const T * data() const
   {
     return coll__.data();

@@ -24,7 +24,7 @@
 #include "openturns/Exception.hxx"
 #include "openturns/ResourceMap.hxx"
 #include <cmath>
-#include <cstdio>
+#include <algorithm>
 
 BEGIN_NAMESPACE_OPENTURNS
 
@@ -345,7 +345,7 @@ static Bool ComputeNodesAndWeightsIterative(const UnsignedInteger n,
     if (!(weights[q] >= 0.0)) return false;
     if ((q > 0) && !(nodes[q] > nodes[q - 1]))
     {
-      std::fprintf(stderr, "DBG reject k=%g n=%u q=%u xq=%g xqm=%g\n", k, static_cast<unsigned>(n), static_cast<unsigned>(q), nodes[q], nodes[q - 1]);
+      LOGDEBUG(OSS() << "Reject k=" << k << " n=" << n << " q=" << q << " xq=" << nodes[q] << " xqm=" << nodes[q - 1]);
       return false;
     }
   }
@@ -414,11 +414,8 @@ namespace FastLaguerre
       Point trialWeights;
       if (ComputeNodesAndWeightsIterative(n, k, trialNodes, trialWeights))
       {
-        for (UnsignedInteger j = 0; j < n; ++j)
-        {
-          nodes[j] = trialNodes[j];
-          weights[j] = trialWeights[j];
-        }
+        std::copy(trialNodes.begin(), trialNodes.end(), nodes);
+        std::copy(trialWeights.begin(), trialWeights.end(), weights);
         return;
       }
     }
