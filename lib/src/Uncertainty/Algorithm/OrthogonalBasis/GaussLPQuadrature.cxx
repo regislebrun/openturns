@@ -177,8 +177,8 @@ void ApplyClusterPath(const Sample & nodes,
                       const Point & weights,
                       const Collection<Indices> & path,
                       const UnsignedInteger targetN,
-                      Sample & outNodes,
-                      Point & outWeights)
+                      Sample & resultNodes,
+                      Point & resultWeights)
 {
   Sample workingNodes(nodes);
   Point workingW(weights);
@@ -203,8 +203,8 @@ void ApplyClusterPath(const Sample & nodes,
     workingNodes.erase(last);
     workingW.erase(last);
   }
-  outNodes = workingNodes;
-  outWeights = workingW;
+  resultNodes = workingNodes;
+  resultWeights = workingW;
 }
 
 Scalar ComputeResidual(const Sample & nodes,

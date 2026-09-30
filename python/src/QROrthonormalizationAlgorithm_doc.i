@@ -1,5 +1,5 @@
 %feature("docstring") OT::QROrthonormalizationAlgorithm
-"QR-based orthonormalization algorithm.
+R"RAW(QR-based orthonormalization algorithm.
 
 .. warning::
     This class is experimental and likely to be modified in future releases.
@@ -11,7 +11,7 @@ This class computes an orthonormal basis from a finite set of functions using th
 factorization of the weighted design matrix:
 
 .. math::
-    M_{ij} = \\sqrt{w_i}\\, f_j(x_i)
+    M_{ij} = \sqrt{w_i}\, f_j(x_i)
 
 where :math:`(x_i, w_i)` are quadrature nodes and weights for the measure.
 
@@ -45,7 +45,7 @@ Examples
 >>> algo = otexp.QROrthonormalizationAlgorithm(basis, distribution)
 >>> algo.run()
 >>> phi0 = algo.getOrthonormalFunctions()[0]
-"
+)RAW"
 
 %feature("docstring") OT::QROrthonormalizationAlgorithm::run
 "Compute the orthonormal basis."
