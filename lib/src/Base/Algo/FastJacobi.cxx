@@ -430,7 +430,7 @@ static JacobiBoundaryTables BuildBoundaryTables(const Scalar alpha,
 }
 
 // Interior Hahn expansion with M terms, (3.22)
-static void EvaluateInteriorAsymptotics(const UnsignedInteger n,
+static Bool EvaluateInteriorAsymptotics(const UnsignedInteger n,
                                         const Scalar alpha,
                                         const Scalar beta,
                                         const Point & theta,
@@ -541,7 +541,9 @@ static void EvaluateInteriorAsymptotics(const UnsignedInteger n,
       for (UnsignedInteger i = 0; i < nt; ++i)
         SC(mm, i) *= cosTsc[i];
   }
-  // Front constant: log-ratio series + Stirling factors
+  // Front constant: log-ratio series + Stirling factors. The series
+  // contracts for moderate parameters; cap the iterations and signal
+  // failure so the caller falls back instead of hanging.
   Scalar dsa = 0.5 * alpha * alpha / n;
   Scalar dsb = 0.5 * beta * beta / n;
   Scalar dsab = 0.25 * (alpha + beta) * (alpha + beta) / n;
@@ -549,8 +551,10 @@ static void EvaluateInteriorAsymptotics(const UnsignedInteger n,
   Scalar s = ds;
   UnsignedInteger j = 1;
   Scalar dsold = std::abs(ds);
+  UnsignedInteger guard = 0;
   while ((s != 0.0) && (std::abs(ds / s) + dsold > SpecFunc::ScalarEpsilon / 10.0))
   {
+    if (++guard > 10000) return false;
     dsold = std::abs(ds / s);
     ++j;
     const Scalar tmp = -(j - 1.0) / (j + 1.0) / n;
@@ -592,10 +596,11 @@ static void EvaluateInteriorAsymptotics(const UnsignedInteger n,
     vals[i] = v * denom;
     ders[i] = dd * denom;
   }
+  return true;
 }
 
 // Boundary Bessel expansion with higher collocation terms
-static void EvaluateBoundaryAsymptotics(const UnsignedInteger n,
+static Bool EvaluateBoundaryAsymptotics(const UnsignedInteger n,
                                         const Scalar alpha,
                                         const Scalar beta,
                                         const Point & theta,
@@ -632,8 +637,10 @@ static void EvaluateBoundaryAsymptotics(const UnsignedInteger n,
     Scalar ds = 0.5 * alpha * alpha / n;
     Scalar s = ds;
     UnsignedInteger jj = 1;
+    UnsignedInteger guard = 0;
     while ((s != 0.0) && (std::abs(ds / s) > SpecFunc::ScalarEpsilon / 10.0))
     {
+      if (++guard > 10000) return false;
       ++jj;
       ds = -(jj - 1.0) / (jj + 1.0) / n * (ds * alpha);
       s = s + ds;
@@ -661,13 +668,14 @@ static void EvaluateBoundaryAsymptotics(const UnsignedInteger n,
     Scalar dd = (n * (alpha - beta - (2.0 * n + alpha + beta) * std::cos(t)) * valstmp + 2.0 * (n + alpha) * (n + beta) * C2 * v2) / (2.0 * n + alpha + beta);
     ders[i] = dd * (std::sqrt(t) / (denom * std::sin(t)));
   }
+  return true;
 }
 
 // Newton refinement of a theta block with an evaluator callback
 struct JacobiThetaEvaluator
 {
   virtual ~JacobiThetaEvaluator() {}
-  virtual void evaluate(const Point & theta, Point & vals, Point & ders) const = 0;
+  virtual Bool evaluate(const Point & theta, Point & vals, Point & ders) const = 0;
 };
 
 struct JacobiInteriorEvaluator: public JacobiThetaEvaluator
@@ -676,9 +684,9 @@ struct JacobiInteriorEvaluator: public JacobiThetaEvaluator
                           const Scalar alpha,
                           const Scalar beta)
     : n_(n), alpha_(alpha), beta_(beta) {}
-  void evaluate(const Point & theta, Point & vals, Point & ders) const override
+  Bool evaluate(const Point & theta, Point & vals, Point & ders) const override
   {
-    EvaluateInteriorAsymptotics(n_, alpha_, beta_, theta, vals, ders);
+    return EvaluateInteriorAsymptotics(n_, alpha_, beta_, theta, vals, ders);
   }
   UnsignedInteger n_;
   Scalar alpha_;
@@ -693,9 +701,9 @@ struct JacobiBoundaryEvaluator: public JacobiThetaEvaluator
                           const JacobiBoundaryTables & tables,
                           const Bool final)
     : n_(n), alpha_(alpha), beta_(beta), tables_(tables), final_(final) {}
-  void evaluate(const Point & theta, Point & vals, Point & ders) const override
+  Bool evaluate(const Point & theta, Point & vals, Point & ders) const override
   {
-    EvaluateBoundaryAsymptotics(n_, alpha_, beta_, theta, tables_, final_, vals, ders);
+    return EvaluateBoundaryAsymptotics(n_, alpha_, beta_, theta, tables_, final_, vals, ders);
   }
   UnsignedInteger n_;
   Scalar alpha_;
@@ -717,7 +725,7 @@ static Scalar MaxAbsStep(const Point & step,
   return worst;
 }
 
-static void NewtonRefineTheta(Point & theta,
+static Bool NewtonRefineTheta(Point & theta,
                               const JacobiThetaEvaluator & evaluator,
                               const Point & subset,
                               const Scalar tolerance)
@@ -728,17 +736,18 @@ static void NewtonRefineTheta(Point & theta,
   Point step(nt);
   for (UnsignedInteger iter = 0; iter < 10; ++iter)
   {
-    evaluator.evaluate(theta, vals, ders);
+    if (!evaluator.evaluate(theta, vals, ders)) return false;
     for (UnsignedInteger i = 0; i < nt; ++i)
       step[i] = vals[i] / ders[i];
     for (UnsignedInteger i = 0; i < nt; ++i)
       theta[i] += step[i];
     if (MaxAbsStep(step, subset, subset.getSize()) <= tolerance) break;
   }
+  return true;
 }
 
 // Interior block over the full rule (boundary entries overwritten later)
-static void RefineInteriorBlock(const UnsignedInteger n,
+static Bool RefineInteriorBlock(const UnsignedInteger n,
                                 const Scalar alpha,
                                 const Scalar beta,
                                 Point & x,
@@ -766,10 +775,10 @@ static void RefineInteriorBlock(const UnsignedInteger n,
   for (UnsignedInteger k = 0; k <= pos && k < t1.getSize(); ++k)
     idx1.add(k);
   const JacobiInteriorEvaluator evaluator1(n, alpha, beta);
-  NewtonRefineTheta(t1, evaluator1, idx1, std::sqrt(SpecFunc::ScalarEpsilon) / 100.0);
+  if (!NewtonRefineTheta(t1, evaluator1, idx1, std::sqrt(SpecFunc::ScalarEpsilon) / 100.0)) return false;
   Point vals1(t1.getSize());
   Point ders1(t1.getSize());
-  evaluator1.evaluate(t1, vals1, ders1);
+  if (!evaluator1.evaluate(t1, vals1, ders1)) return false;
   for (UnsignedInteger k = 0; k < t1.getSize(); ++k)
     t1[k] += vals1[k] / ders1[k];
   evaluator1.evaluate(t1, vals1, ders1);
@@ -796,10 +805,10 @@ static void RefineInteriorBlock(const UnsignedInteger n,
   for (UnsignedInteger k = pos; k < n2; ++k)
     idx2.add(k);
   const JacobiInteriorEvaluator evaluator2(n, beta, alpha);
-  NewtonRefineTheta(t2, evaluator2, idx2, std::sqrt(SpecFunc::ScalarEpsilon) / 100.0);
+  if (!NewtonRefineTheta(t2, evaluator2, idx2, std::sqrt(SpecFunc::ScalarEpsilon) / 100.0)) return false;
   Point vals2(n2);
   Point ders2(n2);
-  evaluator2.evaluate(t2, vals2, ders2);
+  if (!evaluator2.evaluate(t2, vals2, ders2)) return false;
   for (UnsignedInteger k = 0; k < n2; ++k)
     t2[k] += vals2[k] / ders2[k];
   evaluator2.evaluate(t2, vals2, ders2);
@@ -815,10 +824,11 @@ static void RefineInteriorBlock(const UnsignedInteger n,
     x[n2 + k] = x1[k];
     w[n2 + k] = w1[k];
   }
+  return true;
 }
 
 // Right boundary block, ascending nodes near +1
-static void RefineBoundaryBlock(const UnsignedInteger n,
+static Bool RefineBoundaryBlock(const UnsignedInteger n,
                                 const Scalar alpha,
                                 const Scalar beta,
                                 const UnsignedInteger npts,
@@ -856,14 +866,14 @@ static void RefineBoundaryBlock(const UnsignedInteger n,
   Point all;
   for (UnsignedInteger k = 0; k < npts; ++k)
     all.add(k);
-  NewtonRefineTheta(t, evaluator, all, std::sqrt(SpecFunc::ScalarEpsilon) / 200.0);
+  if (!NewtonRefineTheta(t, evaluator, all, std::sqrt(SpecFunc::ScalarEpsilon) / 200.0)) return false;
   const JacobiBoundaryEvaluator finalEvaluator(n, alpha, beta, tables, true);
   Point vals(npts);
   Point ders(npts);
-  finalEvaluator.evaluate(t, vals, ders);
+  if (!finalEvaluator.evaluate(t, vals, ders)) return false;
   for (UnsignedInteger k = 0; k < npts; ++k)
     t[k] += vals[k] / ders[k];
-  finalEvaluator.evaluate(t, vals, ders);
+  if (!finalEvaluator.evaluate(t, vals, ders)) return false;
   x = Point(npts);
   w = Point(npts);
   for (UnsignedInteger k = 0; k < npts; ++k)
@@ -871,10 +881,11 @@ static void RefineBoundaryBlock(const UnsignedInteger n,
     x[npts - 1 - k] = std::cos(t[k]);
     w[npts - 1 - k] = 1.0 / (ders[k] * ders[k]);
   }
+  return true;
 }
 
 // Full asymptotic rule: interior everywhere, Bessel boundary overwrite
-static void ComputeNodesAndWeightsAsymptotic(const UnsignedInteger n,
+static Bool ComputeNodesAndWeightsAsymptotic(const UnsignedInteger n,
                                              const Scalar alpha,
                                              const Scalar beta,
                                              Scalar * nodes,
@@ -888,8 +899,8 @@ static void ComputeNodesAndWeightsAsymptotic(const UnsignedInteger n,
     Point wb1;
     Point xb2;
     Point wb2;
-    RefineBoundaryBlock(n, alpha, beta, (n + 1) / 2, xb1, wb1);
-    RefineBoundaryBlock(n, beta, alpha, n / 2, xb2, wb2);
+    if (!RefineBoundaryBlock(n, alpha, beta, (n + 1) / 2, xb1, wb1)) return false;
+    if (!RefineBoundaryBlock(n, beta, alpha, n / 2, xb2, wb2)) return false;
     x = Point(n);
     w = Point(n);
     for (UnsignedInteger k = 0; k < n / 2; ++k)
@@ -905,10 +916,10 @@ static void ComputeNodesAndWeightsAsymptotic(const UnsignedInteger n,
   }
   else
   {
-    RefineInteriorBlock(n, alpha, beta, x, w);
+    if (!RefineInteriorBlock(n, alpha, beta, x, w)) return false;
     Point xb;
     Point wb;
-    RefineBoundaryBlock(n, alpha, beta, JacobiBoundaryNodes, xb, wb);
+    if (!RefineBoundaryBlock(n, alpha, beta, JacobiBoundaryNodes, xb, wb)) return false;
     for (UnsignedInteger k = 0; k < JacobiBoundaryNodes; ++k)
     {
       x[n - JacobiBoundaryNodes + k] = xb[k];
@@ -917,7 +928,9 @@ static void ComputeNodesAndWeightsAsymptotic(const UnsignedInteger n,
     Point xb2;
     Point wb2;
     if (alpha != beta)
-      RefineBoundaryBlock(n, beta, alpha, JacobiBoundaryNodes, xb2, wb2);
+    {
+      if (!RefineBoundaryBlock(n, beta, alpha, JacobiBoundaryNodes, xb2, wb2)) return false;
+    }
     else
     {
       xb2 = xb;
@@ -932,11 +945,19 @@ static void ComputeNodesAndWeightsAsymptotic(const UnsignedInteger n,
   Scalar total = 0.0;
   for (UnsignedInteger k = 0; k < n; ++k)
     total += w[k];
+  if (!(total > 0.0)) return false;
   for (UnsignedInteger k = 0; k < n; ++k)
   {
     nodes[k] = x[k];
     weights[k] = w[k] / total;
   }
+  for (UnsignedInteger k = 0; k < n; ++k)
+  {
+    if (!std::isfinite(nodes[k])) return false;
+    if (!(weights[k] >= 0.0)) return false;
+    if ((k > 0) && !(nodes[k] > nodes[k - 1])) return false;
+  }
+  return true;
 }
 
 namespace FastJacobi
@@ -983,8 +1004,8 @@ namespace FastJacobi
     const UnsignedInteger asymptoticThreshold = ResourceMap::GetAsUnsignedInteger("FastJacobi-AsymptoticThreshold");
     if (n >= asymptoticThreshold)
     {
-      ComputeNodesAndWeightsAsymptotic(n, alpha, beta, nodes, weights);
-      return;
+      if (ComputeNodesAndWeightsAsymptotic(n, alpha, beta, nodes, weights)) return;
+      // fall through to the polished eigensolver on asymptotic failure
     }
     FastGaussQuadrature::PolishedSolve(gamma.data(), b.data(), n, nodes, weights);
   }

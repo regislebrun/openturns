@@ -97,8 +97,10 @@ static Scalar StartLogDerivative(const UnsignedInteger n,
   return ContinuedFractionStartRatio(n, alpha, x);
 }
 
-// Taylor step of y and y' from z0 to z0 + h, scaled against overflow
-static void TaylorStep(const UnsignedInteger n,
+// Taylor step of y and y' from z0 to z0 + h, scaled against overflow.
+// Returns false when the series does not converge within the term cap
+// (step outside the radius of convergence): the caller falls back.
+static Bool TaylorStep(const UnsignedInteger n,
                        const Scalar alpha,
                        const Scalar z0,
                        const Scalar h,
@@ -107,6 +109,7 @@ static void TaylorStep(const UnsignedInteger n,
                        Scalar & y,
                        Scalar & yd)
 {
+  static const UnsignedInteger TaylorMaxTerms = 1000;
   Scalar sf0 = f0 * LaguerreTaylorScale;
   Scalar sf1 = f1 * LaguerreTaylorScale;
   const Scalar L = 2.0 * n + alpha + 1.0;
@@ -128,7 +131,7 @@ static void TaylorStep(const UnsignedInteger n,
   Scalar sf = sf0 + coe * sf1;
   Scalar error = 1.0;
   UnsignedInteger j = 0;
-  while ((error > 1.0e-25) || (j < 10))
+  while (((error > 1.0e-25) || (j < 10)) && (j < TaylorMaxTerms))
   {
     const Scalar c0 = j;
     const Scalar c1 = c0 * (j - 1.0) / 2.0;
@@ -150,6 +153,7 @@ static void TaylorStep(const UnsignedInteger n,
   }
   y = sf / LaguerreTaylorScale;
   yd = sd / LaguerreTaylorScale;
+  return (j < TaylorMaxTerms) && (error <= 1.0e-25);
 }
 
 // Iterative Prufer sweeps in z = sqrt(x): forward sweep from the lower
@@ -203,7 +207,7 @@ static Bool ComputeNodesAndWeightsIterative(const UnsignedInteger n,
         {
           Scalar y = 0.0;
           Scalar yd = 0.0;
-          TaylorStep(n, alpha, z0, h, f0, f1, y, yd);
+          if (!TaylorStep(n, alpha, z0, h, f0, f1, y, yd)) return false;
           f0 = y;
           f1 = yd;
           hf = y / yd;
@@ -241,7 +245,7 @@ static Bool ComputeNodesAndWeightsIterative(const UnsignedInteger n,
         Scalar yd = 0.0;
         {
           Scalar y = 0.0;
-          TaylorStep(n, alpha, z0, h, f0, f1, y, yd);
+          if (!TaylorStep(n, alpha, z0, h, f0, f1, y, yd)) return false;
         }
         we.add(1.0 / (yd * yd));
         f0 = 0.0;
@@ -273,13 +277,13 @@ static Bool ComputeNodesAndWeightsIterative(const UnsignedInteger n,
     {
       Scalar y = 0.0;
       Scalar yd = 0.0;
-      TaylorStep(n, alpha, z0, h, f0, f1, y, yd);
+      if (!TaylorStep(n, alpha, z0, h, f0, f1, y, yd)) return false;
       we[1] = 1.0 / (yd * yd);
       z0 = std::sqrt(xc[1]);
       h = std::sqrt(xc[0]) - std::sqrt(xc[1]);
       f0 = 0.0;
       f1 = yd;
-      TaylorStep(n, alpha, z0, h, f0, f1, y, yd);
+      if (!TaylorStep(n, alpha, z0, h, f0, f1, y, yd)) return false;
       we[0] = 1.0 / (yd * yd);
       f0 = 0.0;
       f1 = yd;
@@ -295,7 +299,7 @@ static Bool ComputeNodesAndWeightsIterative(const UnsignedInteger n,
       {
         Scalar y = 0.0;
         Scalar yd = 0.0;
-        TaylorStep(n, alpha, z0, h, f0, f1, y, yd);
+        if (!TaylorStep(n, alpha, z0, h, f0, f1, y, yd)) return false;
         f0 = y;
         f1 = yd;
       }
