@@ -452,9 +452,7 @@ Scalar WrappedNormal::computeLogPDF(const Point & point) const
     {
       // Truncation drove the alternating sum non-positive in the deep tails:
       // the direct sum is the right tool there
-      OSS oss;
-      oss << "WrappedNormal: Fourier sum is non-positive, this point is out of scope";
-      LOGWARN(oss.str());
+      LOGWARN("WrappedNormal: Fourier sum is non-positive, this point is out of scope");
       return -SpecFunc::Infinity;
     }
     logSum = std::log(sum) - static_cast<Scalar>(d) * std::log(period_);
