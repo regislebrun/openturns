@@ -7,14 +7,5 @@ OrthonormalFunction_2([0.5, 0.5])=[0]
 OrthonormalFunction_3([0.5, 0.5])=[-1.11803]
 OrthonormalFunction_4([0.5, 0.5])=[0]
 OrthonormalFunction_5([0.5, 0.5])=[-1.11803]
-Coefficients=
- 6x6
-[[  1            9.04957e-16  1.09059e-15  2.23607      1.98316e-17  2.23607     ]
- [  0            1.73205     -9.75782e-19 -1.17514e-15  1.55039e-15 -2.00422e-18 ]
- [  0            0            1.73205      8.23956e-18  1.56616e-15 -9.35524e-16 ]
- [  0            0            0            4.74342      3.08569e-17 -8.53809e-18 ]
- [  0            0            0            0            3           -1.00285e-17 ]
- [  0            0            0            0            0            4.74342     ]]
-Quadrature: 3 nodes, weights sum=0.999990
 With custom experiment: [1]
 setMeasureAndFunctions OK

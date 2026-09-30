@@ -6,4 +6,6 @@
 
 %include QROrthonormalizationAlgorithm_doc.i
 
+%copyctor OT::QROrthonormalizationAlgorithm;
+
 %include openturns/QROrthonormalizationAlgorithm.hxx

@@ -1008,6 +1008,15 @@ void ResourceMap::loadDefaultConfiguration()
   addAsScalar("AdaptiveStieltjesAlgorithm-MaximumError",  1.0e-12);
   addAsUnsignedInteger("AdaptiveStieltjesAlgorithm-MaximumSubIntervalsBetweenRoots", 64);
 
+  // QROrthonormalizationAlgorithm parameters //
+  addAsUnsignedInteger("QROrthonormalizationAlgorithm-DefaultDiscretization", 128);
+  addAsScalar("QROrthonormalizationAlgorithm-Epsilon", 1.0e-11);
+
+  // GaussLPQuadrature parameters //
+  addAsUnsignedInteger("GaussLPQuadrature-AlphaS", 100);
+  addAsUnsignedInteger("GaussLPQuadrature-Ngauss", 100);
+  addAsScalar("GaussLPQuadrature-Epsilon", 1.0e-5);
+
   // LinearModelTest parameters //
   addAsScalar("LinearModelTest-DefaultHarrisonMcCabeBreakpoint", 0.5);
   addAsScalar("LinearModelTest-DefaultLevel", 0.05);

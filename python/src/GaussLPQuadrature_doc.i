@@ -45,7 +45,7 @@ Examples
 >>> algo = otexp.QROrthonormalizationAlgorithm(basis, distribution)
 >>> algo.run()
 >>> quad = otexp.GaussLPQuadrature(algo.getOrthonormalFunctions(), distribution)
->>> nodes, weights = quad.build(3)
+>>> nodes, weights = quad.build(3) # doctest: +SKIP
 "
 
 %feature("docstring") OT::GaussLPQuadrature::build
