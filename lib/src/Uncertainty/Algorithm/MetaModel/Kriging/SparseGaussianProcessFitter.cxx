@@ -27,6 +27,8 @@
 #include "openturns/ComposedFunction.hxx"
 #include "openturns/SpecFunc.hxx"
 #include "openturns/SparseGaussianProcessEvaluation.hxx"
+#include "openturns/SparseGaussianProcessGradient.hxx"
+#include "openturns/SparseGaussianProcessHessian.hxx"
 #include "openturns/HMatrixFactory.hxx"
 #include "openturns/HMatrixParameters.hxx"
 #include "openturns/HMatrixImplementation.hxx"
@@ -140,6 +142,8 @@ void SparseGaussianProcessFitter::run()
   Function metaModel(evaluation);
   metaModel.setInputDescription(inputSample_.getDescription());
   metaModel.setOutputDescription(outputSample_.getDescription());
+  metaModel.setGradient(new SparseGaussianProcessGradient(reducedCovarianceModelCopy, inducingPoints_, whiteningFactor_, posteriorMean_, whiteningFactorHMatrix_, method_));
+  metaModel.setHessian(new SparseGaussianProcessHessian(reducedCovarianceModelCopy, inducingPoints_, whiteningFactor_, posteriorMean_, whiteningFactorHMatrix_, method_));
 
   result_ = SparseGaussianProcessFitterResult(inputSample_, outputSample_, reducedCovarianceModelCopy, inducingPoints_, whiteningFactor_, posteriorMean_, posteriorCovariance_, noiseStdDev_, optimalELBO, metaModel, method_);
   result_.setWhiteningFactorHMatrix(whiteningFactorHMatrix_);
@@ -808,7 +812,7 @@ Scalar SparseGaussianProcessFitter::computeELBOValue(const Sample & inducingPoin
   // Tighter collapsed bound of Titsias (2025): replace tr(K_ff - Q_ff)/(2 sigma^2)
   // with 1/2 sum_i log(1 + (k_ii - q_ii)/sigma^2), q_ii = squared norm of row i of A
   // Collapsed ELBO, see Titsias (2009) with the tighter regularization of
-  // Titsias (2025), arXiv:2012.13962 for the whitened formulation
+  // Titsias (2025), arXiv:2502.08730 for the whitened formulation
   // When M == N the cross covariance Q_ff = K_fu K_uu^{-1} K_uf equals K_ff, hence
   // all residuals k_ii - q_ii are zero exactly. Skipping the term avoids amplifying
   // the cancellation residue by 1 / sigma^2 for vanishing noise.

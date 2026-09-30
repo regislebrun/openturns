@@ -83,7 +83,7 @@ String SparseGaussianProcessFitterResult::__str__(const String & offset) const
   oss << getClassName() << "("
       << "covariance model=" << covarianceModel_.__str__(offset)
       << ", inducing points=" << inducingPoints_.__str__(offset)
-      << ", noise variance=" << noiseStdDev_
+      << ", noiseStdDev=" << noiseStdDev_
       << ", optimal ELBO=" << optimalELBO_ << ")";
   return oss;
 }

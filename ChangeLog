@@ -55,7 +55,6 @@
  * UniVariateDistributionPolynomialFactory
  * VonMisesFisher(Factory) (openturns.experimental)
  * SparseGaussianProcessFitter, SparseGaussianProcessFitterResult, SparseGaussianProcessRegression (openturns.experimental)
- * SparseGaussianProcessHessian (openturns.experimental)
 
 ==== API changes ====
  * Removed ambiguous TruncatedDistribution(distribution, lowerBound, upperBound) constructor in favor of the Interval variant

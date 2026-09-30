@@ -871,8 +871,9 @@ void GaussianProcessFitter::setMethod(const LinearAlgebra method)
   // First update only if method has changed. It avoids useless reset
   if (method != method_)
   {
-    if (method > 1)
-      throw InvalidArgumentException(HERE) << "Expecting 0 (LAPACK) or 1 (HMAT)";
+    if (method != GaussianProcessFitterResult::LAPACK &&
+        method != GaussianProcessFitterResult::HMAT)
+      throw InvalidArgumentException(HERE) << "In GaussianProcessFitter::setMethod, expecting LAPACK or HMAT, got " << static_cast<UnsignedInteger>(method);
     // Set new method
     method_ = method;
     // reset for new computation
