@@ -2,6 +2,7 @@
 
 import openturns as ot
 import openturns.testing as ott
+import math
 
 ot.TESTPREAMBLE()
 
@@ -45,3 +46,14 @@ check_coefficients(jacobi_bounded, [a, (a + b) * 0.5, b])
 # Affine map from [-1, 2] to standard [-1, 1]: a_=2/3, b_=-1/3
 ott.assert_almost_equal(jacobi_bounded.getA(), 2.0 / 3.0)
 ott.assert_almost_equal(jacobi_bounded.getB(), -1.0 / 3.0)
+
+# Edge case: Jacobi exponents summing to -1, i.e. Beta shape parameters
+# summing to 1. Beta(0.5, 0.5) maps to exponents (-0.5, -0.5), which uses
+# the canceled recurrence form; the 2-point rule is +-1/sqrt(2), weights 0.5
+jacobi_chebyshev = ot.JacobiFactory(0.5, 0.5)
+nodes, weights = jacobi_chebyshev.getNodesAndWeights(2)
+ref = 1.0 / math.sqrt(2.0)
+ott.assert_almost_equal(nodes[0], -ref, 1e-12)
+ott.assert_almost_equal(nodes[1], ref, 1e-12)
+ott.assert_almost_equal(weights[0], 0.5, 1e-12)
+ott.assert_almost_equal(weights[1], 0.5, 1e-12)

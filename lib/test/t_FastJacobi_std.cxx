@@ -122,6 +122,29 @@ int main(int, char *[])
       assert_almost_equal(nodes[0], 1.0 / 4.0, 1.0e-12, 1.0e-12, ", n=1 node");
       assert_almost_equal(weights[0], 1.0, 1.0e-12, 1.0e-12, ", n=1 weight");
     }
+    // n=2 closed forms: regression tests for the recurrence coefficients
+    // (gamma[0] 0/0 when alpha+beta==0, b[j] 2/t factor) and for the
+    // alpha+beta==-1 canceled form (b[1] 0/0 when j==1, t==1)
+    {
+      Point nodes(2);
+      Point weights(2);
+      FastJacobi::ComputeNodesAndWeights(2, 0.0, 0.0, nodes.data(), weights.data());
+      const Scalar ref = 1.0 / std::sqrt(3.0);
+      assert_almost_equal(nodes[0], -ref, 1.0e-12, 1.0e-12, ", n=2 Legendre node-");
+      assert_almost_equal(nodes[1], ref, 1.0e-12, 1.0e-12, ", n=2 Legendre node+");
+      assert_almost_equal(weights[0], 0.5, 1.0e-12, 1.0e-12, ", n=2 Legendre weight-");
+      assert_almost_equal(weights[1], 0.5, 1.0e-12, 1.0e-12, ", n=2 Legendre weight+");
+    }
+    {
+      Point nodes(2);
+      Point weights(2);
+      FastJacobi::ComputeNodesAndWeights(2, -0.5, -0.5, nodes.data(), weights.data());
+      const Scalar ref = 1.0 / std::sqrt(2.0);
+      assert_almost_equal(nodes[0], -ref, 1.0e-12, 1.0e-12, ", n=2 Chebyshev node-");
+      assert_almost_equal(nodes[1], ref, 1.0e-12, 1.0e-12, ", n=2 Chebyshev node+");
+      assert_almost_equal(weights[0], 0.5, 1.0e-12, 1.0e-12, ", n=2 Chebyshev weight-");
+      assert_almost_equal(weights[1], 0.5, 1.0e-12, 1.0e-12, ", n=2 Chebyshev weight+");
+    }
     // No cross-check against JacobiFactory here: it uses the same polished
     // solver through the base class, so the comparison would be circular.
     // Accuracy is covered by the exactness checks below against the
