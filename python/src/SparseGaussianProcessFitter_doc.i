@@ -73,7 +73,7 @@ standard deviation and the inducing inputs:
 
 where :math:`\vect{c} = \mat{L}_B^{-1} \mat{A}^t \vect{y}`,
 :math:`\mat{L}_B` is the Cholesky factor of :math:`\mat{B}` and
-:math:`\vect{a}_i^t` is the :math:`i`-th row of :math:`\mat{A}\).
+:math:`\vect{a}_i^t` is the :math:`i`-th row of :math:`\mat{A}`.
 The last sum is the tighter regularization of Titsias [titsias2025]_,
 which replaces the trace term of the original bound.
 

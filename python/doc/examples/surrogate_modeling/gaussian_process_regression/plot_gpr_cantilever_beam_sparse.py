@@ -151,7 +151,7 @@ print(R2)
 
 # %%
 # Compare with the exact Gaussian process and with optimized inducing points
-# -------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 #
 # To quantify the loss of accuracy introduced by the sparse approximation, we
 # fit an exact :class:`~openturns.GaussianProcessRegression` on the same
