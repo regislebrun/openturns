@@ -157,7 +157,8 @@ print(R2)
 # fit an exact :class:`~openturns.GaussianProcessRegression` on the same
 # training sample and compare its R2 score on the same validation set.
 basis = ot.ConstantBasisFactory(cb.dim).build()
-covarianceModelExact = ot.SquaredExponential(cb.dim)
+covarianceModelExact = ot.SquaredExponential([1.0] * cb.dim)
+covarianceModelExact.setActiveParameter(range(cb.dim + 1))
 exact_fitter = ot.GaussianProcessFitter(
     X_train_std, Y_train, covarianceModelExact, basis
 )
@@ -166,7 +167,6 @@ exact_algo = ot.GaussianProcessRegression(exact_fitter.getResult())
 exact_algo.run()
 exactMetamodel = exact_algo.getResult().getMetaModel()
 R2_exact = ot.MetaModelValidation(Y_test, exactMetamodel(X_test_std)).computeR2Score()[0]
-print(R2_exact)
 
 # %%
 # We also fit a second sparse model with optimized inducing points. The
@@ -176,7 +176,7 @@ print(R2_exact)
 fitter_opt = SparseGaussianProcessFitter(X_train_std, Y_train, covarianceModel, m)
 fitter_opt.setOptimizeInducingPoints(True)
 solver = fitter_opt.getOptimizationAlgorithm()
-solver.setMaximumEvaluationNumber(50)
+solver.setMaximumIterationNumber(10)
 fitter_opt.setOptimizationAlgorithm(solver)
 fitter_opt.run()
 gpr_opt = SparseGaussianProcessRegression(fitter_opt.getResult())
