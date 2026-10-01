@@ -196,8 +196,32 @@ int main(int, char *[])
         }
       }
     }
-    // Small-n asymptotic branch (n <= 20): lower the threshold to exercise
-    // the boundary-only path of ComputeNodesAndWeightsAsymptotic
+    // Large-exponent fallback (n above the threshold but exponents outside the
+    // Hale-Townsend validity domain): the asymptotic path is declined and the
+    // polished eigensolver must give full accuracy. Cases from PR #3286
+    // review (JacobiFactory(A, B) maps to exponents alpha=B-1, beta=A-1).
+    {
+      const UnsignedInteger n = 100;
+      const Scalar abValues[][2] = {{30.0, 30.0}, {20.0, 0.0}, {10.0, 10.0}, {10.0, 0.0}, {0.0, 200.0}};
+      for (UnsignedInteger r = 0; r < 5; ++r)
+      {
+        const Scalar alpha = abValues[r][0];
+        const Scalar beta = abValues[r][1];
+        Point nodes(n);
+        Point weights(n);
+        FastJacobi::ComputeNodesAndWeights(n, alpha, beta, nodes.data(), weights.data());
+        for (UnsignedInteger m = 0; m <= 12; ++m)
+        {
+          Scalar integral = 0.0;
+          for (UnsignedInteger i = 0; i < n; ++i)
+            integral += weights[i] * std::pow(nodes[i], static_cast<Scalar>(m));
+          assert_almost_equal(integral, jacobiMoment(alpha, beta, m), 1.0e-10, 1.0e-12, OSS() << ", large-exponent fallback a=" << alpha << " b=" << beta << " degree " << m);
+        }
+      }
+    }
+    // Small-n fallback (n <= 20): lower the threshold to check that the
+    // asymptotic path declines small rules and falls back to the polished
+    // eigensolver with full accuracy
     {
       const UnsignedInteger oldThreshold = ResourceMap::GetAsUnsignedInteger("FastJacobi-AsymptoticThreshold");
       ResourceMap::SetAsUnsignedInteger("FastJacobi-AsymptoticThreshold", 5);
@@ -212,7 +236,7 @@ int main(int, char *[])
         Scalar integral = 0.0;
         for (UnsignedInteger i = 0; i < n; ++i)
           integral += weights[i] * std::pow(nodes[i], static_cast<Scalar>(m));
-        assert_almost_equal(integral, jacobiMoment(alpha, beta, m), 1.0e-8, 1.0e-10, OSS() << ", small-n asymptotic degree " << m);
+        assert_almost_equal(integral, jacobiMoment(alpha, beta, m), 1.0e-10, 1.0e-12, OSS() << ", small-n fallback degree " << m);
       }
       ResourceMap::SetAsUnsignedInteger("FastJacobi-AsymptoticThreshold", oldThreshold);
     }

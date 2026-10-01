@@ -25,6 +25,7 @@
 #include "openturns/Exception.hxx"
 #include "openturns/ResourceMap.hxx"
 #include "openturns/SpecFunc.hxx"
+#include <algorithm>
 #include <cmath>
 
 BEGIN_NAMESPACE_OPENTURNS
@@ -893,54 +894,33 @@ static Bool ComputeNodesAndWeightsAsymptotic(const UnsignedInteger n,
 {
   Point x;
   Point w;
-  if (n <= 20)
+  // Asymptotic expansions are only accurate for large n; small rules fall
+  // back to the polished eigensolver via the caller
+  if (n <= 20) return false;
+  if (!RefineInteriorBlock(n, alpha, beta, x, w)) return false;
+  Point xb;
+  Point wb;
+  if (!RefineBoundaryBlock(n, alpha, beta, JacobiBoundaryNodes, xb, wb)) return false;
+  for (UnsignedInteger k = 0; k < JacobiBoundaryNodes; ++k)
   {
-    Point xb1;
-    Point wb1;
-    Point xb2;
-    Point wb2;
-    if (!RefineBoundaryBlock(n, alpha, beta, (n + 1) / 2, xb1, wb1)) return false;
-    if (!RefineBoundaryBlock(n, beta, alpha, n / 2, xb2, wb2)) return false;
-    x = Point(n);
-    w = Point(n);
-    for (UnsignedInteger k = 0; k < n / 2; ++k)
-    {
-      x[k] = -xb2[n / 2 - 1 - k];
-      w[k] = wb2[n / 2 - 1 - k];
-    }
-    for (UnsignedInteger k = 0; k < (n + 1) / 2; ++k)
-    {
-      x[n / 2 + k] = xb1[k];
-      w[n / 2 + k] = wb1[k];
-    }
+    x[n - JacobiBoundaryNodes + k] = xb[k];
+    w[n - JacobiBoundaryNodes + k] = wb[k];
+  }
+  Point xb2;
+  Point wb2;
+  if (alpha != beta)
+  {
+    if (!RefineBoundaryBlock(n, beta, alpha, JacobiBoundaryNodes, xb2, wb2)) return false;
   }
   else
   {
-    if (!RefineInteriorBlock(n, alpha, beta, x, w)) return false;
-    Point xb;
-    Point wb;
-    if (!RefineBoundaryBlock(n, alpha, beta, JacobiBoundaryNodes, xb, wb)) return false;
-    for (UnsignedInteger k = 0; k < JacobiBoundaryNodes; ++k)
-    {
-      x[n - JacobiBoundaryNodes + k] = xb[k];
-      w[n - JacobiBoundaryNodes + k] = wb[k];
-    }
-    Point xb2;
-    Point wb2;
-    if (alpha != beta)
-    {
-      if (!RefineBoundaryBlock(n, beta, alpha, JacobiBoundaryNodes, xb2, wb2)) return false;
-    }
-    else
-    {
-      xb2 = xb;
-      wb2 = wb;
-    }
-    for (UnsignedInteger k = 0; k < JacobiBoundaryNodes; ++k)
-    {
-      x[k] = -xb2[JacobiBoundaryNodes - 1 - k];
-      w[k] = wb2[JacobiBoundaryNodes - 1 - k];
-    }
+    xb2 = xb;
+    wb2 = wb;
+  }
+  for (UnsignedInteger k = 0; k < JacobiBoundaryNodes; ++k)
+  {
+    x[k] = -xb2[JacobiBoundaryNodes - 1 - k];
+    w[k] = wb2[JacobiBoundaryNodes - 1 - k];
   }
   Scalar total = 0.0;
   for (UnsignedInteger k = 0; k < n; ++k)
@@ -1001,8 +981,16 @@ namespace FastJacobi
     // polished eigensolver; threshold from the ResourceMap. Benchmark origin:
     // above the threshold the relative accuracy is better than 5e-13 and
     // the asymptotic path is faster (see doc/fast_gauss_benchmark.tex).
+    // Validity: the Hale-Townsend expansions assume moderate exponents.
+    // Chebfun jacpts warns for MAX(ALPHA, BETA) > 5 when asymmetric, and the
+    // mpmath oracle shows symmetric cases need the same guard ((6, 6) fails
+    // at n=100 with 1.5e-12, (30, 30) fails even at n=1000 with 1e-05).
+    // Gate validated to 5e-13: max <= 5 for n < 200, max <= 10 for n >= 200;
+    // larger exponents fall back to the polished solver.
     const UnsignedInteger asymptoticThreshold = ResourceMap::GetAsUnsignedInteger("FastJacobi-AsymptoticThreshold");
-    if (n >= asymptoticThreshold)
+    const Scalar maxAB = std::max(alpha, beta);
+    const Scalar allowedMax = (n >= 200 ? 10.0 : 5.0);
+    if ((n >= asymptoticThreshold) && (maxAB <= allowedMax))
     {
       if (ComputeNodesAndWeightsAsymptotic(n, alpha, beta, nodes, weights)) return;
       // fall through to the polished eigensolver on asymptotic failure
