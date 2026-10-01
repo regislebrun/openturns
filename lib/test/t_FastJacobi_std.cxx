@@ -196,6 +196,26 @@ int main(int, char *[])
         }
       }
     }
+    // Small-n asymptotic branch (n <= 20): lower the threshold to exercise
+    // the boundary-only path of ComputeNodesAndWeightsAsymptotic
+    {
+      const UnsignedInteger oldThreshold = ResourceMap::GetAsUnsignedInteger("FastJacobi-AsymptoticThreshold");
+      ResourceMap::SetAsUnsignedInteger("FastJacobi-AsymptoticThreshold", 5);
+      const UnsignedInteger n = 10;
+      const Scalar alpha = 0.5;
+      const Scalar beta = 1.5;
+      Point nodes(n);
+      Point weights(n);
+      FastJacobi::ComputeNodesAndWeights(n, alpha, beta, nodes.data(), weights.data());
+      for (UnsignedInteger m = 0; m <= 12; ++m)
+      {
+        Scalar integral = 0.0;
+        for (UnsignedInteger i = 0; i < n; ++i)
+          integral += weights[i] * std::pow(nodes[i], static_cast<Scalar>(m));
+        assert_almost_equal(integral, jacobiMoment(alpha, beta, m), 1.0e-8, 1.0e-10, OSS() << ", small-n asymptotic degree " << m);
+      }
+      ResourceMap::SetAsUnsignedInteger("FastJacobi-AsymptoticThreshold", oldThreshold);
+    }
     // Structural properties: nodes in [-1, 1], strictly increasing,
     // positive weights summing to one
     {

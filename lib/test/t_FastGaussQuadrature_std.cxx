@@ -39,7 +39,7 @@ int main(int, char *[])
       Bool thrown = false;
       try
       {
-        FastGaussQuadrature::PolishedSolve(&nodes[0], &weights[0], 0, &nodes[0], &weights[0]);
+        FastGaussQuadrature::PolishedSolve(nodes.data(), weights.data(), 0, nodes.data(), weights.data());
       }
       catch (const InvalidArgumentException & ex)
       {
@@ -54,7 +54,7 @@ int main(int, char *[])
       Point b(1, 0.0);
       Point nodes(1);
       Point weights(1);
-      FastGaussQuadrature::PolishedSolve(&gamma[0], &b[0], 1, &nodes[0], &weights[0]);
+      FastGaussQuadrature::PolishedSolve(gamma.data(), b.data(), 1, nodes.data(), weights.data());
       assert_almost_equal(nodes[0], 3.0, 0.0, 1.0e-14, ", n=1 node");
       assert_almost_equal(weights[0], 1.0, 0.0, 1.0e-14, ", n=1 weight");
     }
@@ -65,7 +65,7 @@ int main(int, char *[])
       b[1] = 1.0;
       Point nodes(2);
       Point weights(2);
-      FastGaussQuadrature::PolishedSolve(&gamma[0], &b[0], 2, &nodes[0], &weights[0]);
+      FastGaussQuadrature::PolishedSolve(gamma.data(), b.data(), 2, nodes.data(), weights.data());
       assert_almost_equal(nodes, Point({-1.0, 1.0}), 1.0e-12, 1.0e-12, ", n=2 Hermite nodes");
       assert_almost_equal(weights, Point({0.5, 0.5}), 1.0e-12, 1.0e-12, ", n=2 Hermite weights");
     }
@@ -77,7 +77,7 @@ int main(int, char *[])
       b[2] = std::sqrt(2.0);
       Point nodes(3);
       Point weights(3);
-      FastGaussQuadrature::PolishedSolve(&gamma[0], &b[0], 3, &nodes[0], &weights[0]);
+      FastGaussQuadrature::PolishedSolve(gamma.data(), b.data(), 3, nodes.data(), weights.data());
       assert_almost_equal(nodes, Point({-std::sqrt(3.0), 0.0, std::sqrt(3.0)}), 1.0e-12, 1.0e-12, ", n=3 Hermite nodes");
       assert_almost_equal(weights, Point({1.0 / 6.0, 2.0 / 3.0, 1.0 / 6.0}), 1.0e-12, 1.0e-12, ", n=3 Hermite weights");
     }
@@ -91,7 +91,7 @@ int main(int, char *[])
         b[j] = static_cast<Scalar>(j) / std::sqrt(4.0 * j * j - 1.0);
       Point nodes(n);
       Point weights(n);
-      FastGaussQuadrature::PolishedSolve(&gamma[0], &b[0], n, &nodes[0], &weights[0]);
+      FastGaussQuadrature::PolishedSolve(gamma.data(), b.data(), n, nodes.data(), weights.data());
       // structural properties
       Scalar sum = 0.0;
       for (UnsignedInteger i = 0; i < n; ++i) sum += weights[i];

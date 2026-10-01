@@ -250,6 +250,8 @@ Scalar SpecFunc::BesselInu(const Scalar x, const Scalar nu)
 Scalar SpecFunc::BesselJ(const Scalar nu,
                          const Scalar x)
 {
+  if (!std::isfinite(nu)) throw InvalidArgumentException(HERE) << "Expected a finite value for nu, got nu=" << nu;
+  if (!std::isfinite(x)) throw InvalidArgumentException(HERE) << "Expected a finite value for x, got x=" << x;
   // Integer order: reflection formulas extend to negative x and negative nu,
   // J_{-k}(x) = (-1)^k J_k(x) and J_k(-x) = (-1)^k J_k(x)
   const Scalar nearestInteger = std::round(nu);
@@ -297,6 +299,8 @@ Scalar SpecFunc::BesselJ(const Scalar nu,
 Scalar SpecFunc::BesselJDerivative(const Scalar nu,
                                    const Scalar x)
 {
+  if (!std::isfinite(nu)) throw InvalidArgumentException(HERE) << "Expected a finite value for nu, got nu=" << nu;
+  if (!std::isfinite(x)) throw InvalidArgumentException(HERE) << "Expected a finite value for x, got x=" << x;
   // J_{-k}(x) = (-1)^k J_k(x) gives J'_{-k}(x) = (-1)^k J'_k(x), and
   // J_k(-x) = (-1)^k J_k(x) gives J'_k(-x) = (-1)^{k+1} J'_k(x)
   const Scalar nearestInteger = std::round(nu);

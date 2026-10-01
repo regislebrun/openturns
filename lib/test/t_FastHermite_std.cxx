@@ -49,7 +49,7 @@ int main(int, char *[])
       Bool thrown = false;
       try
       {
-        FastHermite::ComputeNodesAndWeights(0, &nodes[0], &weights[0]);
+        FastHermite::ComputeNodesAndWeights(0, nodes.data(), weights.data());
       }
       catch (const InvalidArgumentException & ex)
       {
@@ -62,7 +62,7 @@ int main(int, char *[])
     {
       Point nodes(1);
       Point weights(1);
-      FastHermite::ComputeNodesAndWeights(1, &nodes[0], &weights[0]);
+      FastHermite::ComputeNodesAndWeights(1, nodes.data(), weights.data());
       assert_almost_equal(nodes[0], 0.0, 0.0, 1.0e-14, ", n=1 node");
       assert_almost_equal(weights[0], 1.0, 0.0, 1.0e-14, ", n=1 weight");
     }
@@ -79,7 +79,7 @@ int main(int, char *[])
         const UnsignedInteger n = order[q];
         Point nodes(n);
         Point weights(n);
-        FastHermite::ComputeNodesAndWeights(n, &nodes[0], &weights[0]);
+        FastHermite::ComputeNodesAndWeights(n, nodes.data(), weights.data());
         for (UnsignedInteger m = 0; m < 2 * n; ++m)
         {
           Scalar integral = 0.0;
@@ -100,7 +100,7 @@ int main(int, char *[])
         const UnsignedInteger n = order[q];
         Point nodes(n);
         Point weights(n);
-        FastHermite::ComputeNodesAndWeights(n, &nodes[0], &weights[0]);
+        FastHermite::ComputeNodesAndWeights(n, nodes.data(), weights.data());
         for (UnsignedInteger m = 0; m <= 12; ++m)
         {
           Scalar integral = 0.0;
@@ -115,7 +115,7 @@ int main(int, char *[])
       const UnsignedInteger n = 16;
       Point nodes(n);
       Point weights(n);
-      FastHermite::ComputeNodesAndWeights(n, &nodes[0], &weights[0]);
+      FastHermite::ComputeNodesAndWeights(n, nodes.data(), weights.data());
       for (UnsignedInteger i = 0; i < n; ++i)
       {
         if (!(weights[i] > 0.0)) throw TestFailed(OSS() << "non positive weight " << weights[i]);
@@ -129,7 +129,7 @@ int main(int, char *[])
       const UnsignedInteger n = 1024;
       Point nodes(n);
       Point weights(n);
-      FastHermite::ComputeNodesAndWeights(n, &nodes[0], &weights[0]);
+      FastHermite::ComputeNodesAndWeights(n, nodes.data(), weights.data());
       Scalar sum = 0.0;
       for (UnsignedInteger i = 0; i < n; ++i)
       {

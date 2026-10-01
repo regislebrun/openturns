@@ -110,3 +110,15 @@ y = ot.SpecFunc.BesselJ(-3.0, 4.0)
 ott.assert_almost_equal(y, -0.43017147387562193, 1e-14, 0.0)
 yp = ot.SpecFunc.BesselJDerivative(2.0, -5.0)
 ott.assert_almost_equal(yp, 0.34620518410256607, 1e-14, 0.0)
+
+# Non-finite inputs must throw instead of hanging in boost
+for bad_nu, bad_x in [
+    (float("inf"), 1.0),
+    (float("nan"), 1.0),
+    (0.0, float("inf")),
+    (0.0, float("nan")),
+]:
+    with ott.assert_raises(TypeError):
+        ot.SpecFunc.BesselJ(bad_nu, bad_x)
+    with ott.assert_raises(TypeError):
+        ot.SpecFunc.BesselJDerivative(bad_nu, bad_x)

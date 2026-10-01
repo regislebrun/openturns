@@ -48,7 +48,7 @@ int main(int, char *[])
       Bool thrown = false;
       try
       {
-        FastLaguerre::ComputeNodesAndWeights(0, 1.0, &nodes[0], &weights[0]);
+        FastLaguerre::ComputeNodesAndWeights(0, 1.0, nodes.data(), weights.data());
       }
       catch (const InvalidArgumentException & ex)
       {
@@ -63,7 +63,7 @@ int main(int, char *[])
       Bool thrown = false;
       try
       {
-        FastLaguerre::ComputeNodesAndWeights(4, 0.0, &nodes[0], &weights[0]);
+        FastLaguerre::ComputeNodesAndWeights(4, 0.0, nodes.data(), weights.data());
       }
       catch (const InvalidArgumentException & ex)
       {
@@ -77,7 +77,7 @@ int main(int, char *[])
       const Scalar k = 2.5;
       Point nodes(1);
       Point weights(1);
-      FastLaguerre::ComputeNodesAndWeights(1, k, &nodes[0], &weights[0]);
+      FastLaguerre::ComputeNodesAndWeights(1, k, nodes.data(), weights.data());
       assert_almost_equal(nodes[0], k, 1.0e-12, 1.0e-12, ", n=1 node");
       assert_almost_equal(weights[0], 1.0, 1.0e-12, 1.0e-12, ", n=1 weight");
     }
@@ -100,7 +100,7 @@ int main(int, char *[])
           const UnsignedInteger n = order[q];
           Point nodes(n);
           Point weights(n);
-          FastLaguerre::ComputeNodesAndWeights(n, k, &nodes[0], &weights[0]);
+          FastLaguerre::ComputeNodesAndWeights(n, k, nodes.data(), weights.data());
           for (UnsignedInteger m = 0; m < 2 * n; ++m)
           {
             Scalar integral = 0.0;
@@ -120,7 +120,7 @@ int main(int, char *[])
       const UnsignedInteger n = 16;
       Point nodes(n);
       Point weights(n);
-      FastLaguerre::ComputeNodesAndWeights(n, k, &nodes[0], &weights[0]);
+      FastLaguerre::ComputeNodesAndWeights(n, k, nodes.data(), weights.data());
       for (UnsignedInteger m = 0; m <= 8; ++m)
       {
         Scalar integral = 0.0;
@@ -136,7 +136,7 @@ int main(int, char *[])
       const UnsignedInteger n = 16;
       Point nodes(n);
       Point weights(n);
-      FastLaguerre::ComputeNodesAndWeights(n, k, &nodes[0], &weights[0]);
+      FastLaguerre::ComputeNodesAndWeights(n, k, nodes.data(), weights.data());
       Scalar sum = 0.0;
       for (UnsignedInteger i = 0; i < n; ++i)
       {
@@ -154,7 +154,7 @@ int main(int, char *[])
       const UnsignedInteger n = 1024;
       Point nodes(n);
       Point weights(n);
-      FastLaguerre::ComputeNodesAndWeights(n, 1.0, &nodes[0], &weights[0]);
+      FastLaguerre::ComputeNodesAndWeights(n, 1.0, nodes.data(), weights.data());
       Scalar sum = 0.0;
       for (UnsignedInteger i = 0; i < n; ++i)
       {
