@@ -43,9 +43,11 @@ namespace {
 // the Jacobi matrix has a zero diagonal and sqrt(i) off-diagonal entries,
 // its eigenvalues are the nodes and the weights follow from the first row
 // of the eigenvector matrix
-void GaussHermiteRule(const UnsignedInteger order,
-                      Point & nodes,
-                      Point & weights)
+// NOTE: prefixed with RiemannianGaussian to avoid an ODR collision with the
+// byte-identical WrappedNormal helpers when the Unity build merges both TUs
+void RiemannianGaussianGaussHermiteRule(const UnsignedInteger order,
+                                        Point & nodes,
+                                        Point & weights)
 {
   SymmetricMatrix jacobi(order);
   for (UnsignedInteger i = 1; i < order; ++i)
@@ -61,8 +63,8 @@ void GaussHermiteRule(const UnsignedInteger order,
 // Tensor Gauss-Hermite order from a point budget: the largest order with
 // order^dimension <= budget, at least 2, at most budget^{1/3} to keep the
 // Golub-Welsch eigendecomposition negligible
-UnsignedInteger GaussHermiteOrder(const UnsignedInteger dimension,
-                                  const UnsignedInteger budget)
+UnsignedInteger RiemannianGaussianGaussHermiteOrder(const UnsignedInteger dimension,
+                                                    const UnsignedInteger budget)
 {
   const Scalar maxOrder = std::cbrt(static_cast<Scalar>(budget));
   const Scalar tensorOrder = std::pow(static_cast<Scalar>(budget), 1.0 / static_cast<Scalar>(dimension));
@@ -754,10 +756,10 @@ Scalar RiemannianGaussian::computeEntropy() const
   // is evaluated by tensor Gauss-Hermite quadrature from the cached
   // eigendecomposition, mirroring WrappedNormal::computeEntropy.
   const UnsignedInteger budget = ResourceMap::GetAsUnsignedInteger("RiemannianGaussian-GaussHermiteMaximumPoints");
-  const UnsignedInteger order = GaussHermiteOrder(d, budget);
+  const UnsignedInteger order = RiemannianGaussianGaussHermiteOrder(d, budget);
   Point nodes;
   Point weights;
-  GaussHermiteRule(order, nodes, weights);
+  RiemannianGaussianGaussHermiteRule(order, nodes, weights);
   Scalar expectedLogJacobian = 0.0;
   Scalar totalWeight = 0.0;
   std::vector<UnsignedInteger> counter(d, 0);
