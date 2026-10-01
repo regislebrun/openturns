@@ -111,7 +111,7 @@ functions : sequence of :class:`~openturns.Function`
 
 Returns
 -------
-functions : :class:`~openturns.Collection` of :class:`~openturns.Function`
+functions : :class:`~openturns.FunctionCollection`
     Initial functions.
 "
 
