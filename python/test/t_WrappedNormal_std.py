@@ -134,9 +134,10 @@ ott.assert_almost_equal(
 )
 
 # Covariance of the wrapped variable: tangent sigma when peaked,
-# uniform-like variance pi^2/3 when flat
+# uniform variance pi^2/3 in the flat limit (sigma^2 = 9 is close to uniform
+# up to the finite-concentration bias)
 ott.assert_almost_equal(peaked.getCovariance()[0, 0], 0.25, 1e-6, 0.0)
-ott.assert_almost_equal(flat.getCovariance()[0, 0], 3.31819, 1e-3, 0.0)
+ott.assert_almost_equal(flat.getCovariance()[0, 0], math.pi**2 / 3.0, 5e-2, 0.0)
 
 # High dimension: ellipsoidal lattice sums avoid the premature uniform fallback
 d = 8

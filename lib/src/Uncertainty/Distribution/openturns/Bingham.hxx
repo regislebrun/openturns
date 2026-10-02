@@ -106,9 +106,6 @@ private:
   /** Update the sampler parameters */
   void updateSampler();
 
-  /** Dimension of the sphere (S^{dimension-1}) */
-  UnsignedInteger dimension_;
-
   /** Concentration parameters (diagonal of Z) */
   Point zeta_;
 

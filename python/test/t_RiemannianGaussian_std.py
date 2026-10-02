@@ -31,15 +31,15 @@ ott.assert_almost_equal(
     0.0,
 )
 
-# Off-mean log-density: preserved input gives the same value twice, and the
-# value matches the closed form (quadratic + exp-map Jacobian)
+# Off-mean log-density: value matches the closed form (quadratic + exp-map Jacobian),
+# and PDF is the exponential of the log-PDF
 ott.assert_almost_equal(
     distribution.computeLogPDF([2.0, 0.0, 1.0]), -4.0567022077, 1e-8, 0.0
 )
 ott.assert_almost_equal(
-    distribution.computeLogPDF([2.0, 0.0, 1.0]),
-    distribution.computeLogPDF([2.0, 0.0, 1.0]),
-    1e-15,
+    distribution.computePDF([2.0, 0.0, 1.0]),
+    math.exp(distribution.computeLogPDF([2.0, 0.0, 1.0])),
+    1e-12,
     0.0,
 )
 

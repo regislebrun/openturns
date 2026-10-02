@@ -33,10 +33,11 @@ BEGIN_NAMESPACE_OPENTURNS
  * dimension 3). This layout matches the points of the MatrixFisher
  * distribution.
  *
- * The Riemannian metric is the bi-invariant metric induced by the
- * axis-angle identification of the Lie algebra so(3) with R^3: the
- * geodesic distance between two rotations is the angle of the relative
- * rotation and the total volume is 8.pi^2. The exponential and logarithmic
+ * The Riemannian metric is the bi-invariant metric induced by the ambient
+ * Frobenius product on :math:`\Rset^{3 \times 3}`: the tangent basis is
+ * Frobenius-orthonormal, the geodesic distance between two rotations is
+ * :math:`\sqrt{2}` times the angle of the relative rotation and the total
+ * volume is :math:`16 \sqrt{2} \pi^2`. The exponential and logarithmic
  * maps are available in closed form through the Rodrigues formulas.
  */
 class OT_API OT_WARN_UNUSED SO3Manifold
@@ -69,7 +70,7 @@ public:
   /** Check if a flattened 3x3 matrix is a rotation up to epsilon_ */
   Bool isOnManifold(const Point & point) const override;
 
-  /** Geodesic distance (rotation angle) between two rotations */
+  /** Geodesic distance (Frobenius-induced metric) between two rotations */
   Scalar getGeodesicDistance(const Point & point1,
                              const Point & point2) const override;
 
@@ -79,7 +80,7 @@ public:
   /** Volume density of the pushed-forward Lebesgue measure at intrinsic coordinates */
   Scalar getExpMapVolumeDensity(const Point & coordinates) const override;
 
-  /** Total Riemannian volume (8.pi^2) of SO(3) */
+  /** Total Riemannian volume (16.sqrt(2).pi^2) of SO(3) */
   Scalar getVolume() const override;
 
   /** Comparison operator */

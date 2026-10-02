@@ -90,7 +90,7 @@ Continuous parametric distributions
     Rayleigh
     Rice
 
-    :template: Distribution.rst_t
+    :template: class.rst_t
     experimental.PushForwardDistribution
     experimental.PushForwardOverMesh
     experimental.ManifoldMappedDistribution

@@ -10,10 +10,11 @@ The special orthogonal group :math:`SO(3)` of 3D rotations, embedded in
 dimension 9, intrinsic dimension 3). This layout matches the points of
 the :class:`~openturns.experimental.MatrixFisher` distribution.
 
-The Riemannian metric is the bi-invariant metric induced by the
-axis-angle identification of the Lie algebra :math:`\mathfrak{so}(3)`
-with :math:`\Rset^3`: the geodesic distance between two rotations is the
-angle of the relative rotation and the total volume is :math:`8 \pi^2`.
+The Riemannian metric is the bi-invariant metric induced by the ambient
+Frobenius product on :math:`\Rset^{3 \times 3}`: the tangent basis is
+Frobenius-orthonormal, the geodesic distance between two rotations is
+:math:`\sqrt{2}` times the angle of the relative rotation and the total
+volume is :math:`16 \sqrt{2} \pi^2`.
 The exponential and logarithmic maps are available in closed form
 through the Rodrigues formulas.
 
@@ -36,5 +37,5 @@ Examples
 >>> print(manifold.getIntrinsicDimension())
 3
 >>> print(manifold.getVolume())
-78.9568352...
+223.3236543...
 )RAW"

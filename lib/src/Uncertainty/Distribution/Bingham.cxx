@@ -38,7 +38,6 @@ static const Factory<Bingham> Factory_Bingham;
 
 Bingham::Bingham()
   : DistributionImplementation()
-  , dimension_(3)
   , zeta_(3)
   , gamma_(3)
   , epsilon_(ResourceMap::GetAsScalar("Bingham-OrthogonalityThreshold"))
@@ -61,14 +60,13 @@ Bingham::Bingham()
 Bingham::Bingham(const Point & zeta,
                  const SquareMatrix & gamma)
   : DistributionImplementation()
-  , dimension_(zeta.getDimension())
   , zeta_(zeta)
   , gamma_(gamma.getDimension())
   , epsilon_(ResourceMap::GetAsScalar("Bingham-OrthogonalityThreshold"))
   , logNormalization_(0.0)
   , optimalB_(0.0)
 {
-  const UnsignedInteger n = dimension_;
+  const UnsignedInteger n = zeta.getDimension();
   if (n < 2)
     throw InvalidArgumentException(HERE) << "in Bingham: dimension must be >= 2, got n=" << n;
   if (zeta.getSize() != n)
@@ -104,7 +102,7 @@ Bingham::Bingham(const Point & zeta,
 Bool Bingham::operator ==(const Bingham & other) const
 {
   if (this == &other) return true;
-  return (dimension_ == other.dimension_)
+  return (getDimension() == other.getDimension())
       && (zeta_ == other.zeta_)
       && (gamma_ == other.gamma_);
 }
@@ -140,14 +138,14 @@ Bingham * Bingham::clone() const
 
 void Bingham::computeRange()
 {
-  Point lower(dimension_, -1.0);
-  Point upper(dimension_, 1.0);
+  Point lower(getDimension(), -1.0);
+  Point upper(getDimension(), 1.0);
   setRange(Interval(lower, upper));
 }
 
 Scalar Bingham::computeLogNormalizationConstant(const Point & zeta) const
 {
-  const UnsignedInteger n = dimension_;
+  const UnsignedInteger n = getDimension();
   Point cZeta(zeta);
 
   // The density depends on zeta up to an additive constant: shift so that
@@ -247,7 +245,7 @@ void Bingham::computeNormalization()
 
 Point Bingham::computeSecondMoments() const
 {
-  const UnsignedInteger n = dimension_;
+  const UnsignedInteger n = getDimension();
   // Canonical shift (adding a constant to zeta leaves the law unchanged)
   Point cZeta(zeta_);
   const Scalar minZeta = *std::min_element(cZeta.begin(), cZeta.end());
@@ -362,7 +360,7 @@ void Bingham::updateSampler()
   // concentration matrix is diag(b, b + zeta_1 - zeta_2, ..., b + zeta_1 - zeta_n).
   // The parameter b is chosen as the root of sum_i 1/(b + zeta_1 - zeta_i) = 1,
   // which makes the envelope asymptotically tight.
-  const UnsignedInteger n = dimension_;
+  const UnsignedInteger n = getDimension();
   Point delta(n);
   for (UnsignedInteger i = 0; i < n; ++i)
     delta[i] = zeta_[0] - zeta_[i];
@@ -397,7 +395,7 @@ void Bingham::updateSampler()
 
 Point Bingham::getRealization() const
 {
-  const UnsignedInteger n = dimension_;
+  const UnsignedInteger n = getDimension();
   const Scalar b = optimalB_;
 
   // Maximum over u in [0, zeta_1] of h(u) = exp(-u) * (b + u)^{n/2} of the
@@ -459,8 +457,8 @@ Point Bingham::getRealization() const
 
 Scalar Bingham::computePDF(const Point & point) const
 {
-  if (point.getDimension() != dimension_)
-    throw InvalidArgumentException(HERE) << "Error: the given point must have dimension=" << dimension_ << ", here dimension=" << point.getDimension();
+  if (point.getDimension() != getDimension())
+    throw InvalidArgumentException(HERE) << "Error: the given point must have dimension=" << getDimension() << ", here dimension=" << point.getDimension();
   const Scalar normX = point.norm();
   if (std::abs(normX - 1.0) > epsilon_) return 0.0;
   return std::exp(computeLogPDF(point));
@@ -468,18 +466,18 @@ Scalar Bingham::computePDF(const Point & point) const
 
 Scalar Bingham::computeLogPDF(const Point & point) const
 {
-  if (point.getDimension() != dimension_)
-    throw InvalidArgumentException(HERE) << "Error: the given point must have dimension=" << dimension_ << ", here dimension=" << point.getDimension();
+  if (point.getDimension() != getDimension())
+    throw InvalidArgumentException(HERE) << "Error: the given point must have dimension=" << getDimension() << ", here dimension=" << point.getDimension();
   const Scalar normX = point.norm();
   if (std::abs(normX - 1.0) > epsilon_) return -SpecFunc::Infinity;
 
   // The density is exp(x^T gamma diag(zeta) gamma^T x) = exp(sum zeta_i (gamma_i.x)^2)
   // where gamma_i are the COLUMNS of the orientation matrix
   Scalar exponent = 0.0;
-  for (UnsignedInteger i = 0; i < dimension_; ++i)
+  for (UnsignedInteger i = 0; i < getDimension(); ++i)
   {
     Scalar dot = 0.0;
-    for (UnsignedInteger j = 0; j < dimension_; ++j)
+    for (UnsignedInteger j = 0; j < getDimension(); ++j)
       dot += gamma_(j, i) * point[j];
     exponent += zeta_[i] * dot * dot;
   }
@@ -489,7 +487,7 @@ Scalar Bingham::computeLogPDF(const Point & point) const
 
 Point Bingham::getParameter() const
 {
-  const UnsignedInteger n = dimension_;
+  const UnsignedInteger n = getDimension();
   Point point(n + n * n);
   for (UnsignedInteger i = 0; i < n; ++i)
     point[i] = zeta_[i];
@@ -501,7 +499,7 @@ Point Bingham::getParameter() const
 
 void Bingham::setParameter(const Point & parameter)
 {
-  const UnsignedInteger n = dimension_;
+  const UnsignedInteger n = getDimension();
   if (parameter.getSize() != n + n * n)
     throw InvalidArgumentException(HERE) << "Error: expected " << (n + n * n) << " values, got " << parameter.getSize();
 
@@ -522,7 +520,7 @@ void Bingham::setParameter(const Point & parameter)
 
 Description Bingham::getParameterDescription() const
 {
-  const UnsignedInteger n = dimension_;
+  const UnsignedInteger n = getDimension();
   Description description(n + n * n);
   for (UnsignedInteger i = 0; i < n; ++i)
   {
@@ -542,7 +540,7 @@ Description Bingham::getParameterDescription() const
 
 void Bingham::setZeta(const Point & zeta)
 {
-  const UnsignedInteger n = dimension_;
+  const UnsignedInteger n = getDimension();
   if (zeta.getSize() != n)
     throw InvalidArgumentException(HERE) << "Error: zeta has a dimension=" << zeta.getDimension() << " must be equal to the distribution dimension=" << n;
 
@@ -577,7 +575,7 @@ Point Bingham::getZeta() const
 
 void Bingham::setGamma(const SquareMatrix & gamma)
 {
-  const UnsignedInteger n = dimension_;
+  const UnsignedInteger n = getDimension();
   if (gamma.getDimension() != n)
     throw InvalidArgumentException(HERE) << "in Bingham::setGamma: gamma must be of dimension " << n << ", got dimension=" << gamma.getDimension();
   if ((gamma.computeGram() - IdentityMatrix(n)).frobeniusNorm() > epsilon_)
@@ -618,7 +616,7 @@ void Bingham::setEpsilon(const Scalar epsilon)
 void Bingham::computeMean() const
 {
   // The Bingham distribution is antipodally symmetric: the mean is zero
-  mean_ = Point(dimension_, 0.0);
+  mean_ = Point(getDimension(), 0.0);
   isAlreadyComputedMean_ = true;
 }
 
@@ -628,8 +626,8 @@ void Bingham::computeCovariance() const
   // diagonalizing frame: the coordinates are independent in the sense that
   // E[u_i u_j] = 0 for i != j and E[u_i] = 0.
   const Point secondMoments(computeSecondMoments());
-  SquareMatrix diag(dimension_);
-  for (UnsignedInteger i = 0; i < dimension_; ++i)
+  SquareMatrix diag(getDimension());
+  for (UnsignedInteger i = 0; i < getDimension(); ++i)
     diag(i, i) = secondMoments[i];
   const SquareMatrix tmp = gamma_ * diag * gamma_.transpose();
   covariance_ = CovarianceMatrix(tmp.getImplementation());
@@ -642,7 +640,7 @@ Scalar Bingham::computeEntropy() const
   // E[X^T diag(zeta) X] = sum_i zeta_i E[u_i^2]
   const Point secondMoments(computeSecondMoments());
   Scalar expectation = 0.0;
-  for (UnsignedInteger i = 0; i < dimension_; ++i)
+  for (UnsignedInteger i = 0; i < getDimension(); ++i)
     expectation += zeta_[i] * secondMoments[i];
   return logNormalization_ - expectation;
 }
@@ -655,7 +653,6 @@ Bool Bingham::isContinuous() const
 void Bingham::save(Advocate & adv) const
 {
   DistributionImplementation::save(adv);
-  adv.saveAttribute("dimension_", dimension_);
   adv.saveAttribute("zeta_", zeta_);
   adv.saveAttribute("gamma_", gamma_);
   adv.saveAttribute("epsilon_", epsilon_);
@@ -666,7 +663,6 @@ void Bingham::save(Advocate & adv) const
 void Bingham::load(Advocate & adv)
 {
   DistributionImplementation::load(adv);
-  adv.loadAttribute("dimension_", dimension_);
   adv.loadAttribute("zeta_", zeta_);
   adv.loadAttribute("gamma_", gamma_);
   adv.loadAttribute("epsilon_", epsilon_);

@@ -274,6 +274,7 @@ as Python functions.
     SpecFunc.LogFactorial
     SpecFunc.LogGamma
     SpecFunc.LogGamma1p
+    SpecFunc.LogHyperGeom_1_1
     SpecFunc.NextPowerOfTwo
     SpecFunc.Psi
     SpecFunc.RegularizedIncompleteBeta

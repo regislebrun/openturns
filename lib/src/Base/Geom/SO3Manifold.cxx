@@ -211,7 +211,7 @@ Bool SO3Manifold::isOnManifold(const Point & point) const
   return true;
 }
 
-/* Geodesic distance (rotation angle) between two rotations */
+/* Geodesic distance (Frobenius-induced metric) between two rotations */
 Scalar SO3Manifold::getGeodesicDistance(const Point & point1,
                                         const Point & point2) const
 {
@@ -223,7 +223,11 @@ Scalar SO3Manifold::getGeodesicDistance(const Point & point1,
   const Scalar cosTheta = std::max(-1.0, std::min(1.0, 0.5 * (relative(0, 0) + relative(1, 1) + relative(2, 2) - 1.0)));
   const SquareMatrix skewPart((relative - relative.transpose()) * 0.5);
   const Scalar sinTheta = VectorFromSkew(skewPart).norm();
-  return std::atan2(sinTheta, cosTheta);
+  // The Frobenius-induced metric scales rotation-angle distances by sqrt(2):
+  // a tangent vector for an angle theta has Frobenius norm sqrt(2) * theta,
+  // consistent with the Frobenius-orthonormal tangent basis and the volume
+  // density below, whose integral over the tangent ball is 16*sqrt(2)*pi^2
+  return std::sqrt(2.0) * std::atan2(sinTheta, cosTheta);
 }
 
 /* Orthonormal basis of the tangent space at basePoint: scaled skew-symmetric axis matrices */
@@ -256,10 +260,10 @@ Scalar SO3Manifold::getExpMapVolumeDensity(const Point & coordinates) const
   return ratio * ratio;
 }
 
-/* Total Riemannian volume (8.pi^2) of SO(3) */
+/* Total Riemannian volume (16.sqrt(2).pi^2) of SO(3) for the Frobenius-induced metric */
 Scalar SO3Manifold::getVolume() const
 {
-  return 8.0 * M_PI * M_PI;
+  return 16.0 * std::sqrt(2.0) * M_PI * M_PI;
 }
 
 /* Comparison operator */

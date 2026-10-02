@@ -111,8 +111,9 @@ print("Manifold ", rotations)
 assert rotations.getAmbientDimension() == 9
 assert rotations.getIntrinsicDimension() == 3
 
-# Total volume: 8 pi^2
-ott.assert_almost_equal(rotations.getVolume(), 8.0 * math.pi * math.pi, 1e-12, 1e-12)
+# Total volume: 16 sqrt(2) pi^2 for the Frobenius-induced metric, consistent
+# with the integral of getExpMapVolumeDensity over the tangent ball
+ott.assert_almost_equal(rotations.getVolume(), 16.0 * math.sqrt(2.0) * math.pi * math.pi, 1e-12, 1e-12)
 
 # Identity rotation, row-major flattened
 identity = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
@@ -126,8 +127,10 @@ sinT = math.sin(theta)
 rotZ = [cosT, -sinT, 0.0, sinT, cosT, 0.0, 0.0, 0.0, 1.0]
 assert rotations.isOnManifold(rotZ)
 
-# Geodesic distance from identity is the rotation angle
-ott.assert_almost_equal(rotations.getGeodesicDistance(identity, rotZ), theta, 1e-12, 1e-12)
+# Geodesic distance from identity is sqrt(2) times the rotation angle for the
+# Frobenius-induced metric (a tangent vector for an angle theta has
+# Frobenius norm sqrt(2) * theta)
+ott.assert_almost_equal(rotations.getGeodesicDistance(identity, rotZ), math.sqrt(2.0) * theta, 1e-12, 1e-12)
 ott.assert_almost_equal(rotations.getGeodesicDistance(identity, identity), 0.0, 1e-12, 1e-12)
 
 # Exponential map of a null increment is the base point
@@ -143,7 +146,7 @@ ott.assert_almost_equal(rotations.expMap(identity, logZ), rotZ, 1e-12, 1e-12)
 # Round trip at a non-trivial base point: exp then log
 logAtZ = rotations.logMap(rotZ, identity)
 ott.assert_almost_equal(rotations.expMap(rotZ, logAtZ), identity, 1e-10, 1e-10)
-ott.assert_almost_equal(rotations.getGeodesicDistance(rotZ, identity), theta, 1e-12, 1e-12)
+ott.assert_almost_equal(rotations.getGeodesicDistance(rotZ, identity), math.sqrt(2.0) * theta, 1e-12, 1e-12)
 
 # Polar projection of a scaled rotation recovers the rotation
 ott.assert_almost_equal(rotations.projectToManifold([2.0 * x for x in rotZ]), rotZ, 1e-12, 1e-12)
@@ -157,7 +160,7 @@ ott.assert_almost_equal(projectedTangent, [0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0
 # Logarithmic map at the cut locus (half-turn) raises
 halfTurn = [-1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0]
 assert rotations.isOnManifold(halfTurn)
-ott.assert_almost_equal(rotations.getGeodesicDistance(identity, halfTurn), math.pi, 1e-12, 1e-12)
+ott.assert_almost_equal(rotations.getGeodesicDistance(identity, halfTurn), math.sqrt(2.0) * math.pi, 1e-12, 1e-12)
 with ott.assert_raises(TypeError):
     rotations.logMap(identity, halfTurn)
 
