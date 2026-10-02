@@ -574,6 +574,10 @@ ot_add_python_module(experimental experimental_module.i
                      SlicedInverseRegressionResult.i SlicedInverseRegressionResult_doc.i
                      CirculantEmbeddingGaussianProcess.i CirculantEmbeddingGaussianProcess_doc.i
                      P1InterpolatedProcess.i P1InterpolatedProcess_doc.i
+                     HODLRMatrixParameters.i HODLRMatrixParameters_doc.i
+                     HODLRMatrixFactory.i HODLRMatrixFactory_doc.i
+                     HODLRMatrix.i HODLRMatrix_doc.i
+                     HODLRMatrixImplementation.i HODLRMatrixImplementation_doc.i
                      SparseExpansion.i SparseExpansion_doc.i
                     )
 ot_add_python_module(model_process model_process_module.i

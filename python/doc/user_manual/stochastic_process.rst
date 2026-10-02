@@ -208,3 +208,14 @@ Karhunen-Loeve decomposition
     KarhunenLoeveResult
     KarhunenLoeveProjection
     KarhunenLoeveLifting
+
+Hierarchical covariance matrices
+================================
+
+.. autosummary::
+    :toctree: _generated/
+    :template: class.rst_t
+
+    experimental.HODLRMatrix
+    experimental.HODLRMatrixFactory
+    experimental.HODLRMatrixParameters

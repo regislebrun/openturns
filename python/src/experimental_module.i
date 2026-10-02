@@ -15,6 +15,7 @@
 #include "openturns/OTMetaModel.hxx"
 #include "openturns/OTSimulation.hxx"
 #include "openturns/OTSolver.hxx"
+#include "openturns/OTStat.hxx"
 %}
 
 %include typemaps.i
@@ -74,6 +75,13 @@
 %include InverseGammaFactory.i
 %include VonMisesFisher.i
 %include VonMisesFisherFactory.i
+
+/* Base/Stat */
+%import statistics_module.i
+%include HODLRMatrixParameters.i
+%include HODLRMatrixFactory.i
+%include HODLRMatrix.i
+%include HODLRMatrixImplementation.i
 
 /* Uncertainty/Algorithm/Metamodel */
 %include LinearModelValidation.i
