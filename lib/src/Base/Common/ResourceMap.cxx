@@ -1189,6 +1189,14 @@ void ResourceMap::loadDefaultConfiguration()
   addAsScalar("ChristoffelDistribution-KnSafetyFactor", 1.0);
   addAsUnsignedInteger("ChristoffelDistribution-SliceGridSize", 1000);
 
+  // SubsampleChristoffelExperiment parameters //
+  addAsScalar("SubsampleChristoffelExperiment-SamplingFactor", 10.0);
+  addAsScalar("SubsampleChristoffelExperiment-PoolOversamplingFactor", 2.0);
+  addAsScalar("SubsampleChristoffelExperiment-FrameTolerance", 0.5);
+  addAsString("SubsampleChristoffelExperiment-ThinningMethod", "Removal", {"Barrier", "Removal"});
+  addAsScalar("SubsampleChristoffelExperiment-BarrierStep", 1.0);
+  addAsScalar("SubsampleChristoffelExperiment-BarrierRegularization", 1.0e-8);
+
   // JointDistribution parameters //
   addAsBool("JointDistribution-UseGenericCovarianceAlgorithm", false);
 

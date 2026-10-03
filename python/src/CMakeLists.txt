@@ -563,6 +563,7 @@ ot_add_python_module(experimental experimental_module.i
                      SquaredNormalFactory.i SquaredNormalFactory_doc.i
                      InverseGammaFactory.i InverseGammaFactory_doc.i
                      FejerExperiment.i FejerExperiment_doc.i
+                     SubsampleChristoffelExperiment.i SubsampleChristoffelExperiment_doc.i
                      EfficientGlobalOptimization.i EfficientGlobalOptimization_doc.i
                      HiGHS.i HiGHS_doc.i
                      LinearProblem.i LinearProblem_doc.i

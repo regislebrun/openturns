@@ -53,6 +53,7 @@
 %import weightedexperiment_module.i
 %include UncertaintyWeightedExperimentTemplateDefs.i
 %include FejerExperiment.i
+%include SubsampleChristoffelExperiment.i
 
 /* Uncertainty */
 %import metamodel_module.i

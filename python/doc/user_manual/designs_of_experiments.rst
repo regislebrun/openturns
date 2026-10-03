@@ -57,6 +57,7 @@ Random weighted experiments
     LHSExperiment
     MonteCarloExperiment
     ImportanceSamplingExperiment
+    experimental.SubsampleChristoffelExperiment
 
 Deterministic weighted experiments
 ----------------------------------
