@@ -542,6 +542,14 @@
   <PosteriorDistribution-OptimizationAlgorithm value_str="Cobyla" />
   <PosteriorDistribution-RatioUniformCandidateNumber value_int="10000" />
 
+  <!-- OT::ChristoffelDistribution parameters -->
+  <ChristoffelDistribution-OptimizationAlgorithm value_str="Cobyla" />
+  <ChristoffelDistribution-RatioUniformCandidateNumber value_int="10000" />
+  <ChristoffelDistribution-RatioUniformMaxDimension value_int="5" />
+  <ChristoffelDistribution-KnSamplingSize value_int="100000" />
+  <ChristoffelDistribution-KnSafetyFactor value_float="1.0" />
+  <ChristoffelDistribution-SliceGridSize value_int="1000" />
+
   <!-- OT::JointDistribution parameters -->
   <JointDistribution-UseGenericCovarianceAlgorithm value_bool="false" />
 

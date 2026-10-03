@@ -1181,6 +1181,14 @@ void ResourceMap::loadDefaultConfiguration()
   addAsString("PosteriorDistribution-OptimizationAlgorithm", "Cobyla");
   addAsUnsignedInteger("PosteriorDistribution-RatioUniformCandidateNumber", 10000);
 
+  // ChristoffelDistribution parameters //
+  addAsString("ChristoffelDistribution-OptimizationAlgorithm", "Cobyla");
+  addAsUnsignedInteger("ChristoffelDistribution-RatioUniformCandidateNumber", 10000);
+  addAsUnsignedInteger("ChristoffelDistribution-RatioUniformMaxDimension", 5);
+  addAsUnsignedInteger("ChristoffelDistribution-KnSamplingSize", 100000);
+  addAsScalar("ChristoffelDistribution-KnSafetyFactor", 1.0);
+  addAsUnsignedInteger("ChristoffelDistribution-SliceGridSize", 1000);
+
   // JointDistribution parameters //
   addAsBool("JointDistribution-UseGenericCovarianceAlgorithm", false);
 

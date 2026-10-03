@@ -61,6 +61,7 @@
 %import model_process_module.i
 
 /* Uncertainty/Distribution */
+%include ChristoffelDistribution.i
 %include Kent.i
 %include KentFactory.i
 %include MarginalUniformOrderStatistics.i

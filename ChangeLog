@@ -20,8 +20,15 @@
  * Ridgway-UniformPoolSize: maximum number of uniform draws generated sequentially in advance per outer block of the Student orthant computation (default is 1048576)
  * Normal-RectangularProbabilityAlgorithm: algorithm used for large-dimension rectangular probabilities, Genz or Ridgway (default is Genz)
  * Student-RectangularProbabilityAlgorithm: algorithm used for large-dimension rectangular probabilities, Genz or Ridgway (default is Genz)
+ * ChristoffelDistribution-OptimizationAlgorithm: optimization algorithm used by the internal ratio-of-uniforms sampler (default is Cobyla)
+ * ChristoffelDistribution-RatioUniformCandidateNumber: number of candidate points of the internal ratio-of-uniforms sampler (default is 10000)
+ * ChristoffelDistribution-RatioUniformMaxDimension: input dimension above which sampling falls back to crude rejection instead of ratio-of-uniforms (default is 5)
+ * ChristoffelDistribution-KnSamplingSize: sample size of the Monte-Carlo estimate of the stability factor (default is 100000)
+ * ChristoffelDistribution-KnSafetyFactor: multiplicative safety margin of the stability factor estimate (default is 1.0)
+ * ChristoffelDistribution-SliceGridSize: grid size of the univariate slice maxima in sequential conditional sampling (default is 1000)
 
 ==== New classes ====
+ * ChristoffelDistribution (openturns.experimental)
  * InverseGammaFactory (openturns.experimental)
  * Kent, KentFactory (openturns.experimental)
  * MultivariateUniform, MultivariateUniformFactory (openturns.experimental)
