@@ -58,6 +58,7 @@
 ==== New classes ====
  * Bingham, BinghamFactory (openturns.experimental)
  * ChristoffelDistribution, ChristoffelSubsampleExperiment (openturns.experimental)
+ * FiniteOrthonormalFunctionFactory, GaussLPQuadrature, FiniteOrthonormalizationAlgorithm (openturns.experimental)
  * InverseGammaFactory (openturns.experimental)
  * Kent, KentFactory (openturns.experimental)
  * LeaveOneOut
