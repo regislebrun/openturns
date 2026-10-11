@@ -112,7 +112,7 @@ public:
 
   Point operator() (const Point & point) const override
   {
-    const UnsignedInteger m = static_cast<UnsignedInteger>(point[0]);
+    const UnsignedInteger m = static_cast<UnsignedInteger>(std::round(point[0]));
     return Point(1, computeLogLikelihood(m));
   }
 
@@ -211,7 +211,7 @@ public:
 
   Point operator() (const Point & point) const override
   {
-    const UnsignedInteger m = static_cast<UnsignedInteger>(point[0]);
+    const UnsignedInteger m = static_cast<UnsignedInteger>(std::round(point[0]));
     return Point(1, computeCsiszar(m));
   }
 
@@ -275,7 +275,7 @@ UnsignedInteger BernsteinCopulaFactory::FindBestBinNumberSequential(const Functi
 {
   Scalar bestMValue = SpecFunc::Infinity;
   UnsignedInteger bestM = 0;
-  for (UnsignedInteger m = mMin; m < mMax; ++m)
+  for (UnsignedInteger m = mMin; m <= mMax; ++m)
   {
     const Scalar mValue = mObjective(Point(1, m))[0];
     LOGINFO(OSS() << "Searching for the best bin number, m=" << m << ", objective=" << mValue << ", best so far=" << bestM << ", best objective=" << bestMValue);
