@@ -214,8 +214,6 @@ Point BlockIndependentCopula::computeDDF(const Point & point) const
   // First, compute the several elements
   for (UnsignedInteger i = 0; i < size; ++i)
   {
-    // If one component is outside of the support, the PDF is null
-    if ((point[i] <= 0.0) || (point[i] >= 1.0)) return Point(dimension);
     const Distribution copula(copulaCollection_[i]);
     const UnsignedInteger copulaDimension = copula.getDimension();
     Point component(copulaDimension);
@@ -224,6 +222,9 @@ Point BlockIndependentCopula::computeDDF(const Point & point) const
       component[j] = point[index];
       ++index;
     }
+    // If one component is outside of the support, the PDF is null
+    for (UnsignedInteger j = 0; j < copulaDimension; ++j)
+      if ((component[j] <= 0.0) || (component[j] >= 1.0)) return Point(dimension);
     copulaPDF[i] = copula.computePDF(component);
     productPDF *= copulaPDF[i];
     copulaDDF[i] = copula.computeDDF(component);
@@ -255,8 +256,6 @@ Scalar BlockIndependentCopula::computePDF(const Point & point) const
   UnsignedInteger index = 0;
   for (UnsignedInteger i = 0; i < size; ++i)
   {
-    // If one component is outside of the support, the PDF is null
-    if ((point[i] <= 0.0) || (point[i] >= 1.0)) return 0.0;
     const UnsignedInteger copulaDimension = copulaCollection_[i].getDimension();
     Point component(copulaDimension);
     for (UnsignedInteger j = 0; j < copulaDimension; ++j)
@@ -264,6 +263,9 @@ Scalar BlockIndependentCopula::computePDF(const Point & point) const
       component[j] = point[index];
       ++index;
     }
+    // If one component is outside of the support, the PDF is null
+    for (UnsignedInteger j = 0; j < copulaDimension; ++j)
+      if ((component[j] <= 0.0) || (component[j] >= 1.0)) return 0.0;
     productPDF *= copulaCollection_[i].computePDF(component);
   }
   return productPDF;
@@ -274,15 +276,13 @@ Scalar BlockIndependentCopula::computeLogPDF(const Point & point) const
 {
   /* PDF = PDF_copula1x...xPDF_copula_n */
   const UnsignedInteger dimension = getDimension();
-  if (isIndependent_) return IndependentCopula(dimension).computePDF(point);
+  if (isIndependent_) return IndependentCopula(dimension).computeLogPDF(point);
   if (point.getDimension() != dimension) throw InvalidArgumentException(HERE) << "Error: the given point must have dimension=" << dimension << ", here dimension=" << point.getDimension();
   const UnsignedInteger size = copulaCollection_.getSize();
   Scalar sumLogPDF = 0.0;
   UnsignedInteger index = 0;
   for (UnsignedInteger i = 0; i < size; ++i)
   {
-    // If one component is outside of the support, the PDF is null
-    if ((point[i] <= 0.0) || (point[i] >= 1.0)) return SpecFunc::LowestScalar;
     const UnsignedInteger copulaDimension = copulaCollection_[i].getDimension();
     Point component(copulaDimension);
     for (UnsignedInteger j = 0; j < copulaDimension; ++j)
@@ -290,6 +290,9 @@ Scalar BlockIndependentCopula::computeLogPDF(const Point & point) const
       component[j] = point[index];
       ++index;
     }
+    // If one component is outside of the support, the PDF is null
+    for (UnsignedInteger j = 0; j < copulaDimension; ++j)
+      if ((component[j] <= 0.0) || (component[j] >= 1.0)) return SpecFunc::LowestScalar;
     sumLogPDF += copulaCollection_[i].computeLogPDF(component);
   }
   return sumLogPDF;
@@ -308,9 +311,6 @@ Scalar BlockIndependentCopula::computeCDF(const Point & point) const
   UnsignedInteger index = 0;
   for (UnsignedInteger i = 0; i < size; ++i)
   {
-    // If one component is at the left of the support of its marginal distribution, the CDF is null
-    if (point[i] <= 0.0) return 0.0;
-    // If the component is inside of the support, update the CDF value
     const UnsignedInteger copulaDimension = copulaCollection_[i].getDimension();
     Point component(copulaDimension);
     for (UnsignedInteger j = 0; j < copulaDimension; ++j)
@@ -318,6 +318,10 @@ Scalar BlockIndependentCopula::computeCDF(const Point & point) const
       component[j] = point[index];
       ++index;
     }
+    // If one component is at the left of the support of its marginal distribution, the CDF is null
+    for (UnsignedInteger j = 0; j < copulaDimension; ++j)
+      if (component[j] <= 0.0) return 0.0;
+    // If the component is inside of the support, update the CDF value
     const Scalar cdf = copulaCollection_[i].computeCDF(component);
     productCDF *= cdf;
   }
@@ -339,6 +343,7 @@ Scalar BlockIndependentCopula::computeProbability(const Interval & interval) con
   const Point upperIntersect(intersect.getUpperBound());
   const UnsignedInteger size = copulaCollection_.getSize();
   Scalar value = 1.0;
+  UnsignedInteger blockShift = 0;
   for (UnsignedInteger i = 0; i < size; ++i)
   {
     const Distribution copula(copulaCollection_[i]);
@@ -347,9 +352,10 @@ Scalar BlockIndependentCopula::computeProbability(const Interval & interval) con
     Point upper(copulaDimension);
     for (UnsignedInteger j = 0; j < copulaDimension; ++j)
     {
-      lower[j] = lowerIntersect[j];
-      upper[j] = upperIntersect[j];
+      lower[j] = lowerIntersect[blockShift + j];
+      upper[j] = upperIntersect[blockShift + j];
     }
+    blockShift += copulaDimension;
     value *= copula.computeProbability(Interval(lower, upper));
   }
   return value;
@@ -368,9 +374,6 @@ Scalar BlockIndependentCopula::computeSurvivalFunction(const Point & point) cons
   UnsignedInteger index = 0;
   for (UnsignedInteger i = 0; i < size; ++i)
   {
-    // If one component is at the left of the support of its marginal distribution, the Survival is null
-    if (point[i] >= 1.0) return 0.0;
-    // If the component is inside of the support, update the Survival value
     const UnsignedInteger copulaDimension = copulaCollection_[i].getDimension();
     Point component(copulaDimension);
     for (UnsignedInteger j = 0; j < copulaDimension; ++j)
@@ -378,6 +381,10 @@ Scalar BlockIndependentCopula::computeSurvivalFunction(const Point & point) cons
       component[j] = point[index];
       ++index;
     }
+    // If one component is at the left of the support of its marginal distribution, the Survival is null
+    for (UnsignedInteger j = 0; j < copulaDimension; ++j)
+      if (component[j] >= 1.0) return 0.0;
+    // If the component is inside of the support, update the Survival value
     const Scalar survival = copulaCollection_[i].computeSurvivalFunction(component);
     productSurvival *= survival;
   }
