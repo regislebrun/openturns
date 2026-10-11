@@ -1527,6 +1527,7 @@ void ResourceMap::loadDefaultConfiguration()
 
   // KFactor parameters //
   addAsScalar("KFactor-Precision", 1.0e-8);
+  addAsScalar("KFactor-RMax", 8.5);
   addAsUnsignedInteger("KFactor-DefaultIntegrationNodesNumber", 256);
   addAsUnsignedInteger("KFactor-MaximumIteration", 32);
 
