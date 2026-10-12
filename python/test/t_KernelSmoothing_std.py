@@ -27,30 +27,32 @@ kernels.add(ot.Triangular())
 kernels.add(ot.Logistic())
 kernels.add(ot.Beta(2.0, 2.0, -1.0, 1.0))
 kernels.add(ot.Beta(3.0, 3.0, -1.0, 1.0))
-meanExact = distribution.getMean()
-covarianceExact = distribution.getCovariance()
-for kernel in kernels:
-    print("kernel=", kernel.getName())
+expectedBandwidth = [
+    [0.745017, 1.51724],
+    [1.66591, 3.39265],
+    [1.29041, 2.62794],
+    [1.82491, 3.71646],
+    [0.41075, 0.836498],
+    [1.66591, 3.39265],
+    [1.97113, 4.01424],
+]
+expectedSmoothedPDF = [0.0247623, 0.0245905, 0.0235911, 0.0246934, 0.0254113, 0.0245905, 0.0244981]
+expectedSmoothedCDF = [0.279515, 0.278675, 0.278627, 0.278851, 0.280123, 0.278675, 0.27883]
+expectedMixturePDF = [0.0247621, 0.0245902, 0.0235911, 0.0246934, 0.0254111, 0.0245902, 0.024498]
+expectedMixtureCDF = [0.279514, 0.278675, 0.278627, 0.27885, 0.280123, 0.278675, 0.27883]
+for ki, kernel in enumerate(kernels):
     smoother = ot.KernelSmoothing(kernel)
     smoothed = smoother.build(sample)
     bw = smoother.getBandwidth()
-    print("kernel bandwidth=[ %.6g" % bw[0], ",  %.6g" % bw[1], "]")
+    ott.assert_almost_equal(bw, expectedBandwidth[ki], 1e-5, 0.0)
     meanSmoothed = smoothed.getMean()
-    print(
-        "mean(smoothed)=[ %.6g" % meanSmoothed[0],
-        ",  %.6g" % meanSmoothed[1],
-        "] mean(exact)=[",
-        meanExact[0],
-        ", ",
-        meanExact[1],
-        "]",
-    )
+    ott.assert_almost_equal(meanSmoothed, [0.50406, -0.708164], 1e-5, 0.0)
     covarianceSmoothed = smoothed.getCovariance()
-    print(
-        "covariance=",
-        repr(covarianceSmoothed),
-        " covariance(exact)=",
-        repr(covarianceExact),
+    ott.assert_almost_equal(
+        covarianceSmoothed,
+        ot.CovarianceMatrix(2, [4.10693, 2.78725, 2.78725, 11.7692]),
+        1e-5,
+        0.0,
     )
     # Define a point
     point = ot.Point(smoothed.getDimension(), 0.0)
@@ -58,11 +60,11 @@ for kernel in kernels:
     # Show PDF and CDF of point point
     pointPDF = smoothed.computePDF(point)
     pointCDF = smoothed.computeCDF(point)
-    print("Point= ", repr(point))
-    print(" pdf(smoothed)=%.6g" % pointPDF)
-    print(" pdf(exact)=%.6g" % distribution.computePDF(point))
-    print(" cdf(smoothed)=%.6g" % pointCDF)
-    print(" cdf(exact)=%.6g" % distribution.computeCDF(point))
+    ott.assert_almost_equal(point, [0.0, 0.0], 0.0, 0.0)
+    ott.assert_almost_equal(pointPDF, expectedSmoothedPDF[ki], 1e-5, 0.0)
+    ott.assert_almost_equal(distribution.computePDF(point), 0.0280502, 1e-5, 0.0)
+    ott.assert_almost_equal(pointCDF, expectedSmoothedCDF[ki], 1e-5, 0.0)
+    ott.assert_almost_equal(distribution.computeCDF(point), 0.305529, 1e-5, 0.0)
 
     # as mixture
     mixture = smoother.buildAsMixture(
@@ -70,10 +72,10 @@ for kernel in kernels:
     )
     pointPDF = mixture.computePDF(point)
     pointCDF = mixture.computeCDF(point)
-    print(" pdf(smoothed)=%.6g" % pointPDF)
-    print(" pdf(exact)=%.6g" % distribution.computePDF(point))
-    print(" cdf(smoothed)=%.6g" % pointCDF)
-    print(" cdf(exact)=%.6g" % distribution.computeCDF(point))
+    ott.assert_almost_equal(pointPDF, expectedMixturePDF[ki], 1e-5, 0.0)
+    ott.assert_almost_equal(distribution.computePDF(point), 0.0280502, 1e-5, 0.0)
+    ott.assert_almost_equal(pointCDF, expectedMixtureCDF[ki], 1e-5, 0.0)
+    ott.assert_almost_equal(distribution.computeCDF(point), 0.305529, 1e-5, 0.0)
 
 
 # Test for boundary correction
@@ -84,12 +86,31 @@ sampleCollection = [
     distributionCollection[0].getSample(discretization),
     distributionCollection[1].getSample(discretization),
 ]
-for i in range(kernels.getSize()):
-    kernel = kernels[i]
-    print("kernel=", kernel.getName())
+expectedBoundaryPDF = [
+    [[0.302612, 0.302613], [0.339484, 0.537733]],
+    [[0.302157, 0.302157], [0.316357, 0.521347]],
+    [[0.300471, 0.300471], [0.292855, 0.491997]],
+    [[0.302471, 0.302471], [0.334081, 0.531359]],
+    [[0.303756, 0.303774], [0.355609, 0.546998]],
+    [[0.302157, 0.302157], [0.316357, 0.521347]],
+    [[0.302041, 0.302041], [0.324187, 0.527483]],
+]
+expectedBoundaryCDF = [
+    [[0.206809, 0.206809], [0.0881112, 0.0535112]],
+    [[0.208576, 0.208576], [0.0891315, 0.0516683]],
+    [[0.209151, 0.209151], [0.0900747, 0.0507867]],
+    [[0.208301, 0.208301], [0.0887193, 0.0527025]],
+    [[0.205753, 0.20575], [0.0871653, 0.05477]],
+    [[0.208576, 0.208576], [0.0891315, 0.0516683]],
+    [[0.207977, 0.207977], [0.0888216, 0.0522068]],
+]
+expectedExactPDF = [[0.266085, 0.597681], [0.266085, 0.597681], [0.266085, 0.597681], [0.266085, 0.597681], [0.266085, 0.597681], [0.266085, 0.597681], [0.266085, 0.597681]]
+expectedExactCDF = [[0.18406, 0.0852122], [0.18406, 0.0852122], [0.18406, 0.0852122], [0.18406, 0.0852122], [0.18406, 0.0852122], [0.18406, 0.0852122], [0.18406, 0.0852122]]
+for ki in range(kernels.getSize()):
+    kernel = kernels[ki]
     smoother = ot.KernelSmoothing(kernel)
     for j in range(2):
-        for corr in [False, True]:
+        for ci, corr in enumerate([False, True]):
             smoother.setBoundingOption(
                 ot.KernelSmoothing.BOTH if corr else ot.KernelSmoothing.NONE
             )
@@ -97,25 +118,19 @@ for i in range(kernels.getSize()):
                 ot.KernelSmoothing.BOTH if corr else ot.KernelSmoothing.NONE
             ), "wrong bounding option"
             smoothed = smoother.build(sampleCollection[j])
-            print(
-                "Bounded underlying distribution? ",
-                j == 1,
-                " bounded reconstruction? ",
-                corr,
-            )
             # Define a point
             point = ot.Point(smoothed.getDimension(), -0.9)
 
             # Show PDF and CDF of point point
             pointPDF = smoothed.computePDF(point)
             pointCDF = smoothed.computeCDF(point)
-            print(
-                " pdf(smoothed)=  %.6g" % pointPDF,
-                " pdf(exact)= %.6g" % distributionCollection[j].computePDF(point),
+            ott.assert_almost_equal(pointPDF, expectedBoundaryPDF[ki][j][ci], 1e-5, 0.0)
+            ott.assert_almost_equal(
+                distributionCollection[j].computePDF(point), expectedExactPDF[ki][j], 1e-5, 0.0
             )
-            print(
-                " cdf(smoothed)=  %.6g" % pointCDF,
-                " cdf(exact)= %.6g" % distributionCollection[j].computeCDF(point),
+            ott.assert_almost_equal(pointCDF, expectedBoundaryCDF[ki][j][ci], 1e-5, 0.0)
+            ott.assert_almost_equal(
+                distributionCollection[j].computeCDF(point), expectedExactCDF[ki][j], 1e-5, 0.0
             )
 
 # bounding option accessor round-trips all values, default is NONE
@@ -135,112 +150,96 @@ ks1 = ot.KernelSmoothing(ot.Normal(), True, 64).build(sample)
 ks2 = ot.KernelSmoothing(ot.Normal(), True, 1024).build(sample)
 ks3 = ot.KernelSmoothing(ot.Normal(), False).build(sample)
 point = 0.3
-print("with low  bin count, pdf=%.6g" % ks1.computePDF(point))
-print("with high bin count, pdf=%.6g" % ks2.computePDF(point))
-print("without   binning,   pdf=%.6g" % ks3.computePDF(point))
+ott.assert_almost_equal(ks1.computePDF(point), 0.365181, 1e-5, 0.0)
+ott.assert_almost_equal(ks2.computePDF(point), 0.365423, 1e-5, 0.0)
+ott.assert_almost_equal(ks3.computePDF(point), 0.365424, 1e-5, 0.0)
 # Test with varying boundary corrections
 coll = [ot.Uniform(-1.0, 1.0), ot.Uniform(0.0, 2.0)]
 left = [-0.9, 0.1]
 right = [0.9, 1.9]
+expectedLeft = [
+    [0.38087, 0.521626, 0.506571, 0.38087, 0.38087, 0.521626, 0.506571, 0.521626, 0.506571],
+    [0.379383, 0.485563, 0.466624, 0.379383, 0.379383, 0.485563, 0.466624, 0.485563, 0.466624],
+]
+expectedRight = [
+    [0.361147, 0.361147, 0.361147, 0.506744, 0.505152, 0.506744, 0.506744, 0.505152, 0.505152],
+    [0.404847, 0.404847, 0.404847, 0.512248, 0.511777, 0.512248, 0.512248, 0.511777, 0.511777],
+]
 for nDist in range(len(coll)):
     baseDist = coll[nDist]
     sample = baseDist.getSample(500)
     algo1 = ot.KernelSmoothing(ot.Normal(), False)
     algo1.setBoundingOption(ot.KernelSmoothing.NONE)
     ks1 = algo1.build(sample)
-    print(
-        "with no boundary correction, pdf(left)=%.6g" % ks1.computePDF(left[nDist]),
-        ", pdf(right)=%.6g" % ks1.computePDF(right[nDist]),
-    )
+    ott.assert_almost_equal(ks1.computePDF(left[nDist]), expectedLeft[nDist][0], 1e-5, 0.0)
+    ott.assert_almost_equal(ks1.computePDF(right[nDist]), expectedRight[nDist][0], 1e-5, 0.0)
 
     algo2 = ot.KernelSmoothing(ot.Normal(), False)
     algo2.setBoundingOption(ot.KernelSmoothing.LOWER)
     algo2.setAutomaticLowerBound(True)
     ks2 = algo2.build(sample)
-    print(
-        "with automatic lower boundary correction, pdf(left)=%.6g"
-        % ks2.computePDF(left[nDist]),
-        ", pdf(right)=%.6g" % ks2.computePDF(right[nDist]),
-    )
+    ott.assert_almost_equal(ks2.computePDF(left[nDist]), expectedLeft[nDist][1], 1e-5, 0.0)
+    ott.assert_almost_equal(ks2.computePDF(right[nDist]), expectedRight[nDist][1], 1e-5, 0.0)
 
     algo3 = ot.KernelSmoothing(ot.Normal(), False)
     algo3.setBoundingOption(ot.KernelSmoothing.LOWER)
     algo3.setLowerBound(baseDist.getRange().getLowerBound()[0])
     algo3.setAutomaticLowerBound(False)
     ks3 = algo3.build(sample)
-    print(
-        "with user defined lower boundary correction, pdf(left)=%.6g"
-        % ks3.computePDF(left[nDist]),
-        ", pdf(right)=%.6g" % ks3.computePDF(right[nDist]),
-    )
+    ott.assert_almost_equal(ks3.computePDF(left[nDist]), expectedLeft[nDist][2], 1e-5, 0.0)
+    ott.assert_almost_equal(ks3.computePDF(right[nDist]), expectedRight[nDist][2], 1e-5, 0.0)
 
     algo4 = ot.KernelSmoothing(ot.Normal(), False)
     algo4.setBoundingOption(ot.KernelSmoothing.UPPER)
     algo4.setAutomaticUpperBound(True)
     ks4 = algo4.build(sample)
-    print(
-        "with automatic upper boundary correction, pdf(left)=%.6g"
-        % ks4.computePDF(left[nDist]),
-        ", pdf(right)=%.6g" % ks4.computePDF(right[nDist]),
-    )
+    ott.assert_almost_equal(ks4.computePDF(left[nDist]), expectedLeft[nDist][3], 1e-5, 0.0)
+    ott.assert_almost_equal(ks4.computePDF(right[nDist]), expectedRight[nDist][3], 1e-5, 0.0)
 
     algo5 = ot.KernelSmoothing(ot.Normal(), False)
     algo5.setBoundingOption(ot.KernelSmoothing.UPPER)
     algo5.setUpperBound(baseDist.getRange().getUpperBound()[0])
     algo5.setAutomaticLowerBound(False)
     ks5 = algo5.build(sample)
-    print(
-        "with user defined upper boundary correction, pdf(left)=%.6g"
-        % ks5.computePDF(left[nDist]),
-        ", pdf(right)=%.6g" % ks5.computePDF(right[nDist]),
-    )
+    ott.assert_almost_equal(ks5.computePDF(left[nDist]), expectedLeft[nDist][4], 1e-5, 0.0)
+    ott.assert_almost_equal(ks5.computePDF(right[nDist]), expectedRight[nDist][4], 1e-5, 0.0)
 
     algo6 = ot.KernelSmoothing(ot.Normal(), False)
     algo6.setBoundingOption(ot.KernelSmoothing.BOTH)
     ks6 = algo6.build(sample)
-    print(
-        "with automatic boundaries correction, pdf(left)=%.6g"
-        % ks6.computePDF(left[nDist]),
-        ", pdf(right)=%.6g" % ks6.computePDF(right[nDist]),
-    )
+    ott.assert_almost_equal(ks6.computePDF(left[nDist]), expectedLeft[nDist][5], 1e-5, 0.0)
+    ott.assert_almost_equal(ks6.computePDF(right[nDist]), expectedRight[nDist][5], 1e-5, 0.0)
 
     algo7 = ot.KernelSmoothing(ot.Normal(), False)
     algo7.setBoundingOption(ot.KernelSmoothing.BOTH)
     algo7.setLowerBound(baseDist.getRange().getLowerBound()[0])
     ks7 = algo7.build(sample)
-    print(
-        "with user defined lower/automatic upper boundaries correction, pdf(left)=%.6g"
-        % ks7.computePDF(left[nDist]),
-        ", pdf(right)=%.6g" % ks7.computePDF(right[nDist]),
-    )
+    ott.assert_almost_equal(ks7.computePDF(left[nDist]), expectedLeft[nDist][6], 1e-5, 0.0)
+    ott.assert_almost_equal(ks7.computePDF(right[nDist]), expectedRight[nDist][6], 1e-5, 0.0)
 
     algo8 = ot.KernelSmoothing(ot.Normal(), False)
     algo8.setBoundingOption(ot.KernelSmoothing.BOTH)
     algo8.setUpperBound(baseDist.getRange().getUpperBound()[0])
     ks8 = algo8.build(sample)
-    print(
-        "with automatic lower/user defined upper boundaries correction, pdf(left)=%.6g"
-        % ks8.computePDF(left[nDist]),
-        ", pdf(right)=%.6g" % ks8.computePDF(right[nDist]),
-    )
+    ott.assert_almost_equal(ks8.computePDF(left[nDist]), expectedLeft[nDist][7], 1e-5, 0.0)
+    ott.assert_almost_equal(ks8.computePDF(right[nDist]), expectedRight[nDist][7], 1e-5, 0.0)
 
     algo9 = ot.KernelSmoothing(ot.Normal(), False)
     algo9.setBoundingOption(ot.KernelSmoothing.BOTH)
     algo9.setLowerBound(baseDist.getRange().getLowerBound()[0])
     algo9.setUpperBound(baseDist.getRange().getUpperBound()[0])
     ks9 = algo9.build(sample)
-    print(
-        "with user defined boundaries correction, pdf(left)=%.6g"
-        % ks9.computePDF(left[nDist]),
-        ", pdf(right)=%.6g" % ks9.computePDF(right[nDist]),
-    )
+    ott.assert_almost_equal(ks9.computePDF(left[nDist]), expectedLeft[nDist][8], 1e-5, 0.0)
+    ott.assert_almost_equal(ks9.computePDF(right[nDist]), expectedRight[nDist][8], 1e-5, 0.0)
 
 # full degenerate case
 sample = ot.JointDistribution([ot.Dirac(-7.0), ot.Dirac(0.0), ot.Dirac(8.0)]).getSample(
     50
 )
 smoothed = ot.KernelSmoothing().build(sample)
-print(smoothed.getSample(3))
+ott.assert_almost_equal(
+    smoothed.getSample(3), [[-7.0, 0.0, 8.0], [-7.0, 0.0, 8.0], [-7.0, 0.0, 8.0]], 0.0, 0.0
+)
 
 # n-d degenerate case
 sample = ot.JointDistribution(
@@ -248,7 +247,11 @@ sample = ot.JointDistribution(
 ).getSample(50)
 sample.setDescription(["d7", "a23", "d8"])
 smoothed = ot.KernelSmoothing().build(sample)
-print(smoothed.getSample(3))
+degenerateSample = smoothed.getSample(3)
+ott.assert_almost_equal(
+    degenerateSample, [[-7.0, 2.82969, 8.0], [-7.0, 2.35796, 8.0], [-7.0, 2.08774, 8.0]], 1e-5, 0.0
+)
+assert list(degenerateSample.getDescription()) == ["d7", "a23", "d8"]
 
 # Test with reduced Cutoff - generates non positive phiGammaH
 distribution = ot.Normal()
@@ -258,7 +261,7 @@ ot.ResourceMap.SetAsScalar("KernelSmoothing-CutOffPlugin", 3.0)
 ot.RandomGenerator.SetSeed(8457)
 sample = distribution.getSample(30)
 h = factory.computePluginBandwidth(sample)[0]
-print("with reduced cutoff. h=%.6g" % (h))
+ott.assert_almost_equal(h, 0.769339, 1e-5, 0.0)
 
 # test of logTransform
 for i, distribution in enumerate(

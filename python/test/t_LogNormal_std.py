@@ -8,102 +8,104 @@ ot.TESTPREAMBLE()
 
 # Instantiate one distribution object
 distribution = ot.LogNormal(-1.0, 1.5, -0.5)
-print("Distribution ", repr(distribution))
-print("Distribution ", distribution)
+assert distribution.getClassName() == "LogNormal"
 
 # Is this distribution elliptical ?
-print("Elliptical = ", distribution.isElliptical())
+assert not distribution.isElliptical()
 
 # Is this distribution continuous ?
-print("Continuous = ", distribution.isContinuous())
+assert distribution.isContinuous()
 
 # Test for realization of distribution
 oneRealization = distribution.getRealization()
-print("oneRealization=", repr(oneRealization))
+ott.assert_almost_equal(oneRealization, [0.416038], 1e-5, 0.0)
 
 # Define a point
 point = ot.Point(distribution.getDimension(), 1.0)
-print("Point= ", repr(point))
+ott.assert_almost_equal(point, [1.0], 0.0, 0.0)
 
 # Show PDF and CDF at point
 eps = 1e-5
 # derivative of PDF with regards its arguments
 DDF = distribution.computeDDF(point)
-print("ddf     =", repr(DDF))
+ott.assert_almost_equal(DDF, [-0.12381], 1e-5, 0.0)
 
 # PDF value
 LPDF = distribution.computeLogPDF(point)
-print("log pdf=%.6f" % LPDF)
+ott.assert_almost_equal(LPDF, -2.168831, 1e-6, 1e-6)
 PDF = distribution.computePDF(point)
-print("pdf     =%.6f" % PDF)
+ott.assert_almost_equal(PDF, 0.114311, 1e-6, 1e-6)
 
 # derivative of the PDF with regards the parameters of the distribution
 CDF = distribution.computeCDF(point)
-print("cdf=%.6f" % CDF)
+ott.assert_almost_equal(CDF, 0.825615, 1e-6, 1e-6)
 CCDF = distribution.computeComplementaryCDF(point)
-print("ccdf=%.6f" % CCDF)
+ott.assert_almost_equal(CCDF, 0.174385, 1e-6, 1e-6)
 CF = distribution.computeCharacteristicFunction(point[0])
-print("characteristic function= (%.12g%+.12gj)" % (CF.real, CF.imag))
+ott.assert_almost_equal([CF.real, CF.imag], [0.74087680493, -0.0157786395661], 1e-9, 0.0)
 PDFgr = distribution.computePDFGradient(point)
-print("pdf gradient     =", repr(PDFgr))
+ott.assert_almost_equal(PDFgr, [0.0714046, -0.00930299, 0.12381], 1e-5, 0.0)
 
 # derivative of the PDF with regards the parameters of the distribution
 CDFgr = distribution.computeCDFGradient(point)
-print("cdf gradient     =", repr(CDFgr))
+ott.assert_almost_equal(CDFgr, [-0.171467, -0.16066, -0.114311], 1e-5, 0.0)
 
 # quantile
 quantile = distribution.computeQuantile(0.95)
-print("quantile=", repr(quantile))
-print("cdf(quantile)=%.6f" % distribution.computeCDF(quantile))
+ott.assert_almost_equal(quantile, [3.83742], 1e-5, 0.0)
+ott.assert_almost_equal(distribution.computeCDF(quantile), 0.95, 1e-6, 1e-6)
 # Get 95% survival function
 inverseSurvival = ot.Point(distribution.computeInverseSurvivalFunction(0.95))
-print("InverseSurvival=", repr(inverseSurvival))
-print(
-    "Survival(inverseSurvival)=%.6f"
-    % distribution.computeSurvivalFunction(inverseSurvival)
+ott.assert_almost_equal(inverseSurvival, [-0.468798], 1e-5, 0.0)
+ott.assert_almost_equal(
+    distribution.computeSurvivalFunction(inverseSurvival), 0.95, 1e-6, 1e-6
 )
-print("entropy=%.6f" % distribution.computeEntropy())
+ott.assert_almost_equal(distribution.computeEntropy(), 0.824404, 1e-6, 1e-6)
 
 # Confidence regions
 interval, threshold = distribution.computeMinimumVolumeIntervalWithMarginalProbability(
     0.95
 )
-print("Minimum volume interval=", interval)
-print("threshold=", ot.Point(1, threshold))
+ott.assert_almost_equal(interval.getLowerBound(), [-0.499653], 1e-5, 0.0)
+ott.assert_almost_equal(interval.getUpperBound(), [3.83753], 1e-5, 0.0)
+ott.assert_almost_equal(threshold, 0.95, 1e-5, 0.0)
 levelSet, beta = distribution.computeMinimumVolumeLevelSetWithThreshold(0.95)
-print("Minimum volume level set=", levelSet)
-print("beta=", ot.Point(1, beta))
+ott.assert_almost_equal(beta, [0.0158512], 1e-5, 0.0)
 interval, beta = distribution.computeBilateralConfidenceIntervalWithMarginalProbability(
     0.95
 )
-print("Bilateral confidence interval=", interval)
-print("beta=", ot.Point(1, beta))
+ott.assert_almost_equal(interval.getLowerBound(), [-0.480551], 1e-5, 0.0)
+ott.assert_almost_equal(interval.getUpperBound(), [6.45838], 1e-5, 0.0)
+ott.assert_almost_equal(beta, 0.95, 1e-5, 0.0)
 (
     interval,
     beta,
 ) = distribution.computeUnilateralConfidenceIntervalWithMarginalProbability(0.95, False)
-print("Unilateral confidence interval (lower tail)=", interval)
-print("beta=", ot.Point(1, beta))
+ott.assert_almost_equal(interval.getLowerBound(), [-0.5], 1e-5, 0.0)
+ott.assert_almost_equal(interval.getUpperBound(), [3.83742], 1e-5, 0.0)
+ott.assert_almost_equal(beta, 0.95, 1e-5, 0.0)
 (
     interval,
     beta,
 ) = distribution.computeUnilateralConfidenceIntervalWithMarginalProbability(0.95, True)
-print("Unilateral confidence interval (upper tail)=", interval)
-print("beta=", ot.Point(1, beta))
+ott.assert_almost_equal(interval.getLowerBound(), [-0.468798], 1e-5, 0.0)
+ott.assert_almost_equal(interval.getUpperBound(), [35451.8], 1e-5, 0.0)
+ott.assert_almost_equal(beta, 0.95, 1e-5, 0.0)
 
 mean = distribution.getMean()
-print("mean=", repr(mean))
+ott.assert_almost_equal(mean, [0.633148], 1e-5, 0.0)
 standardDeviation = distribution.getStandardDeviation()
-print("standard deviation=", repr(standardDeviation))
+ott.assert_almost_equal(standardDeviation, [3.30128], 1e-5, 0.0)
 skewness = distribution.getSkewness()
-print("skewness=", repr(skewness))
+ott.assert_almost_equal(skewness, [33.468], 1e-5, 0.0)
 kurtosis = distribution.getKurtosis()
-print("kurtosis=", repr(kurtosis))
+ott.assert_almost_equal(kurtosis, [10078.3], 1e-5, 0.0)
 covariance = distribution.getCovariance()
-print("covariance=", repr(covariance))
+ott.assert_almost_equal(covariance, ot.CovarianceMatrix(1, [10.8985]), 1e-5, 0.0)
 parameters = distribution.getParametersCollection()
-print("parameters=", repr(parameters))
-print("Standard representative=", distribution.getStandardRepresentative())
+assert len(parameters) == 1
+ott.assert_almost_equal(parameters[0], [-1.0, 1.5, -0.5], 0.0, 0.0)
+assert distribution.getStandardRepresentative().getImplementation().getClassName() == "LogNormal"
 
 ot.Log.Show(ot.Log.TRACE)
 validation = ott.DistributionValidation(distribution)
