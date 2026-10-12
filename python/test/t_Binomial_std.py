@@ -1,63 +1,61 @@
 #! /usr/bin/env python
 
-# %%
 import openturns as ot
 import openturns.testing as ott
 import os
 
-# %%
 ot.TESTPREAMBLE()
 
 # Instantiate one distribution object
 distribution = ot.Binomial(15, 0.7)
-print("Distribution ", repr(distribution))
-print("Distribution ", distribution)
+assert distribution.getClassName() == "Binomial"
 
 # Is this distribution elliptical ?
-print("Elliptical = ", distribution.isElliptical())
+assert not distribution.isElliptical()
 
 # Is this distribution continuous ?
-print("Continuous = ", distribution.isContinuous())
+assert not distribution.isContinuous()
 
 # Test for realization of distribution
 oneRealization = distribution.getRealization()
-print("oneRealization=", repr(oneRealization))
+ott.assert_almost_equal(oneRealization, [10.0], 0.0, 0.0)
 
 # Define a point
 point = ot.Point(distribution.getDimension(), 5.0)
-print("Point= ", repr(point))
+ott.assert_almost_equal(point, [5.0], 0.0, 0.0)
 
 # PDF value
 PDF = distribution.computePDF(point)
-print("pdf     =%.6f" % PDF)
+ott.assert_almost_equal(PDF, 0.002980, 1e-6, 1e-6)
 
 # derivative of the PDF with regards the parameters of the distribution
 CDF = distribution.computeCDF(point)
-print("cdf=%.6f" % CDF)
+ott.assert_almost_equal(CDF, 0.003653, 1e-6, 1e-6)
 # quantile
 quantile = distribution.computeQuantile(0.95)
-print("quantile=", repr(quantile))
-print("cdf(quantile)=%.6f" % distribution.computeCDF(quantile))
-print("entropy=%.6f" % distribution.computeEntropy())
+ott.assert_almost_equal(quantile, [13.0], 0.0, 0.0)
+ott.assert_almost_equal(distribution.computeCDF(quantile), 0.964732, 1e-6, 1e-6)
+ott.assert_almost_equal(distribution.computeEntropy(), 1.986819, 1e-6, 1e-6)
 mean = distribution.getMean()
-print("mean=", repr(mean))
+ott.assert_almost_equal(mean, [10.5], 1e-5, 0.0)
 standardDeviation = distribution.getStandardDeviation()
-print("standard deviation=", repr(standardDeviation))
+ott.assert_almost_equal(standardDeviation, [1.77482], 1e-5, 0.0)
 skewness = distribution.getSkewness()
-print("skewness=", repr(skewness))
+ott.assert_almost_equal(skewness, [-0.225374], 1e-5, 0.0)
 kurtosis = distribution.getKurtosis()
-print("kurtosis=", repr(kurtosis))
+ott.assert_almost_equal(kurtosis, [2.91746], 1e-5, 0.0)
 covariance = distribution.getCovariance()
-print("covariance=", repr(covariance))
+ott.assert_almost_equal(covariance, ot.CovarianceMatrix(1, [3.15]), 1e-5, 0.0)
 parameters = distribution.getParametersCollection()
-print("parameters=", repr(parameters))
-print("Standard representative=", distribution.getStandardRepresentative())
+assert len(parameters) == 1
+ott.assert_almost_equal(parameters[0], [15.0, 0.7], 0.0, 0.0)
+assert distribution.getStandardRepresentative().getImplementation().getClassName() == "Binomial"
 # Confidence interval
 alpha = 0.05
 bounds = distribution.computeBilateralConfidenceInterval(1 - alpha)
-print("%.2f%% bilateral confidence interval" % ((1 - alpha) * 100), " =", bounds)
+ott.assert_almost_equal(bounds.getLowerBound(), [7.0], 0.0, 0.0)
+ott.assert_almost_equal(bounds.getUpperBound(), [13.0], 0.0, 0.0)
 
-# %%
 # check survival at upper bound
 distribution = ot.Binomial(10, 1.0)
 assert distribution.computeCDF(10.0) == 1.0
@@ -83,8 +81,6 @@ with ott.assert_raises(TypeError):
 with ott.assert_raises(TypeError):
     degenerate.setParameter([float("nan"), 0.5])
 
-# %%
-print("Check on dataset")
 separator = ","
 path = os.path.join(os.path.dirname(__file__), "t_Binomial_std.csv")
 sample = ot.Sample.ImportFromTextFile(path, separator)
@@ -101,31 +97,13 @@ for i in range(sample_size):
     computed_cdf = distribution.computeCDF(x)
     computed_ccdf = distribution.computeComplementaryCDF(x)
     computed_surv = distribution.computeSurvivalFunction(x)
-    print(
-        f"row = {i}/{sample_size}, x = {x}, n = {n}, pr = {pr}, "
-        f"P(X = x) = {expected_pdf}, CDF = {expected_cdfp}, Compl. CDF = {expected_cdfq}"
-    )
     # Check PDF
-    print(
-        f"    computePDF. Computed = {computed_p:.11e}, expected = {expected_pdf:.11e}"
-    )
     ott.assert_almost_equal(computed_p, expected_pdf, rtol, atol)
     # Check CDF
-    print(
-        f"    computeCDF. Computed = {computed_cdf:.11e}, expected = {expected_cdfp:.11e}"
-    )
     ott.assert_almost_equal(computed_cdf, expected_cdfp, rtol, atol)
     # Check complementary CDF
-    print(
-        f"    computeComplementaryCDF. Computed = {computed_ccdf:.11e}, "
-        f"expected = {expected_cdfq:.11e}"
-    )
     ott.assert_almost_equal(computed_ccdf, expected_cdfq, rtol, atol)
     # Check Survival
-    print(
-        f"    computeSurvivalFunction. Computed = {computed_surv:.11e}, "
-        f"expected = {computed_ccdf:.11e}"
-    )
     ott.assert_almost_equal(computed_surv, computed_ccdf, rtol, atol)
     # Check quantile
     if pr == 0.0 or pr == 1.0:
@@ -136,17 +114,12 @@ for i in range(sample_size):
         computed_x = int(distribution.computeQuantile(computed_cdf)[0])
         cdfXM1 = distribution.computeCDF(computed_x - 1)
         cdfX = distribution.computeCDF(computed_x)
-        print(
-            f"    computeQuantile (A). Computed X = {computed_x}, "
-            f"F(X - 1) = {cdfXM1:.7e}, F(X) = {cdfX:.7e}"
-        )
         if computed_cdf == 0.0:
             assert computed_x == 0.0
         else:
             assert cdfXM1 < computed_cdf and computed_cdf <= cdfX
     else:
         computed_x = int(distribution.computeQuantile(computed_ccdf, True)[0])
-        print(f"    computeQuantile (B). Computed X = {computed_x}, expected = {x}")
         assert x == computed_x
     if i > 0:
         ott.assert_almost_equal(
@@ -154,7 +127,6 @@ for i in range(sample_size):
         )  # Can be off by 1 unit
 
 
-# %%
 # quantile bug
 alpha = 0.05
 beta = 0.05
@@ -164,7 +136,6 @@ for n in range(59, 100):
     p1 = d.computeCDF(k - 1)
     p2 = d.computeCDF(k)
     ok = p1 < beta <= p2
-    print(f"n={n} k={k:.0f} p(k-1)={p1:.4f} p(k)={p2:.4f} ok={ok}")
     assert ok
 
 ot.Log.Show(ot.Log.TRACE)

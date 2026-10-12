@@ -9,7 +9,7 @@ ot.TESTPREAMBLE()
 # Instantiate one distribution object
 distribution = ot.DiscreteCompoundDistribution(ot.Bernoulli(0.5), ot.Poisson(20.0))
 upper_bound = int(distribution.getRange().getUpperBound()[0])
-print("Upper bound : {!r}".format(upper_bound))
+assert upper_bound == 62
 
 # Compare with mathematically equal distribution
 poisson_distribution = ot.Poisson(10.0)
@@ -19,43 +19,44 @@ for i in range(upper_bound):
         distribution.computePDF([i]), poisson_distribution.computePDF([i])
     )
 
-print("Distribution ", repr(distribution))
-print("Distribution ", distribution)
+assert distribution.getClassName() == "DiscreteCompoundDistribution"
 
 # Is this distribution elliptical ?
-print("Elliptical = ", distribution.isElliptical())
+assert not distribution.isElliptical()
 
 # Is this distribution continuous ?
-print("Continuous = ", distribution.isContinuous())
+assert not distribution.isContinuous()
 
 # Test for realization of distribution
 oneRealization = distribution.getRealization()
-print("oneRealization=", repr(oneRealization))
+ott.assert_almost_equal(oneRealization, [4.0], 0.0, 0.0)
 
 # Test for sampling
 size = 10000
 oneSample = distribution.getSample(size)
-print("oneSample first=", repr(oneSample[0]), " last=", repr(oneSample[size - 1]))
-print("mean=", repr(oneSample.computeMean()))
-print("covariance=", repr(oneSample.computeCovariance()))
+ott.assert_almost_equal(oneSample[0], [12.0], 0.0, 0.0)
+ott.assert_almost_equal(oneSample[size - 1], [18.0], 0.0, 0.0)
+ott.assert_almost_equal(oneSample.computeMean(), [9.9932], 1e-5, 0.0)
+ott.assert_almost_equal(
+    oneSample.computeCovariance(), ot.CovarianceMatrix(1, [9.88734]), 1e-5, 0.0
+)
 
 # quantile
 quantile = distribution.computeQuantile(0.95)
-print("quantile=", repr(quantile))
-print("cdf(quantile)=%.6f" % distribution.computeCDF(quantile))
-print("entropy=%.6f" % distribution.computeEntropy())
+ott.assert_almost_equal(quantile, [15.0], 0.0, 0.0)
+ott.assert_almost_equal(distribution.computeCDF(quantile), 0.951260, 1e-6, 1e-6)
+ott.assert_almost_equal(distribution.computeEntropy(), 2.561410, 1e-6, 1e-6)
 mean = distribution.getMean()
-print("mean=", repr(mean))
+ott.assert_almost_equal(mean, [10.0], 1e-5, 0.0)
 standardDeviation = distribution.getStandardDeviation()
-print("standard deviation=", repr(standardDeviation))
+ott.assert_almost_equal(standardDeviation, [3.16228], 1e-5, 0.0)
 skewness = distribution.getSkewness()
-print("skewness=", repr(skewness))
+ott.assert_almost_equal(skewness, [0.316228], 1e-5, 0.0)
 kurtosis = distribution.getKurtosis()
-print("kurtosis=", repr(kurtosis))
+ott.assert_almost_equal(kurtosis, [3.1], 1e-5, 0.0)
 covariance = distribution.getCovariance()
-print("covariance=", repr(covariance))
-print("Standard representative=", distribution.getStandardRepresentative())
-# print("probabilities=", distribution.getProbabilities())
+ott.assert_almost_equal(covariance, ot.CovarianceMatrix(1, [10.0]), 1e-5, 0.0)
+assert distribution.getStandardRepresentative().getImplementation().getClassName() == "DiscreteCompoundDistribution"
 
 ot.Log.Show(ot.Log.TRACE)
 validation = ott.DistributionValidation(distribution)
