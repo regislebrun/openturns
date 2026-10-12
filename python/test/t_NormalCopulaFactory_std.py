@@ -13,12 +13,18 @@ for i in range(dim):
     for j in range(i):
         R[i, j] = 0.5 * (1.0 + i) / dim
 distribution = ot.NormalCopula(R)
+assert distribution.getClassName() == "NormalCopula"
+ott.assert_almost_equal(distribution.getShapeMatrix(), R, 0.0, 0.0)
 size = 10000
 sample = distribution.getSample(size)
 factory = ot.NormalCopulaFactory()
 estimatedDistribution = factory.build(sample)
-print("distribution=", distribution)
-print("Estimated distribution=", estimatedDistribution)
+ott.assert_almost_equal(
+    estimatedDistribution.getShapeMatrix(),
+    [[1.0, 0.313268, 0.490701], [0.313268, 1.0, 0.487274], [0.490701, 0.487274, 1.0]],
+    1e-5,
+    0.0,
+)
 
 # non-regression for #572
 estimated_dist = ot.NormalCopulaFactory().build(distribution.getSample(10))
@@ -26,18 +32,25 @@ mydist = ot.JointDistribution(
     ot.DistributionCollection(dim, ot.Normal()), estimated_dist
 )
 estimatedDistribution = factory.build()
-print("Default distribution=", estimatedDistribution)
+ott.assert_almost_equal(estimatedDistribution.getShapeMatrix(), [[1.0, 0.0], [0.0, 1.0]], 0.0, 0.0)
 estimatedNormalCopula = factory.buildAsNormalCopula(sample)
-print("NormalCopula          =", distribution)
-print("Estimated normalCopula=", estimatedNormalCopula)
+ott.assert_almost_equal(distribution.getShapeMatrix(), R, 0.0, 0.0)
+ott.assert_almost_equal(
+    estimatedNormalCopula.getShapeMatrix(),
+    [[1.0, 0.313268, 0.490701], [0.313268, 1.0, 0.487274], [0.490701, 0.487274, 1.0]],
+    1e-5,
+    0.0,
+)
 estimatedNormalCopula = factory.buildAsNormalCopula()
-print("Default normalCopula=", estimatedNormalCopula)
+ott.assert_almost_equal(estimatedNormalCopula.getShapeMatrix(), [[1.0, 0.0], [0.0, 1.0]], 0.0, 0.0)
 
 # Kendall estimate is singular here: fallback on Spearman's rho
 singular_sample = ot.Sample(
     [[0.10, 0.10], [0.11, 0.11], [0.12, 0.12], [0.13, 0.13], [0.14, 0.14]]
 )
-print("Fallback estimate=", factory.build(singular_sample).getCorrelation())
+ott.assert_almost_equal(
+    factory.build(singular_sample).getCorrelation(), [[1.0, 1.0], [1.0, 1.0]], 1e-12, 0.0
+)
 
 # Neither Kendall nor Spearman estimates are definite positive:
 # fall back to the regularized sample linear correlation (see #3321)
