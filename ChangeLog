@@ -128,6 +128,15 @@
  * LMG, PMVD, Johnson indices and VIF metric added to CorrelationAnalysis, the latter as a static CorrelationAnalysis.computeVIF(Sample) method
  * Accelerated Gauss quadrature in HermiteFactory, JacobiFactory, LaguerreFactory, LegendreFactory and OrthogonalUniVariatePolynomialFactory
  * HistogramFactory.buildWeighted(), buildWeightedAsHistogram() and computeBandwidthWeighted() for importance-weighted histograms
+ * Sample.computeSuperQuantile
+ * Sample.computeQuantile and computeQuantilePerComponent accept an optional tail flag
+ * MetaModelValidation.computeRootMeanSquaredError, computeMeanAbsoluteError and drawResiduals
+ * Distribution.drawMarginalPDFs draws a grid of marginals for dimension greater than 2
+ * FiniteDifferenceGradient per-output finite difference steps
+ * NonLinearLeastSquaresCalibration.setUseLaplaceApproximation
+ * GaussKronrod.getErrorEstimate, getIterationNumber, getEvaluationSubIntervals and getLocalErrorEstimates
+ * Curve.setLabels/getLabels
+ * PointToFieldFunction.getMarginal
 
 === Documentation ===
  * Theory: add interpolation page
@@ -135,6 +144,8 @@
 
 === Python module ===
  * Add Process sample slicing operator
+ * Add Sample.describe and Sample.printSummary
+ * Add the title_kw argument to the viewer to style the figure suptitle
  * Re-raise native Python exceptions through PythonFunction instead of RuntimeException
  * Deprecated coupling_tools.execute method (use subprocess.run)
 
