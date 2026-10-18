@@ -272,17 +272,17 @@ Histogram HistogramFactory::buildWeightedAsHistogram(const Sample & sample,
   const Scalar xMax = sample.getMax()[0];
   if (!(xMax > xMin))
     throw InvalidArgumentException(HERE) << "Error: cannot estimate an Histogram distribution from a constant sample, here max value is " << xMax << " and min value is " << xMin;
-  const UnsignedInteger binNumber = static_cast<UnsignedInteger>(ceil((xMax - xMin) / bandwidth + 0.5));
+  const UnsignedInteger binNumber = static_cast<UnsignedInteger>(std::ceil((xMax - xMin) / bandwidth + 0.5));
   // Adjust the bin with in order to match the bin number. Add a small adjustment in order to have bins defined as [x_k, x_k+1[ intervals
   const Scalar delta = ResourceMap::GetAsScalar("Distribution-DefaultQuantileEpsilon") * (xMax - xMin);
   const Scalar hOpt = ((xMax - xMin) + delta) / binNumber;
   Point heights(binNumber, 0.0);
   const Scalar step = 1.0 / hOpt;
   // Aggregate the weighted realizations into the bins
-  for(UnsignedInteger i = 0; i < size; ++i)
+  for (UnsignedInteger i = 0; i < size; ++i)
   {
     // The index takes values in [[0, binNumber-1]] because min <= sample(i, 0) <= max and step < binNumber / (max - min)
-    const UnsignedInteger index = static_cast<UnsignedInteger>(floor((sample(i, 0) - xMin) * step));
+    const UnsignedInteger index = static_cast<UnsignedInteger>(std::floor((sample(i, 0) - xMin) * step));
     heights[index] += weights[i];
   }
   const Scalar inverseArea = 1.0 / (hOpt * totalWeight);
