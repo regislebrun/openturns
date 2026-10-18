@@ -137,6 +137,7 @@
  * GaussKronrod.getErrorEstimate, getIterationNumber, getEvaluationSubIntervals and getLocalErrorEstimates
  * Curve.setLabels/getLabels
  * PointToFieldFunction.getMarginal
+ * GaussKronrod.setMaximumError now requires a strictly positive finite error instead of a nonnegative one
 
 === Documentation ===
  * Theory: add interpolation page
