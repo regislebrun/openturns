@@ -172,7 +172,7 @@ for bad in ([10], [-1], [2, 2]):
 descSample = ot.Sample([[1.0, 10.0], [2.0, 20.0], [3.0, 30.0], [4.0, 40.0]])
 descSample.setDescription(["x", "y"])
 stats = descSample.describe()
-assert list(stats["count"]) == [4.0, 4.0]
+ott.assert_almost_equal(list(stats["count"]), [4.0, 4.0])
 ott.assert_almost_equal(stats["mean"], descSample.computeMean())
 ott.assert_almost_equal(stats["std"], descSample.computeStandardDeviation())
 ott.assert_almost_equal(stats["min"], descSample.getMin())
@@ -197,12 +197,37 @@ closeStats = descSample.describe([0.12345671, 0.12345672])
 percentileKeys = [key for key in closeStats if "%" in key]
 assert len(percentileKeys) == 2
 assert percentileKeys[0] != percentileKeys[1]
+# ... and each one carries its own quantile, not a duplicated value
+closeValues = [
+    descSample.computeQuantilePerComponent(0.12345671),
+    descSample.computeQuantilePerComponent(0.12345672),
+]
+for key, value in zip(percentileKeys, closeValues):
+    ott.assert_almost_equal(closeStats[key], value)
+# A probability inside ]0, 1[ must not be labelled outside ]0, 100[
+edgeStats = descSample.describe([1.0 - 1.0e-9, 1.0e-9])
+edgeKeys = [key for key in edgeStats if key.endswith("%")]
+assert all(0.0 < float(key[:-1]) < 100.0 for key in edgeKeys)
 # printSummary writes the same values in a table, capture it for the expout
 buffer = io.StringIO()
 with contextlib.redirect_stdout(buffer):
     descSample.printSummary()
 summary = buffer.getvalue()
 assert "mean" in summary and "50%" in summary
+# The table rows carry the values of describe, with the description as headers.
+# printSummary prints %g, so compare at the printed 6 significant digits.
+describedStats = descSample.describe()
+for line in summary.splitlines():
+    fields = line.split()
+    if fields and fields[0] in describedStats:
+        values = [float(value) for value in fields[1:]]
+        ott.assert_almost_equal(
+            list(describedStats[fields[0]]),
+            values,
+            1.0e-5 * max(1.0, max(abs(value) for value in values)),
+            0.0,
+        )
+assert "x" in summary and "y" in summary
 
 # Quantile with tail flag, see issue #3130
 tailSample = ot.Normal(1).getSample(50)

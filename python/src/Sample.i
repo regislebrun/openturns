@@ -154,10 +154,12 @@ def __Sample_describe(self, percentiles=None):
     stats["std"] = self.computeStandardDeviation()
     stats["min"] = self.getMin()
     for prob in percentiles:
-        # :g keys collide for closely spaced probabilities, fall back to
-        # the full-precision value so no result is overwritten
+        # The %g label rounds to 6 significant digits, which can turn a
+        # probability strictly inside ]0, 1[ into a boundary label such as
+        # "100%". Keep the exact value in that case, and on a collision with
+        # an already inserted key, so no row is mislabelled or overwritten.
         key = f"{100.0 * prob:g}%"
-        if key in stats:
+        if key in stats or not 0.0 < 100.0 * prob < 100.0 or float(key[:-1]) != 100.0 * prob:
             key = f"{100.0 * prob!r}%"
         stats[key] = self.computeQuantilePerComponent(prob)
     stats["max"] = self.getMax()
