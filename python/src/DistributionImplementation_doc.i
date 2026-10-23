@@ -137,7 +137,7 @@ Notes
 The characteristic function is defined as:
 
 .. math::
-    \phi_X(t) = \mathbb{E}\left[\exp(- i t X)\right],
+    \phi_X(t) = \mathbb{E}\left[\exp(+ i t X)\right],
                 \quad t \in \Rset
 
 OpenTURNS features a generic implementation of the characteristic function for
