@@ -136,7 +136,10 @@ with unit tangent is integrated with Runge-Kutta steps, each step being
 followed by a Newton projection on the actual level set. This removes most of
 the mesh-size bias of the polygonal approximation, while branching and saddle
 fibres keep the mesh result as a fallback and singular fibres return an
-infinite density. The continuation is controlled by the
+infinite density. The continuation is seeded from a coarser triangulation and
+integrated with the step size of the requested resolution, so that the mesh
+resolution mainly controls the topology discovery and the fallback accuracy.
+The continuation is controlled by the
 ``PushForwardDistribution-NonlinearCoAreaContinuation`` key.
 The co-area factor is the norm of the gradient for a scalar function,
 evaluated at the segment midpoint in :math:`\Rset^2` and at the surface
@@ -228,8 +231,9 @@ The following :class:`~openturns.ResourceMap` keys are used:
   of times the one dimensional integration interval is extended over the search box while the integrand is
   still significant at its end.
 - ``PushForwardDistribution-NonlinearCoAreaDiscretization`` (``UnsignedInteger``, default: ``128``): number of
-  intervals per input dimension in the triangulation of the search box used by the scalar nonlinear co-area
-  density in :math:`\Rset^2`.
+  intervals per input dimension in the fallback triangulation of the search box used by the scalar nonlinear
+  co-area density in :math:`\Rset^2`. When the continuation is enabled, a quarter-resolution triangulation
+  seeds it first and this resolution is only built if the continuation fails.
 - ``PushForwardDistribution-NonlinearCoAreaSurfaceDiscretization`` (``UnsignedInteger``, default: ``48``): number
   of intervals per input dimension in the tetrahedral background mesh used by the nonlinear co-area densities
   from :math:`\Rset^3` to :math:`\Rset` and from :math:`\Rset^3` to :math:`\Rset^2`.
