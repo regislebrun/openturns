@@ -170,7 +170,8 @@ Notes
 In the co-area case :math:`\outputDim < d`, where :math:`d` is the intrinsic
 dimension of the reference mesh, the image simplices are collapsed and cannot
 be reconstructed as a mesh: this accessor raises a
-:class:`~openturns.NotYetImplementedException`.)RAW"
+*NotYetImplementedException*.
+)RAW"
 
 // ---------------------------------------------------------------------
 
