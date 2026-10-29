@@ -134,13 +134,7 @@ public:
 
 private:
 
-  /** Default constructor */
-  EmpiricalBernsteinCopula(const Sample & copulaSample,
-                           const UnsignedInteger binNumber,
-                           const SampleImplementation & logBetaMarginalFactors,
-                           const SampleImplementation & logFactors);
-
-  /** Compute the normalization factors */
+  /** Compute the bin factors */
   void update();
 
   /** Compute the numerical range of the distribution given the parameters values */
@@ -152,9 +146,7 @@ private:
   /** Bin number */
   UnsignedInteger binNumber_;
 
-  /** Normalization factors */
-  Point logBetaFactors_;
-  SampleImplementation logBetaMarginalFactors_;
+  /** Bin factors */
   SampleImplementation logFactors_;
 
 }; /* class EmpiricalBernsteinCopula */

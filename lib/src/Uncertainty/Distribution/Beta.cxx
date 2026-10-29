@@ -144,12 +144,10 @@ Point Beta::computeDDF(const Point & point) const
 
 
 /* Get the PDF of the distribution */
-/* Get the PDF of the distribution */
 Scalar Beta::computePDF(const Scalar x) const
 {
   if ((x == b_) && (beta_ == 1.0)) return alpha_ / (b_ - a_);
-  if ((x <= a_) || (x >= b_)) return 0.0;
-  return std::exp(computeLogPDF(x));
+  return DistFunc::dBeta(alpha_, beta_, (x - a_) / (b_ - a_)) / (b_ - a_);
 }
 
 Scalar Beta::computePDF(const Point & point) const
@@ -162,8 +160,7 @@ Scalar Beta::computePDF(const Point & point) const
 Scalar Beta::computeLogPDF(const Scalar x) const
 {
   if ((x == b_) && (beta_ == 1.0)) return std::log(alpha_ / (b_ - a_));
-  if ((x <= a_) || (x >= b_)) return SpecFunc::LowestScalar;
-  return normalizationFactor_ + (alpha_ - 1.0) * std::log(x - a_) + (beta_ - 1.0) * std::log(b_ - x);
+  return DistFunc::logdBeta(alpha_, beta_, (x - a_) / (b_ - a_)) - std::log(b_ - a_);
 }
 
 Scalar Beta::computeLogPDF(const Point & point) const
