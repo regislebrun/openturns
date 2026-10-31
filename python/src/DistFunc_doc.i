@@ -1484,7 +1484,7 @@ The logarithm of the probability density function is defined as:
 .. math::
     \log p(x) = -\log B(\alpha, \beta)
     + (\alpha - 1)\log(x) + (\beta - 1)\log(1 - x)
-    \quad x \in [0,1]
+    \quad x \in (0,1)
 
 with :math:`\alpha, \beta > 0` and where :math:`\rm B` denotes
 Euler's beta function :meth:`~openturns.SpecFunc.Beta`.
@@ -1523,7 +1523,7 @@ Notes
 The probability density function is defined as:
 
 .. math::
-    p(x) = \dfrac{1}{B(\alpha, \beta)}x^{(\alpha-1)}(1-x)^{(\beta-1)} \quad x \in [0,1]
+    p(x) = \dfrac{1}{B(\alpha, \beta)}x^{(\alpha-1)}(1-x)^{(\beta-1)} \quad x \in (0,1)
 
 with :math:`\alpha, \beta > 0` and where :math:`\rm B` denotes
 Euler's beta function :meth:`~openturns.SpecFunc.Beta`.
