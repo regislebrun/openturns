@@ -59,7 +59,7 @@ invertible : bool
 Returns
 -------
 p : int
-    Order of the AR part of the :math:`ARMA(p,q)` process of dimension :math:`d`."
+    Order of the AR part of the :math:`ARMA(p,q)` process of dimension :math:`\processDim`."
 
 // ---------------------------------------------------------------------
 
@@ -69,7 +69,7 @@ p : int
 Returns
 -------
 q : int
-    Order of the MA part of the :math:`ARMA(p,q)` process of dimension :math:`d`."
+    Order of the MA part of the :math:`ARMA(p,q)` process of dimension :math:`\processDim`."
 
 // ---------------------------------------------------------------------
 
