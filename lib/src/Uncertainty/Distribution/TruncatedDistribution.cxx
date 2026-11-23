@@ -35,6 +35,9 @@
 #include "openturns/KernelMixture.hxx"
 #include "openturns/Mixture.hxx"
 #include "openturns/PiecewiseLinearDistribution.hxx"
+#include "openturns/DistFunc.hxx"
+#include "openturns/Log.hxx"
+#include "openturns/SpecFunc.hxx"
 
 BEGIN_NAMESPACE_OPENTURNS
 
@@ -413,9 +416,10 @@ void TruncatedDistribution::computeMean() const
   {
     mean_ = simplifiedVersion_.getMean();
     isAlreadyComputedMean_ = true;
+    return;
   }
-  else
-    DistributionImplementation::computeMean();
+  if (computeNormalMoments()) return;
+  DistributionImplementation::computeMean();
 }
 
 void TruncatedDistribution::computeCovariance() const
@@ -424,9 +428,103 @@ void TruncatedDistribution::computeCovariance() const
   {
     covariance_ = simplifiedVersion_.getCovariance();
     isAlreadyComputedCovariance_ = true;
+    return;
   }
-  else
-    DistributionImplementation::computeCovariance();
+  if (computeNormalMoments()) return;
+  DistributionImplementation::computeCovariance();
+}
+
+/* Compute the mean and the covariance of the truncation of a normal
+   distribution in a single pass, and return false for the other
+   antecedents */
+Bool TruncatedDistribution::computeNormalMoments() const
+{
+  const Normal * p_normal = dynamic_cast<const Normal *>(distribution_.getImplementation().get());
+  if (p_normal == nullptr) return false;
+
+  const UnsignedInteger dimension = getDimension();
+  const Interval range(getRange());
+  const Point lowerBound(range.getLowerBound());
+  const Point upperBound(range.getUpperBound());
+  const Interval::BoolCollection finiteLowerBound(range.getFiniteLowerBound());
+  const Interval::BoolCollection finiteUpperBound(range.getFiniteUpperBound());
+  const Point mean(p_normal->getMean());
+  const Point sigma(p_normal->getSigma());
+
+  // A zero standard deviation gives a Dirac at the mean: the coordinate is
+  // deterministic and is removed before the computation, as done by
+  // Normal::computeProbability. computeRange() has already checked that the
+  // truncation interval contains its mean.
+  Indices active(0);
+  for (UnsignedInteger i = 0; i < dimension; ++i)
+    if (sigma[i] > 0.0) active.add(i);
+
+  mean_ = mean;
+  // A zero-variance coordinate is deterministic: its variance and its
+  // covariances with the other coordinates are zero, whereas the default
+  // covariance matrix has a unit diagonal
+  covariance_ = CovarianceMatrix(dimension);
+  covariance_.setDiagonal(0.0);
+
+  const UnsignedInteger activeDimension = active.getSize();
+  if (activeDimension > 0)
+  {
+    Point lowerActive(activeDimension);
+    Point upperActive(activeDimension);
+    Point meanActive(activeDimension);
+    Point sigmaActive(activeDimension);
+    for (UnsignedInteger k = 0; k < activeDimension; ++k)
+    {
+      const UnsignedInteger i = active[k];
+      // An infinite bound is stored with a finite placeholder in the interval:
+      // the finiteness flag is authoritative
+      lowerActive[k] = finiteLowerBound[i] ? lowerBound[i] : -SpecFunc::Infinity;
+      upperActive[k] = finiteUpperBound[i] ? upperBound[i] : SpecFunc::Infinity;
+      meanActive[k] = mean[i];
+      sigmaActive[k] = sigma[i];
+    }
+
+    // Independent components: the truncated distribution is the product of the
+    // univariate truncated normal distributions, whose moments are analytic
+    if (p_normal->hasIndependentCopula())
+    {
+      for (UnsignedInteger k = 0; k < activeDimension; ++k)
+      {
+        const TruncatedNormal component(meanActive[k], sigmaActive[k], lowerActive[k], upperActive[k]);
+        const UnsignedInteger i = active[k];
+        mean_[i] = component.getMean()[0];
+        covariance_(i, i) = component.getCovariance()(0, 0);
+      }
+    }
+    else
+    {
+      // Correlated components: the moments of the truncated multivariate
+      // normal distribution have no closed form, let a single weighted Genz
+      // quasi-Monte Carlo pass estimate them
+      const CovarianceMatrix fullCovariance(p_normal->getCovariance());
+      CovarianceMatrix activeCovariance(activeDimension);
+      for (UnsignedInteger k = 0; k < activeDimension; ++k)
+        for (UnsignedInteger l = 0; l <= k; ++l)
+          activeCovariance(k, l) = fullCovariance(active[k], active[l]);
+      const TriangularMatrix cholesky(activeCovariance.computeCholesky());
+      const GenzMoments moments(DistFunc::NormalMomentsND(lowerActive, upperActive, meanActive, cholesky));
+      // The weights degenerate when the box probability is small: the relative
+      // standard error of the estimated probability is about 1/sqrt(ESS)
+      const Scalar minimumEffectiveSampleSize(ResourceMap::GetAsScalar("TruncatedDistribution-MinimumEffectiveSampleSize"));
+      if (moments.effectiveSampleSize < minimumEffectiveSampleSize)
+        LOGWARN(OSS() << "The moments of the truncated normal distribution may be inaccurate: the effective sample size of the Genz weights is " << moments.effectiveSampleSize << " < " << minimumEffectiveSampleSize << " for Genz-DefaultSampleSize=" << ResourceMap::GetAsUnsignedInteger("Genz-DefaultSampleSize") << " points, increase Genz-DefaultSampleSize");
+      for (UnsignedInteger k = 0; k < activeDimension; ++k)
+      {
+        const UnsignedInteger i = active[k];
+        mean_[i] = moments.mean[k];
+        for (UnsignedInteger l = 0; l <= k; ++l)
+          covariance_(i, active[l]) = moments.covariance(k, l);
+      }
+    }
+  }
+  isAlreadyComputedMean_ = true;
+  isAlreadyComputedCovariance_ = true;
+  return true;
 }
 
 /* Compute the numerical range of the distribution given the parameters values */

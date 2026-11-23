@@ -795,6 +795,7 @@
 
   <!-- OT::TruncatedDistribution parameters -->
   <TruncatedDistribution-DefaultThresholdRealization value_float="0.5" />
+  <TruncatedDistribution-MinimumEffectiveSampleSize value_float="100.0" />
 
   <!-- OT::TruncatedNormalFactory parameters -->
   <TruncatedNormalFactory-SigmaLowerBound value_float="1.0e-4" />

@@ -160,6 +160,7 @@
  * ProductDistribution: Evaluate CDF/complement via dedicated product quadrature with stable tails; handle density limits at zero; solve tail quantiles in log-distance; optimize characteristic function evaluation via separate scalar Gauss-Kronrod passes without Point allocations.
  * DistributionImplementation: Select characteristic function panels by absolute argument, bound Filon grid points, document exponent convention, and make `operator /` return `RatioDistribution` for continuous univariate operands.
  * SimulationSensitivityAnalysis now supports importance sampling through optional importance weights for the mean point, importance factors and event probability sensitivity
+ * TruncatedDistribution computes the mean and the covariance of a truncated multivariate Normal distribution in a single weighted Genz quasi-Monte Carlo pass, exact in dimension 1 and for independent components (new TruncatedDistribution-MinimumEffectiveSampleSize ResourceMap key)
 
 === Bug fixes ===
 

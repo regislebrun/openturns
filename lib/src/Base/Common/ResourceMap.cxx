@@ -1432,6 +1432,7 @@ void ResourceMap::loadDefaultConfiguration()
 
   // TruncatedDistribution parameters //
   addAsScalar("TruncatedDistribution-DefaultThresholdRealization", 0.5);
+  addAsScalar("TruncatedDistribution-MinimumEffectiveSampleSize", 100.0);
 
   // TruncatedNormalFactory parameters //
   addAsScalar("TruncatedNormalFactory-SigmaLowerBound", 1.0e-4);

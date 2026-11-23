@@ -26,6 +26,7 @@
 #include "openturns/Point.hxx"
 #include "openturns/Indices.hxx"
 #include "openturns/Sample.hxx"
+#include "openturns/Genz.hxx"
 
 BEGIN_NAMESPACE_OPENTURNS
 
@@ -494,6 +495,13 @@ OT_API Scalar pStudentND(const Point & a, const Point & b,
                           const Point & mu, const TriangularMatrix & L,
                           const Scalar nu,
                           const UnsignedInteger n = ResourceMap::GetAsUnsignedInteger("Genz-DefaultSampleSize"));
+#ifndef SWIG
+// For N-dimensional Normal rectangular moments, exact in dimension 1 and
+// estimated by the weighted Genz quasi-Monte Carlo estimator otherwise
+OT_API GenzMoments NormalMomentsND(const Point & a, const Point & b,
+                                   const Point & mu, const TriangularMatrix & L,
+                                   const UnsignedInteger n = ResourceMap::GetAsUnsignedInteger("Genz-DefaultSampleSize"));
+#endif
 
 } /* DistFunc */
 

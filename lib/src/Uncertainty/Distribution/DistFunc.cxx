@@ -2503,4 +2503,11 @@ Scalar DistFunc::pStudentND(const Point & a, const Point & b,
   return mvt_rectangular_probability(a, b, mu, L, nu, n);
 }
 
+GenzMoments DistFunc::NormalMomentsND(const Point & a, const Point & b,
+                                      const Point & mu, const TriangularMatrix & L,
+                                      const UnsignedInteger n)
+{
+  return mvn_rectangular_moments(a, b, mu, L, n);
+}
+
 END_NAMESPACE_OPENTURNS

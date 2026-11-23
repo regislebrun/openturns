@@ -211,6 +211,11 @@ private:
   Bool hasSimplifiedVersion(Distribution & simplified) const;
   Distribution dispatchTruncation(const Collection<Distribution> & distributions) const;
 
+  /** Compute the mean and the covariance of the truncation of a normal
+      distribution in a single pass, and return false for the other
+      antecedents */
+  Bool computeNormalMoments() const;
+
   /** The main parameter set of the distribution */
   Distribution distribution_;
   Interval bounds_;

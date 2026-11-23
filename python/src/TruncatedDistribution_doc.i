@@ -59,9 +59,18 @@ threshold : float, :math:`\tau \in [0, 1]`
 
 Notes
 -----
-The following :class:`~openturns.ResourceMap` key is used:
+When the distribution to be truncated is a multivariate normal distribution
+with correlated components, the mean and the covariance of the truncated
+distribution have no closed form: they are estimated by the weighted Genz
+quasi-Monte Carlo algorithm, in a single pass shared by both. The estimate is
+exact in dimension 1, where the truncation simplifies to a
+:class:`~openturns.TruncatedNormal`, and when the components are independent,
+where it is the product of univariate truncated normal distributions.
+
+The following :class:`~openturns.ResourceMap` keys are used:
 
 - ``TruncatedDistribution-DefaultThresholdRealization`` (``Scalar``, default: ``0.5``): default value of the threshold :math:`\tau` used to choose between the rejection method and the CDF inversion.
+- ``TruncatedDistribution-MinimumEffectiveSampleSize`` (``Scalar``, default: ``100``): the Genz estimate of the moments warns when the effective sample size :math:`\left(\sum_i p_i\right)^2 / \sum_i p_i^2` of the box weights :math:`p_i` falls below this value, as the relative error of the estimate is then of the order of the inverse square root of the effective sample size.
 
 Examples
 --------
