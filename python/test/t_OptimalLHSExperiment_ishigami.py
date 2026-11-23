@@ -1,6 +1,13 @@
 import openturns as ot
 from math import pi
 
+# Running several pyinstallcheck tests at once makes the TBB worker pool of
+# every process compete with the BLAS threads used by the linear algebra
+# kernels: both oversubscribe the machine, so the BLAS threads spin and the
+# wall time grows far beyond the CPU time. Serialising the OpenTURNS loops
+# with TBB keeps this test independent of how many tests ctest starts at once.
+ot.TBB.Disable()
+
 # Definition of the Ishigami function
 dimension = 3
 a = 7.0

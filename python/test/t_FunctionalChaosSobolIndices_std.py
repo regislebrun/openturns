@@ -6,6 +6,13 @@ from openturns.usecases import ishigami_function
 
 ot.TESTPREAMBLE()
 
+# Running several pyinstallcheck tests at once makes the TBB worker pool of
+# every process compete with the BLAS threads used by the linear algebra
+# kernels: both oversubscribe the machine, so the BLAS threads spin and the
+# wall time grows far beyond the CPU time. Serialising the OpenTURNS loops
+# with TBB keeps this test independent of how many tests ctest starts at once.
+ot.TBB.Disable()
+
 
 # Problem parameters
 dimension = 3
